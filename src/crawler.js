@@ -5,8 +5,26 @@ const fs = require('fs');
 const {
 	ungzip
 } = require('node-gzip');
-
-
+const DatasetModel = require('../models/dataset.js')
+DatasetModel
+  .findOneAndUpdate(
+    {
+      uri: uri
+    }, 
+    {
+		lastModified: new Date(),
+		verisionCount: verisionCount++
+    },
+    {
+      new: true,                       // return updated doc
+      runValidators: true              // validate before update
+    })
+  .then(doc => {
+    console.log(doc)
+  })
+  .catch(err => {
+    console.error(err)
+  })
 /**
  * TODO:
  *	- versionCounter in DB!!!
@@ -15,8 +33,8 @@ const {
  *	- lastModified in DB
  */
 class Crawler {
-	constructor(url) {
-		this.uri = url;
+	constructor(uri) {
+		this.uri = uri;
 		this.tempLastModified;
 		this.lastModified = new Date();
 		this.waitingTime = 10000;
@@ -28,7 +46,7 @@ class Crawler {
 
 	async crawl() {
 		try {
-			console.log("start", new Date());
+			console.log("now crawling:", this.uri, new Date());
 			let header = await rp.head({
 				uri: this.uri
 			});
@@ -48,7 +66,7 @@ class Crawler {
 			}
 
 			await sleep(this.waitingTime);
-			if (this.stop != true) {
+			if (this.stopped != true) {
 				this.crawl();
 			}
 
@@ -59,7 +77,7 @@ class Crawler {
 		}
 	}
 
-	stop() {
+	quit() {
 		this.stopped = true;
 	}
 

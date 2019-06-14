@@ -16,9 +16,9 @@ router.get('/add', function(req, res, next) {
   }
 });
 
-router.get('/stop', function(req, res, next) {
+router.get('/quit', function(req, res, next) {
   if (req.query.url) {
-    urlEmitter.emit('stopUrl', req.query.url);
+    urlEmitter.emit('quitUrl', req.query.url);
     res.send('Stopped crawling:' + req.query.url);
   } else {
     res.send('give me an url');
