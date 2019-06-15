@@ -44,13 +44,13 @@ let datasetSchema = new mongoose.Schema({
 
 datasetSchema.statics.getDatasets = function () {
 	return new Promise((resolve, reject) => {
-		this.find((err, docs) => {
+		this.find((err, datasets) => {
 			if (err) {
 				console.error(err)
 				return reject(err)
 			}
 
-			resolve(docs)
+			resolve(datasets)
 		})
 	})
 }

@@ -7,7 +7,7 @@ class UrlEmitter extends EventEmitter {};
 
 const urlEmitter = new UrlEmitter();
 
-urlEmitter.on('addUrl', (uri) => {
+urlEmitter.on('addCrawl', (uri) => {
   setImmediate(() => {
     console.log("add", uri);
     new DatasetModel({
@@ -23,7 +23,7 @@ urlEmitter.on('addUrl', (uri) => {
   })
 });
 
-urlEmitter.on('quitUrl', (uri) => {
+urlEmitter.on('quitCrawl', (uri) => {
   setImmediate(() => {
     console.log("quit", uri);
     console.log(Crawlers[uri]);
@@ -31,7 +31,7 @@ urlEmitter.on('quitUrl', (uri) => {
   })
 });
 
-urlEmitter.on('startUrl', (uri) => {
+urlEmitter.on('startCrawl', (uri) => {
   setImmediate(() => {
     console.log("start", uri);
     if (Crawlers[uri]) {

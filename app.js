@@ -1,13 +1,13 @@
 //crawler app
 var db = require('./database.js');
-const urlEmitter = require('./src/events/urlEmitter.js');
+const crawlEmitter = require('./src/events/crawlEmitter.js');
 const DatasetModel = require('./models/dataset.js');
+
 //start crawlers on init
 DatasetModel.getDatasets()
-  .then(docs => {
-    for (doc of docs) {
-      console.log(doc.uri);
-      urlEmitter.emit('startUrl', doc.uri);
+  .then(datasets => {
+    for (dataset of datasets) {
+      crawlEmitter.emit('startCrawl', dataset.uri);
     }
   })
   .catch(err => {

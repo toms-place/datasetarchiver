@@ -6,13 +6,7 @@ const {
 	ungzip
 } = require('node-gzip');
 const DatasetModel = require('../models/dataset.js')
-/**
- * TODO:
- *	- versionCounter in DB!!!
- *	- errorCount in DB
- *	- waitingTime in DB
- *	- lastModified in DB
- */
+
 class Crawler {
 	constructor(uri) {
 		this.uri = uri;
@@ -26,13 +20,15 @@ class Crawler {
 		let host = uriPathArray[2];
 		let filename = uriPathArray[uriPathArray.length - 1];
 
+		const localPath = process.env.DATASETPATH || './data'
+
 		DatasetModel
 			.findOneAndUpdate({
 				uri: this.uri
 			}, {
 				host: host,
 				filename: filename,
-				path: './data/' + host + "/" + filename
+				path: localPath + "/" +  host + "/" + filename
 			}, {
 				runValidators: true // validate before update
 			}).then(() => {
