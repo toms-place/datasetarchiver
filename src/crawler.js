@@ -8,31 +8,31 @@ const {
 const DatasetModel = require('../models/dataset.js')
 
 class Crawler {
-	constructor(uri) {
-		this.uri = uri;
+	constructor(url) {
+		this.url = url;
 		this.tempLastModified;
 		this.init();
 		this.crawl();
 	}
 
 	init() {
-		let uriPathArray = this.uri.split('/');
-		let host = uriPathArray[2];
-		let filename = uriPathArray[uriPathArray.length - 1];
+		let urlPathArray = this.url.split('/');
+		let host = urlPathArray[2];
+		let filename = urlPathArray[urlPathArray.length - 1];
 
 		const localPath = process.env.DATASETPATH || './data'
 
 		DatasetModel
 			.findOneAndUpdate({
-				uri: this.uri
+				url: this.url
 			}, {
 				host: host,
 				filename: filename,
-				path: localPath + "/" +  host + "/" + filename
+				path: localPath + "/" + host + "/" + filename
 			}, {
 				runValidators: true // validate before update
 			}).then(() => {
-				console.log(`initiated: ${this.uri}`)
+				console.log(`initiated: ${this.url}`)
 			})
 			.catch(err => {
 				console.error(err)
@@ -41,16 +41,14 @@ class Crawler {
 
 	async crawl() {
 		let dataset = await DatasetModel.findOne({
-			uri: this.uri
+			url: this.url
 		}).exec();
 
 		if (dataset.stopped != true) {
 			try {
 
-				console.log("now crawling:", this.uri, new Date());
-				let header = await rp.head({
-					uri: this.uri
-				});
+				console.log("now crawling:", this.url, new Date());
+				let header = await rp.head(this.url);
 
 				this.tempLastModified = dataset.lastModified;
 
@@ -59,7 +57,7 @@ class Crawler {
 
 					DatasetModel
 						.findOneAndUpdate({
-							uri: this.uri
+							url: this.url
 						}, {
 							lastModified: new Date(header['last-modified'])
 						}, {
@@ -82,14 +80,14 @@ class Crawler {
 			} catch (error) {
 				DatasetModel
 					.findOneAndUpdate({
-						uri: this.uri
+						url: this.url
 					}, {
 						errorCount: dataset.errorCount + 1
 					}, {
 						new: true,
 						runValidators: true // validate before update
 					}).then((dataset) => {
-						console.log(`(errorCount: ${dataset.errorCount}) Error crawling: ${this.uri}`);
+						console.log(`(errorCount: ${dataset.errorCount}) Error crawling: ${this.url}`);
 					})
 					.catch(err => {
 						console.error(err)
@@ -102,13 +100,13 @@ class Crawler {
 	quit() {
 		DatasetModel
 			.findOneAndUpdate({
-				uri: this.uri
+				url: this.url
 			}, {
 				stopped: true
 			}, {
 				runValidators: true // validate before update
 			}).then(() => {
-				console.log(`Stopped crawling: ${this.uri}`)
+				console.log(`Stopped crawling: ${this.url}`)
 			})
 			.catch(err => {
 				console.error(err)
@@ -118,22 +116,23 @@ class Crawler {
 	start() {
 		DatasetModel
 			.findOneAndUpdate({
-				uri: this.uri
+				url: this.url
 			}, {
 				stopped: false
 			}, {
 				runValidators: true // validate before update
-			}).then(() => {
+			})
+			.then(() => {
 				this.crawl();
 			})
 			.catch(err => {
-				console.error(err)
+				throw err
 			})
 	}
 
 	async saveDataSet(compressed) {
 		let dataset = await DatasetModel.findOne({
-			uri: this.uri
+			url: this.url
 		}).exec();
 
 		await fs.promises.mkdir(dataset.path + "/" + dataset.versionCount, {
@@ -141,15 +140,15 @@ class Crawler {
 		}).catch(console.error);
 
 		if (compressed == false) {
-			rp(this.uri).pipe(fs.createWriteStream(dataset.path + "/" + dataset.versionCount + "/" + dataset.filename));
+			await rp(this.uril).pipe(fs.createWriteStream(dataset.path + "/" + dataset.versionCount + "/" + dataset.filename));
 		} else {
 			let gzip = zlib.createGzip();
-			rp(this.uri).pipe(gzip).pipe(fs.createWriteStream(dataset.path + "/" + dataset.versionCount + "/" + dataset.filename + ".gz"));
+			await rp(this.url).pipe(gzip).pipe(fs.createWriteStream(dataset.path + "/" + dataset.versionCount + "/" + dataset.filename + ".gz"));
 		}
 
 		DatasetModel
 			.findOneAndUpdate({
-				uri: this.uri
+				url: this.url
 			}, {
 				versionCount: dataset.versionCount + 1
 			}, {
@@ -161,7 +160,7 @@ class Crawler {
 	}
 
 	static async uncompressDataSet(host, filename, version) {
-		console.log(`Get ${this.uri}`);
+		console.log(`Get ${this.url}`);
 		const folder = './data/' + host + "/" + filename + "/v" + version;
 		let path2file = './data/' + host + "/" + filename + "/v" + version + "/" + filename + ".gz";
 

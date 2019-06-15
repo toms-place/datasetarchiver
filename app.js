@@ -1,13 +1,15 @@
 //crawler app
 var db = require('./database.js');
-const crawlEmitter = require('./src/events/crawlEmitter.js');
 const DatasetModel = require('./models/dataset.js');
+const Crawlers = require('./src/crawlers.js');
+const Crawler = require('./src/crawler.js');
 
 //start crawlers on init
 DatasetModel.getDatasets()
   .then(datasets => {
     for (dataset of datasets) {
-      crawlEmitter.emit('startCrawl', dataset.uri);
+      Crawlers[dataset.url] = new Crawler(dataset.url);
+      console.log('started:', Crawlers[dataset.url]);
     }
   })
   .catch(err => {

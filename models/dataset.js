@@ -1,7 +1,7 @@
 let mongoose = require('mongoose')
 
 let datasetSchema = new mongoose.Schema({
-	uri: {
+	url: {
 		type: String,
 		required: true,
 		unique: true
