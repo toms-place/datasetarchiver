@@ -42,6 +42,10 @@ let datasetSchema = new mongoose.Schema({
 
 })
 
+datasetSchema.virtual('publicPath').get(function () {
+	return this.host + "/" + this.filename
+})
+
 datasetSchema.statics.getDatasets = function () {
 	return new Promise((resolve, reject) => {
 		this.find((err, datasets) => {
