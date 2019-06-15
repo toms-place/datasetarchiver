@@ -1,4 +1,6 @@
 let mongoose = require('mongoose');
+mongoose.set('useFindAndModify', false);
+mongoose.set('useCreateIndex', true);
 
 const server = '127.0.0.1:27017'; // REPLACE WITH YOUR DB SERVER
 const database = 'archiver';      // REPLACE WITH YOUR DB NAME

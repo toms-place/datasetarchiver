@@ -6,25 +6,6 @@ const {
 	ungzip
 } = require('node-gzip');
 const DatasetModel = require('../models/dataset.js')
-DatasetModel
-  .findOneAndUpdate(
-    {
-      uri: uri
-    }, 
-    {
-		lastModified: new Date(),
-		verisionCount: verisionCount++
-    },
-    {
-      new: true,                       // return updated doc
-      runValidators: true              // validate before update
-    })
-  .then(doc => {
-    console.log(doc)
-  })
-  .catch(err => {
-    console.error(err)
-  })
 /**
  * TODO:
  *	- versionCounter in DB!!!
@@ -36,72 +17,151 @@ class Crawler {
 	constructor(uri) {
 		this.uri = uri;
 		this.tempLastModified;
-		this.lastModified = new Date();
-		this.waitingTime = 10000;
-		this.errorCount = 0;
-		this.verisionCount = 0;
-		this.stopped = false;
+		this.init();
 		this.crawl();
 	}
 
-	async crawl() {
-		try {
-			console.log("now crawling:", this.uri, new Date());
-			let header = await rp.head({
+	init() {
+		let uriPathArray = this.uri.split('/');
+		let host = uriPathArray[2];
+		let filename = uriPathArray[uriPathArray.length - 1];
+
+		DatasetModel
+			.findOneAndUpdate({
 				uri: this.uri
-			});
+			}, {
+				host: host,
+				filename: filename,
+				path: './data/' + host + "/" + filename
+			}, {
+				runValidators: true // validate before update
+			}).then(() => {
+				console.log(`initiated: ${this.uri}`)
+			})
+			.catch(err => {
+				console.error(err)
+			})
+	}
 
-			this.tempLastModified = this.lastModified;
+	async crawl() {
+		let dataset = await DatasetModel.findOne({
+			uri: this.uri
+		}).exec();
 
-			if (header['last-modified'] != undefined && header['content-type'] != 'text/html') {
-				this.lastModified = new Date(header['last-modified']);
-			} else {
-				//TODO: define other change detection methods!
+		if (dataset.stopped != true) {
+			try {
+
+				console.log("now crawling:", this.uri, new Date());
+				let header = await rp.head({
+					uri: this.uri
+				});
+
+				this.tempLastModified = dataset.lastModified;
+
+				//TODO other change detection methods
+				if (header['last-modified'] != undefined && header['content-type'] != 'text/html') {
+
+					DatasetModel
+						.findOneAndUpdate({
+							uri: this.uri
+						}, {
+							lastModified: new Date(header['last-modified'])
+						}, {
+							new: true,
+							runValidators: true // validate before update
+						}).then(async (dataset) => {
+							if (this.tempLastModified - dataset.lastModified != 0) {
+								this.saveDataSet();
+							}
+
+							await sleep(dataset.waitingTime);
+							this.crawl();
+
+						})
+						.catch(err => {
+							console.error(err)
+						})
+				}
+
+			} catch (error) {
+				DatasetModel
+					.findOneAndUpdate({
+						uri: this.uri
+					}, {
+						errorCount: dataset.errorCount + 1
+					}, {
+						new: true,
+						runValidators: true // validate before update
+					}).then((dataset) => {
+						console.log(`(errorCount: ${dataset.errorCount}) Error crawling: ${this.uri}`);
+					})
+					.catch(err => {
+						console.error(err)
+					})
+				throw error;
 			}
-			if (this.tempLastModified - this.lastModified != 0) {
-				let requestpathArray = this.uri.split('/');
-				let host = requestpathArray[2];
-				let filename = requestpathArray[requestpathArray.length - 1];
-				this.saveDataSet(host, filename);
-			}
-
-			await sleep(this.waitingTime);
-			if (this.stopped != true) {
-				this.crawl();
-			}
-
-		} catch (error) {
-			this.errorCount++;
-			console.log(`(errorCount: ${this.errorCount}) Error crawling: ${this.uri}`);
-			throw error;
 		}
 	}
 
 	quit() {
-		this.stopped = true;
+		DatasetModel
+			.findOneAndUpdate({
+				uri: this.uri
+			}, {
+				stopped: true
+			}, {
+				runValidators: true // validate before update
+			}).then(() => {
+				console.log(`Stopped crawling: ${this.uri}`)
+			})
+			.catch(err => {
+				console.error(err)
+			})
 	}
 
 	start() {
-		this.stop = false;
-		this.crawl();
+		DatasetModel
+			.findOneAndUpdate({
+				uri: this.uri
+			}, {
+				stopped: false
+			}, {
+				runValidators: true // validate before update
+			}).then(() => {
+				this.crawl();
+			})
+			.catch(err => {
+				console.error(err)
+			})
 	}
 
-	async saveDataSet(host, filename, compressed) {
+	async saveDataSet(compressed) {
+		let dataset = await DatasetModel.findOne({
+			uri: this.uri
+		}).exec();
 
-		let folder = './data/' + host + "/" + filename + "/v" + this.verisionCount;
-
-		await fs.promises.mkdir(folder, {
+		await fs.promises.mkdir(dataset.path + "/" + dataset.versionCount, {
 			recursive: true
 		}).catch(console.error);
 
 		if (compressed == false) {
-			rp(this.uri).pipe(fs.createWriteStream(folder + "/" + filename + ".gz"));
+			rp(this.uri).pipe(fs.createWriteStream(dataset.path + "/" + dataset.versionCount + "/" + dataset.filename));
 		} else {
 			let gzip = zlib.createGzip();
-			rp(this.uri).pipe(gzip).pipe(fs.createWriteStream(folder + "/" + filename + ".gz"));
+			rp(this.uri).pipe(gzip).pipe(fs.createWriteStream(dataset.path + "/" + dataset.versionCount + "/" + dataset.filename + ".gz"));
 		}
 
-		this.verisionCount++;
+		DatasetModel
+			.findOneAndUpdate({
+				uri: this.uri
+			}, {
+				versionCount: dataset.versionCount + 1
+			}, {
+				runValidators: true // validate before update
+			})
+			.catch(err => {
+				console.error(err)
+			})
 	}
 
 	static async uncompressDataSet(host, filename, version) {
@@ -126,8 +186,6 @@ class Crawler {
 				});
 			}
 		});
-
-		this.verisionCount++;
 	}
 }
 

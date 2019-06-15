@@ -5,7 +5,41 @@ let datasetSchema = new mongoose.Schema({
 		type: String,
 		required: true,
 		unique: true
-	}
+	},
+	lastModified: {
+		type: Date,
+		default: new Date()
+	},
+	waitingTime: {
+		type: Number,
+		default: 10000
+	},
+	errorCount: {
+		type: Number,
+		default: 0
+	},
+	versionCount: {
+		type: Number,
+		default: 0
+	},
+	stopped: {
+		type: Boolean,
+		default: false
+	},
+	path: {
+		type: String
+	},
+	host: {
+		type: String
+	},
+	filename: {
+		type: String
+	},
+	versionPaths: {
+		type: Array
+	},
+	meta: {}
+
 })
 
 datasetSchema.statics.getDatasets = function () {
