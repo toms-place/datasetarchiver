@@ -8,9 +8,22 @@ var cookieParser = require('cookie-parser');
 var morgan = require('morgan');
 
 // create a write stream (in append mode)
-var accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' });
+
+let testserver = process.env.TESTSERVER || false;
+var accessLogStream;
+if (testserver == true) {
+  accessLogStream = fs.createWriteStream(path.join(__dirname, 'access_test.log'), {
+    flags: 'a'
+  });
+} else {
+  accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), {
+    flags: 'a'
+  });
+}
 // setup the logger
-var logger = morgan('combined', { stream: accessLogStream });
+var logger = morgan('combined', {
+  stream: accessLogStream
+});
 
 
 var indexRouter = require('./routes/index');
