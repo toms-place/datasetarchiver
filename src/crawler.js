@@ -7,6 +7,10 @@ const {
 } = require('node-gzip');
 const DatasetModel = require('../models/dataset.js')
 
+/** TODO
+ * other change detection methods
+ * dynamic crawling adjustment
+ */
 class Crawler {
 	constructor(url) {
 		this.url = url;
@@ -55,14 +59,12 @@ class Crawler {
 
 					let headerDate = new Date(header['last-modified'])
 
-					if (headerDate - dataset.tempLastModified > 0 || dataset.nextVersionCount == 0) {
+					if (headerDate - dataset.lastModified > 0 || dataset.nextVersionCount == 0) {
 						dataset.lastModified = headerDate;
 						await this.saveDataSet(dataset);
 					}
 				}
 
-				dataset.tempLastModified = dataset.lastModified;
-				await dataset.save();
 				this.init = false;
 
 			} catch (error) {
@@ -126,6 +128,8 @@ class Crawler {
 
 			dataset.versionPaths.push(dataset.path + "/" + dataset.nextVersionCount + "/" + dataset.filename + ".gz");
 			dataset.nextVersionCount++;
+
+			await dataset.save();
 
 		} catch (error) {
 			throw error
