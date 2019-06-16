@@ -11,8 +11,11 @@ router.get('/', function (req, res, next) {
 router.get('/add', function (req, res, next) {
   if (req.query.url) {
 
+    let time = Math.floor(getRandomArbitrary(10000000, 10160000));
+
     new DatasetModel({
-        url: req.query.url
+        url: req.query.url,
+        waitingTime: time
       }).save()
       .then(dataset => {
         new Crawler(dataset.url);
@@ -114,3 +117,8 @@ router.get('/get', async function (req, res, next) {
 
 
 module.exports = router;
+
+
+function getRandomArbitrary(min, max) {
+  return Math.random() * (max - min) + min;
+}

@@ -33,7 +33,7 @@ if (cluster.isMaster) {
     cluster.fork();
   }
 
-  
+
   //start crawlers distributed on clusters at init
   DatasetModel.getDatasets()
     .then(async (datasets) => {
@@ -45,7 +45,7 @@ if (cluster.isMaster) {
       for (let i = 0; i < dL; i++) {
         for (let w = 1; w < wL + 1; w++) {
           if (counter == w) {
-            cluster.workers[w].send(datasets[i].url);
+            cluster.workers[w].send(datasets[i]);
             await sleep(20);
             if (counter < wL) counter++;
             else counter = 1;
@@ -82,8 +82,8 @@ if (cluster.isMaster) {
   server.on('error', onError);
   server.on('listening', onListening);
 
-  process.on('message', (url) => {
-    let crawler = new Crawler(url);
+  process.on('message', (dataset) => {
+    let crawler = new Crawler(dataset.url);
     console.log(`${process.pid} started: ${crawler}`)
   });
 
