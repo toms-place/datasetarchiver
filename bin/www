@@ -34,7 +34,8 @@ if (cluster.isMaster) {
   }
 
 
-  if (process.env.TESTSERVER != true) {
+  let testserver = process.env.TESTSERVER || false;
+  if (testserver == false) {
     //start crawlers distributed on clusters at init
     DatasetModel.getDatasets()
       .then(async (datasets) => {
