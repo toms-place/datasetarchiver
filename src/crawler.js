@@ -10,6 +10,9 @@ const DatasetModel = require('../models/dataset.js')
 /** TODO
  * other change detection methods
  * dynamic crawling adjustment
+ * is dataset compressed?
+ * filetype detection
+ * metadata generation
  */
 class Crawler {
 	constructor(url) {
@@ -137,9 +140,10 @@ class Crawler {
 	}
 
 	static async uncompressDataSet(host, filename, version) {
-		console.log(`Get ${this.url}`);
-		const folder = './data/' + host + "/" + filename + "/v" + version;
-		let path2file = './data/' + host + "/" + filename + "/v" + version + "/" + filename + ".gz";
+		const localPath = process.env.DATASETPATH || './data';
+
+		const folder = localPath + "/" + host + "/" + filename + "/v" + version;
+		let path2file = folder + "/" + filename + ".gz";
 
 		fs.readFile(path2file, async function (err, file) {
 			if (err) {
