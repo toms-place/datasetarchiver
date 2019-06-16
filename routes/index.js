@@ -11,14 +11,12 @@ router.get('/testFile.csv', function(req, res, next) {
   res.sendFile('/testFile.csv');
 });
 
-/* GET file. */
-router.get('/testFile.1.csv', function(req, res, next) {
-  res.sendFile('/testFile.csv');
-});
+for (let i = 0; i<10000; i++) {
+  /* GET file. */
+  router.get('/testFile.' + i + '.csv', function(req, res, next) {
+    res.sendFile('/testFile.' + i + '.csv');
+  });
 
-/* GET file. */
-router.get('/testFile.2.csv', function(req, res, next) {
-  res.sendFile('/testFile.csv');
-});
+}
 
 module.exports = router;

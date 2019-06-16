@@ -2,3 +2,7 @@ node_modules
 package-lock.json
 .DS_Store
 data
+access.log
+cp.py
+testserver
+rq.py

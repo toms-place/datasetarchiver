@@ -1,39 +1,29 @@
-//crawler app
-var db = require('./database.js');
-const DatasetModel = require('./models/dataset.js');
-const Crawlers = require('./src/crawlers.js');
-const Crawler = require('./src/crawler.js');
-
-//start crawlers on init
-DatasetModel.getDatasets()
-  .then(datasets => {
-    for (dataset of datasets) {
-      Crawlers[dataset.url] = new Crawler(dataset.url);
-      console.log('started:', Crawlers[dataset.url]);
-    }
-  })
-  .catch(err => {
-    console.error(err)
-  })
-
+const fs = require('fs');
 
 //express
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+var morgan = require('morgan');
+
+// create a write stream (in append mode)
+var accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' });
+// setup the logger
+var logger = morgan('combined', { stream: accessLogStream });
+
 
 var indexRouter = require('./routes/index');
 var apiRouter = require('./routes/api');
 
 var app = express();
+//use logger
+app.use(logger);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
-app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({
   extended: false

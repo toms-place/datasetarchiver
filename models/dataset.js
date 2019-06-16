@@ -6,19 +6,23 @@ let datasetSchema = new mongoose.Schema({
 		required: true,
 		unique: true
 	},
+	tempLastModified: {
+		type: Date,
+		default: new Date()
+	},
 	lastModified: {
 		type: Date,
 		default: new Date()
 	},
 	waitingTime: {
 		type: Number,
-		default: 10000
+		default: 300000
 	},
 	errorCount: {
 		type: Number,
 		default: 0
 	},
-	versionCount: {
+	nextVersionCount: {
 		type: Number,
 		default: 0
 	},

@@ -1,5 +1,16 @@
 #!/usr/bin/env node
 
+//cluster
+const cluster = require('cluster');
+const numCPUs = require('os').cpus().length;
+const sleep = require('util').promisify(setTimeout);
+
+//crawler app
+const db = require('../database.js');
+const DatasetModel = require('../models/dataset.js');
+const Crawler = require('../src/crawler.js');
+
+
 /**
  * Module dependencies.
  */
@@ -13,21 +24,72 @@ var http = require('http');
  */
 
 var port = normalizePort(process.env.PORT || '3000');
-app.set('port', port);
 
-/**
- * Create HTTP server.
- */
+if (cluster.isMaster) {
+  console.log(`Master ${process.pid} is running`);
 
-var server = http.createServer(app);
+  // Fork workers.
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
 
-/**
- * Listen on provided port, on all network interfaces.
- */
+  
+  //start crawlers distributed on clusters at init
+  DatasetModel.getDatasets()
+    .then(async (datasets) => {
+      let wL = Object.keys(cluster.workers).length;
+      let dL = datasets.length;
 
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
+      //set up all datasets for the workers
+      let counter = 1;
+      for (let i = 0; i < dL; i++) {
+        for (let w = 1; w < wL + 1; w++) {
+          if (counter == w) {
+            cluster.workers[w].send(datasets[i].url);
+            await sleep(20);
+            if (counter < wL) counter++;
+            else counter = 1;
+            break;
+          }
+        }
+
+      }
+    })
+    .catch(err => {
+      console.error(err)
+    })
+
+  cluster.on('exit', (worker, code, signal) => {
+    console.log(`worker ${worker.process.pid} died`);
+  });
+} else {
+  // Workers can share any TCP connection
+  // In this case it is an HTTP server
+
+  app.set('port', port);
+
+  /**
+   * Create HTTP server.
+   */
+
+  var server = http.createServer(app);
+
+  /**
+   * Listen on provided port, on all network interfaces.
+   */
+
+  server.listen(port);
+  server.on('error', onError);
+  server.on('listening', onListening);
+
+  process.on('message', (url) => {
+    let crawler = new Crawler(url);
+    console.log(`${process.pid} started: ${crawler}`)
+  });
+
+  console.log(`Worker ${process.pid} started`);
+}
+
 
 /**
  * Normalize a port into a number, string, or false.
@@ -58,9 +120,9 @@ function onError(error) {
     throw error;
   }
 
-  var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+  var bind = typeof port === 'string' ?
+    'Pipe ' + port :
+    'Port ' + port;
 
   // handle specific listen errors with friendly messages
   switch (error.code) {
@@ -83,8 +145,8 @@ function onError(error) {
 
 function onListening() {
   var addr = server.address();
-  var bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
+  var bind = typeof addr === 'string' ?
+    'pipe ' + addr :
+    'port ' + addr.port;
   debug('Listening on ' + bind);
 }
