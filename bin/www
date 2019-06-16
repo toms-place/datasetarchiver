@@ -46,6 +46,7 @@ if (cluster.isMaster) {
         for (let w = 1; w < wL + 1; w++) {
           if (counter == w) {
             cluster.workers[w].send(datasets[i]);
+            //maybe adjust, depending on load!
             await sleep(20);
             if (counter < wL) counter++;
             else counter = 1;
@@ -84,7 +85,7 @@ if (cluster.isMaster) {
 
   process.on('message', (dataset) => {
     let crawler = new Crawler(dataset.url);
-    console.log(`${process.pid} started: ${crawler}`)
+    console.log(`${process.pid} started: ${crawler.url}`)
   });
 
   console.log(`Worker ${process.pid} started`);
