@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "DATASETPATH=./data node ./bin/www",
-    "test": "DATASETPATH=./data TESTSERVER=true node ./bin/www"
+    "test": "PORT=5050 DATASETPATH=./data TESTSERVER=true node ./bin/www"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
