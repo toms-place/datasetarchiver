@@ -1,5 +1,10 @@
 let mongoose = require('mongoose')
 
+var versionsSchema = new mongoose.Schema({
+	path: String,
+	hash: String
+});
+
 let datasetSchema = new mongoose.Schema({
 	url: {
 		type: String,
@@ -35,8 +40,8 @@ let datasetSchema = new mongoose.Schema({
 	filename: {
 		type: String
 	},
-	versionPaths: {
-		type: Array
+	versions: {
+		type: [versionsSchema]
 	},
 	meta: {}
 

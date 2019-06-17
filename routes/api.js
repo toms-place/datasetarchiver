@@ -12,18 +12,20 @@ router.get('/', function (req, res, next) {
 router.get('/add', function (req, res, next) {
   if (req.query.url) {
 
-    let time = Math.floor(getRandomArbitrary(10000000, 10160000));
+    let waitingTime = Math.floor(getRandomArbitrary(10000000, 10160000));
 		let urlPathArray = req.query.url.split('/');
 		let host = urlPathArray[2];
     let filename = urlPathArray[urlPathArray.length - 1];
-    let path = localPath + "/" + host + "/" + filename
+    let path = localPath + "/" + host + "/" + filename;
+    let versions = [];
 
     new DatasetModel({
         url: req.query.url,
-        waitingTime: time,
+        waitingTime: waitingTime,
         host: host,
         filename: filename,
-        path: path
+        path: path,
+        versions: versions
       }).save()
       .then(dataset => {
         new Crawler(dataset.url);

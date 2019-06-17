@@ -1,4 +1,6 @@
-const debuglevel = 0;
+//From which number of errors should the crawling be stopped
+const errorCountTreshold = 1;
+const DatasetModel = require('../models/dataset.js')
 
 const rp = require('request-promise-native');
 const sleep = require('util').promisify(setTimeout);
@@ -7,15 +9,14 @@ const fs = require('fs');
 const {
 	ungzip
 } = require('node-gzip');
-const DatasetModel = require('../models/dataset.js')
+const crypto = require('crypto');
+
 
 /** TODO
- * other change detection methods
- * - hash speichern
- * dynamic crawling adjustment
- * is dataset compressed?
- * filetype detection
- * metadata generation
+ * - dynamic crawling adjustment
+ * - is dataset compressed?
+ * - filetype detection
+ * - metadata generation
  */
 class Crawler {
 	constructor(url) {
@@ -33,24 +34,25 @@ class Crawler {
 			try {
 
 				console.log("now crawling:", this.url, new Date());
-				let header = await rp.head(this.url).catch(async () => {
+				let response = await rp(this.url).catch(async (error) => {
 					dataset.errorCount++;
+					let err = new Error('Error requesting: ' + this.url);
+					err.code = error.statusCode;
+					if (dataset.errorCount >= errorCountTreshold) {
+						dataset.stopped = true;
+					}
 					await dataset.save();
-					let err = new Error('Request error:', this.url);
-					err.code = 404;
 					console.error(err);
 				});
 
-				//TODO other change detection methods
-				if (header) {
-					if (header['last-modified'] != undefined && header['content-type'] != 'text/html') {
+				if (response) {
+					let hash = crypto.createHash('sha256');
+					hash.update(response);
+					let digest = hash.digest('hex');
 
-						let headerDate = new Date(header['last-modified'])
-
-						if (headerDate - dataset.lastModified > 0 || dataset.nextVersionCount == 0) {
-							dataset.lastModified = headerDate;
-							await this.saveDataSet(dataset);
-						}
+					if (dataset.nextVersionCount == 0 || digest != dataset.versions[dataset.versions.length - 1].hash) {
+						dataset.lastModified = new Date();
+						await this.saveDataSet(dataset, response, digest);
 					}
 				}
 
@@ -97,23 +99,37 @@ class Crawler {
 		}
 	}
 
-	async saveDataSet(dataset, compressed) {
+	async saveDataSet(dataset, data, digest, compressed) {
 		try {
+
 			await fs.promises.mkdir(dataset.path + "/" + dataset.nextVersionCount, {
 				recursive: true
 			}).catch(console.error);
 
+			let path = dataset.path + "/" + dataset.nextVersionCount + "/" + dataset.filename;
+
 			if (compressed == false) {
-				await rp(this.url).pipe(fs.createWriteStream(dataset.path + "/" + dataset.nextVersionCount + "/" + dataset.filename));
+				fs.writeFile(path, data, async (err) => {
+					if (err) throw err;
+					dataset.versions.push({path: path, hash: digest})
+					dataset.nextVersionCount++;
+					await dataset.save();
+				});
 			} else {
-				let gzip = zlib.createGzip();
-				await rp(this.url).pipe(gzip).pipe(fs.createWriteStream(dataset.path + "/" + dataset.nextVersionCount + "/" + dataset.filename + ".gz"));
+				zlib.deflate(data, (err, buffer) => {
+					if (!err) {
+						fs.writeFile(path, buffer, async (err) => {
+							if (err) throw err;
+							dataset.versions.push({path: path + '.gz', hash: digest})
+							dataset.nextVersionCount++;
+							await dataset.save();
+						});
+					} else {
+						throw err
+					}
+				});
 			}
 
-			dataset.versionPaths.push(dataset.path + "/" + dataset.nextVersionCount + "/" + dataset.filename + ".gz");
-			dataset.nextVersionCount++;
-
-			await dataset.save();
 
 		} catch (error) {
 			throw error
