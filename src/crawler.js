@@ -31,9 +31,6 @@ class Crawler {
 
 				console.log("now crawling:", this.url, new Date());
 				let header = await rp.head(this.url);
-				if (header.statusCode != 200) {
-					throw new Error("Status Code Error", this.url);
-				}
 
 				//TODO other change detection methods
 				if (header['last-modified'] != undefined && header['content-type'] != 'text/html') {
@@ -96,6 +93,7 @@ class Crawler {
 	}
 
 	async saveDataSet(dataset, compressed) {
+		console.log('saving', dataset.url);
 		try {
 			await fs.promises.mkdir(dataset.path + "/" + dataset.nextVersionCount, {
 				recursive: true
