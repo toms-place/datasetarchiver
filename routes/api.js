@@ -13,8 +13,8 @@ router.get('/add', function (req, res, next) {
   if (req.query.url) {
 
     let waitingTime = Math.floor(getRandomArbitrary(10000000, 10160000));
-		let urlPathArray = req.query.url.split('/');
-		let host = urlPathArray[2];
+    let urlPathArray = req.query.url.split('/');
+    let host = urlPathArray[2];
     let filename = urlPathArray[urlPathArray.length - 1];
     let path = localPath + "/" + host + "/" + filename;
     let versions = [];
@@ -28,7 +28,7 @@ router.get('/add', function (req, res, next) {
         versions: versions
       }).save()
       .then(dataset => {
-        new Crawler(dataset.url);
+        new Crawler(dataset);
         res.send('Now crawling:' + req.query.url);
       })
       .catch(err => {
@@ -50,15 +50,9 @@ router.get('/quit', async function (req, res, next) {
 
     if (dataset) {
       if (dataset.stopped != true) {
-        try {
-
-          dataset.stopped = true;
-          await dataset.save();
-          res.send('Stopped crawling:' + req.query.url);
-
-        } catch (error) {
-          throw error
-        }
+        dataset.stopped = true;
+        await dataset.save();
+        res.send('Stopped crawling:' + req.query.url);
       } else {
         res.status(404).send(`${req.query.url} is already stopped`);
       }
@@ -79,15 +73,9 @@ router.get('/start', async function (req, res, next) {
 
     if (dataset) {
       if (dataset.stopped == true) {
-        try {
-
-          dataset.stopped = false;
-          await dataset.save();
-          res.send('Started crawling:' + req.query.url);
-
-        } catch (error) {
-          throw error
-        }
+        dataset.stopped = false;
+        await dataset.save();
+        res.send('Started crawling:' + req.query.url);
       } else {
         res.status(404).send(`${req.query.url} already started`);
       }
