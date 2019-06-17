@@ -1,3 +1,5 @@
+const debuglevel = 0;
+
 const rp = require('request-promise-native');
 const sleep = require('util').promisify(setTimeout);
 const zlib = require('zlib');
@@ -9,6 +11,7 @@ const DatasetModel = require('../models/dataset.js')
 
 /** TODO
  * other change detection methods
+ * - hash speichern
  * dynamic crawling adjustment
  * is dataset compressed?
  * filetype detection
@@ -31,41 +34,39 @@ class Crawler {
 
 				console.log("now crawling:", this.url, new Date());
 				let header = await rp.head(this.url).catch((error) => {
-					console.log(error.statusCode);
-					console.log("---");
-					console.log(error.status);
-					console.log("---");
-					console.log(error);
+					if (error.statusCode == (400 || 404)) {
+						err = new Error('Ressource not found');
+						err.code = 404;
+						throw err;
+					}
 				});
 
 				//TODO other change detection methods
-				if (header['last-modified'] != undefined && header['content-type'] != 'text/html') {
+				if (header) {
+					if (header['last-modified'] != undefined && header['content-type'] != 'text/html') {
 
-					let headerDate = new Date(header['last-modified'])
+						let headerDate = new Date(header['last-modified'])
 
-					if (headerDate - dataset.lastModified > 0 || dataset.nextVersionCount == 0) {
-						dataset.lastModified = headerDate;
-						await this.saveDataSet(dataset);
+						if (headerDate - dataset.lastModified > 0 || dataset.nextVersionCount == 0) {
+							dataset.lastModified = headerDate;
+							await this.saveDataSet(dataset);
+						}
 					}
 				}
 
 				this.init = false;
 
 			} catch (error) {
-
-				console.log(error)
-
-				dataset.errorCount++;
-				await dataset.save();
-				//throw error;
-				/*
-				if (dataset.errorCount > 3) {
-					throw error;
-				} else {
+				if (error.code == 404 && dataset.errorCount < debuglevel) {
+					dataset.errorCount++;
+					await dataset.save();
 					await sleep(dataset.waitingTime);
 					this.crawl();
+				} else {
+					dataset.stopped = true;
+					await dataset.save();
+					throw error;
 				}
-				*/
 			}
 		}
 
