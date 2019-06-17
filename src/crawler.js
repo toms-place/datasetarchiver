@@ -35,7 +35,7 @@ class Crawler {
 				console.log("now crawling:", this.url, new Date());
 				let header = await rp.head(this.url).catch((error) => {
 					if (error.statusCode == (400 || 404)) {
-						err = new Error('Ressource not found');
+						let err = new Error('Ressource not found');
 						err.code = 404;
 						throw err;
 					}
