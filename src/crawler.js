@@ -1,5 +1,5 @@
 //From which number of errors should the crawling be stopped
-const errorCountTreshold = 1;
+const errorCountTreshold = 3;
 const DatasetModel = require('../models/dataset.js')
 
 const rp = require('request-promise-native');
