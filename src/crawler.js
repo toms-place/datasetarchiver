@@ -49,13 +49,15 @@ class Crawler {
 
 				dataset.errorCount++;
 				await dataset.save();
-
+				throw error;
+				/*
 				if (dataset.errorCount > 3) {
 					throw error;
 				} else {
 					await sleep(dataset.waitingTime);
 					this.crawl();
 				}
+				*/
 			}
 		}
 
@@ -93,7 +95,6 @@ class Crawler {
 	}
 
 	async saveDataSet(dataset, compressed) {
-		console.log('saving', dataset.url);
 		try {
 			await fs.promises.mkdir(dataset.path + "/" + dataset.nextVersionCount, {
 				recursive: true
