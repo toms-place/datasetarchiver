@@ -84,9 +84,9 @@ class Crawler {
 					await this.dataset.save();
 				});
 			} else {
-				zlib.deflate(data, (err, buffer) => {
+				zlib.gzip(data, (err, buffer) => {
 					if (!err) {
-						fs.writeFile(path, buffer, async (err) => {
+						fs.writeFile(path + '.gz', buffer, async (err) => {
 							if (err) throw err;
 							this.dataset.versions.push({path: path + '.gz', hash: digest})
 							this.dataset.nextVersionCount++;
