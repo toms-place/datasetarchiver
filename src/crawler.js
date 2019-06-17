@@ -33,12 +33,12 @@ class Crawler {
 			try {
 
 				console.log("now crawling:", this.url, new Date());
-				let header = await rp.head(this.url).catch((error) => {
-					if (error.statusCode == (400 || 404)) {
-						let err = new Error('Ressource not found');
-						err.code = 404;
-						throw err;
-					}
+				let header = await rp.head(this.url).catch(async () => {
+					dataset.errorCount++;
+					await dataset.save();
+					let err = new Error('Request error:', this.url);
+					err.code = 404;
+					console.error(err);
 				});
 
 				//TODO other change detection methods
@@ -57,16 +57,10 @@ class Crawler {
 				this.init = false;
 
 			} catch (error) {
-				if (error.code == 404 && dataset.errorCount < debuglevel) {
-					dataset.errorCount++;
-					await dataset.save();
-					await sleep(dataset.waitingTime);
-					this.crawl();
-				} else {
-					dataset.stopped = true;
-					await dataset.save();
-					throw error;
-				}
+				dataset.stopped = true;
+				dataset.errorCount++;
+				await dataset.save();
+				throw error;
 			}
 		}
 
