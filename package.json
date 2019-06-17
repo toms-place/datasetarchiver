@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "DATASETPATH=./data sudo node ./bin/www",
+    "start": "DATASETPATH=./data node ./bin/www",
     "test": "PORT=5050 DATASETPATH=./data TESTSERVER=true node ./bin/www"
   },
   "dependencies": {
