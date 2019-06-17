@@ -21,31 +21,7 @@ class Crawler {
 		this.crawl();
 	}
 
-	async initPath() {
-		const localPath = process.env.DATASETPATH || './data';
-
-		let urlPathArray = this.url.split('/');
-		let host = urlPathArray[2];
-		let filename = urlPathArray[urlPathArray.length - 1];
-		try {
-			let dataset = await DatasetModel.findOne({
-				url: this.url
-			}).exec();
-
-			dataset.host = host;
-			dataset.filename = filename;
-			dataset.path = localPath + "/" + host + "/" + filename;
-			await dataset.save();
-
-		} catch (error) {
-			throw error
-		}
-	}
-
 	async crawl() {
-		if (this.init == true) {
-			await this.initPath();
-		}
 		let dataset = await DatasetModel.findOne({
 			url: this.url
 		}).exec();

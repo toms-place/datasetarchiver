@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 const DatasetModel = require('../models/dataset.js')
 const Crawler = require('../src/crawler.js');
+const localPath = process.env.DATASETPATH || './data';
 
 /* GET users listing. */
 router.get('/', function (req, res, next) {
@@ -12,10 +13,16 @@ router.get('/add', function (req, res, next) {
   if (req.query.url) {
 
     let time = Math.floor(getRandomArbitrary(10000000, 10160000));
+		let urlPathArray = this.url.split('/');
+		let host = urlPathArray[2];
+		let filename = urlPathArray[urlPathArray.length - 1];
 
     new DatasetModel({
         url: req.query.url,
-        waitingTime: time
+        waitingTime: time,
+        host: host,
+        filename: filename,
+        path: localPath + "/" + host + "/" + filename
       }).save()
       .then(dataset => {
         new Crawler(dataset.url);
