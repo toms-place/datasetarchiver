@@ -13,7 +13,7 @@ router.get('/add', function (req, res, next) {
   if (req.query.url) {
 
     let time = Math.floor(getRandomArbitrary(10000000, 10160000));
-		let urlPathArray = this.url.split('/');
+		let urlPathArray = req.query.url.split('/');
 		let host = urlPathArray[2];
     let filename = urlPathArray[urlPathArray.length - 1];
     let path = localPath + "/" + host + "/" + filename
