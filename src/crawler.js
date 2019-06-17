@@ -56,7 +56,7 @@ class Crawler {
 				console.log("now crawling:", this.url, new Date());
 				let header = await rp.head(this.url);
 				if (header.statusCode != 200) {
-					throw new Error("Status Code Error");
+					throw new Error("Status Code Error", this.url);
 				}
 
 				//TODO other change detection methods
@@ -73,15 +73,16 @@ class Crawler {
 				this.init = false;
 
 			} catch (error) {
-				try {
-					dataset.errorCount++;
-					await dataset.save();
 
-				} catch (error) {
-					throw error
+				dataset.errorCount++;
+				await dataset.save();
+
+				if (dataset.errorCount > 3) {
+					throw error;
+				} else {
+					await sleep(dataset.waitingTime);
+					this.crawl();
 				}
-
-				throw error;
 			}
 		}
 
