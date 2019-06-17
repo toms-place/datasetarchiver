@@ -30,7 +30,13 @@ class Crawler {
 			try {
 
 				console.log("now crawling:", this.url, new Date());
-				let header = await rp.head(this.url);
+				let header = await rp.head(this.url).catch((error) => {
+					console.log(error.statusCode);
+					console.log("---");
+					console.log(error.status);
+					console.log("---");
+					console.log(error);
+				});
 
 				//TODO other change detection methods
 				if (header['last-modified'] != undefined && header['content-type'] != 'text/html') {
@@ -47,9 +53,11 @@ class Crawler {
 
 			} catch (error) {
 
+				console.log(error)
+
 				dataset.errorCount++;
 				await dataset.save();
-				throw error;
+				//throw error;
 				/*
 				if (dataset.errorCount > 3) {
 					throw error;
