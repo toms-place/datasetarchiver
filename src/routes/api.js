@@ -1,7 +1,7 @@
-var express = require('express');
-var router = express.Router();
-const DatasetModel = require('../models/dataset.js')
-const Crawler = require('../src/crawler.js');
+const express = require('express');
+const router = express.Router();
+const DatasetModel = require('../models/dataset.js');
+const Crawler = require('../crawler.js');
 const localPath = process.env.DATASETPATH || './data';
 
 /* GET users listing. */
@@ -28,7 +28,8 @@ router.get('/add', function (req, res, next) {
         versions: versions
       }).save()
       .then(dataset => {
-        new Crawler(dataset);
+        let crawler = new Crawler(dataset);
+        console.log(`${process.pid} started: ${crawler.url}`)
         res.send('Now crawling:' + req.query.url);
       })
       .catch(err => {
