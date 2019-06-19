@@ -9,7 +9,7 @@ const crypto = require('crypto');
 
 
 /** TODO
- * - dynamic crawling adjustment
+ * - improve dynamic crawling adjustment
  * - is dataset compressed?
  * - filetype detection
  * - metadata generation

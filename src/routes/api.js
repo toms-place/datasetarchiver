@@ -91,6 +91,25 @@ router.get('/start', async function (req, res, next) {
   }
 });
 
+router.get('/init', async function (req, res, next) {
+  if (req.query.url) {
+
+    let dataset = await DatasetModel.findOne({
+      url: req.query.url
+    }).exec();
+
+    if (dataset) {
+      let crawler = new Crawler(dataset);
+      console.log(`${process.pid} started: ${crawler.url}`)
+      res.send('Started crawling:' + req.query.url);
+    } else {
+      res.status(404).send(`${req.query.url} is not in our db. If you want to add it, try /api/add?url=`);
+    }
+  } else {
+    res.status(404).send('give me an url');
+  }
+});
+
 router.get('/get', async function (req, res, next) {
   if (req.query.url) {
 
