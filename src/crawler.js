@@ -1,9 +1,9 @@
 //From which number of errors should the crawling be stopped
 const errorCountTreshold = 3;
+const secondsBetweenCrawls = 30;
 const DatasetModel = require('./models/dataset.js')
 
 const rp = require('request-promise-native');
-const sleep = require('util').promisify(setTimeout);
 const zlib = require('zlib');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -51,6 +51,9 @@ class Crawler {
 						this.dataset.lastModified = new Date();
 						await this.saveDataSet(response, digest);
 					}
+
+					this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + secondsBetweenCrawls);
+					await this.dataset.save();
 				}
 
 			} catch (error) {
@@ -62,39 +65,51 @@ class Crawler {
 				throw error;
 			}
 		}
-
-		await sleep(this.dataset.waitingTime);
-		this.crawl();
 	}
 
 	async saveDataSet(data, digest, compressed) {
 		try {
 
-			await fs.promises.mkdir(this.dataset.path + "/" + this.dataset.nextVersionCount, {
+			await fs.promises.mkdir(this.dataset.storage.root + "/" + this.dataset.storage.path + "/" + this.dataset.nextVersionCount, {
 				recursive: true
 			}).catch(console.error);
 
-			let path = this.dataset.path + "/" + this.dataset.nextVersionCount + "/" + this.dataset.filename;
-
-			if (compressed == false) {
-				fs.writeFile(path, data, async (err) => {
-					if (err) throw err;
-					this.dataset.versions.push({path: path, hash: digest})
-					this.dataset.nextVersionCount++;
-					await this.dataset.save();
-				});
-			} else {
+			let storage = {};
+			if (compressed != true) {
+				storage = {
+					root: this.dataset.storage.root,
+					path: this.dataset.storage.path + "/" + this.dataset.nextVersionCount + "/" + this.dataset.storage.filename + ".gz"
+				}
 				zlib.gzip(data, (err, buffer) => {
 					if (!err) {
-						fs.writeFile(path + '.gz', buffer, async (err) => {
+						fs.writeFile(storage.root + "/" + storage.path, buffer, async (err) => {
 							if (err) throw err;
-							this.dataset.versions.push({path: path + '.gz', hash: digest})
+							this.dataset.versions.push({
+								storage: storage,
+								hash: digest
+							})
 							this.dataset.nextVersionCount++;
 							await this.dataset.save();
 						});
 					} else {
 						throw err
 					}
+				});
+			} else {
+				storage = {
+					host: this.dataset.storage.host,
+					filename: this.dataset.storage.filename,
+					root: this.dataset.storage.root,
+					path: this.dataset.storage.path + "/" + this.dataset.nextVersionCount + "/" + this.dataset.filename
+				}
+				fs.writeFile(path, data, async (err) => {
+					if (err) throw err;
+					this.dataset.versions.push({
+						storage: storage,
+						hash: digest
+					})
+					this.dataset.nextVersionCount++;
+					await this.dataset.save();
 				});
 			}
 

@@ -33,129 +33,139 @@ import Crawler from './crawler.js';
 startCluster();
 
 function startCluster() {
-
   if (cluster.isMaster) {
     console.log(`Master ${process.pid} is running`);
-    //start crawlers distributed on clusters at init
-    DatasetModel.getDatasets().then((datasets) => {
-      let data4workers = {};
-      for (let w = 1; w < numCPUs + 1; w++) {
-        data4workers[w] = [];
-      }
-  
-      //set up all datasets for the workers
-      let dL = datasets.length;
-      let counter = 1;
-      for (let i = 0; i < dL; i++) {
-        for (let w = 1; w < numCPUs + 1; w++) {
+
+    // Fork workers.
+    for (let i = 0; i < numCPUs; i++) {
+      cluster.fork();
+    }
+
+    cluster.on('listening', async (worker, address) => {
+      console.log(`A worker is now connected to ${address.address}:${address.port}`);
+    });
+
+    cluster.on('exit', (worker, code, signal) => {
+      console.log(`worker ${worker.process.pid} died`);
+    });
+
+  } else {
+    startServer();
+  }
+  if (cluster.isMaster) {
+    tickMaster(300000);
+  }
+}
+
+function tickMaster(time) {
+
+  DatasetModel.getDatasets().then(async (datasets) => {
+
+    //set up all datasets for the workers
+    let wL = Object.keys(cluster.workers).length
+    let dL = datasets.length;
+    let counter = 1;
+    for (let i = 0; i < dL; i++) {
+      if (datasets[i].nextCrawl <= new Date() && datasets[i].stopped != true) {
+        for (let w = 1; w < wL + 1; w++) {
           if (counter == w) {
-            data4workers[w].push(datasets[i]);
-            if (counter < numCPUs) counter++;
+
+            cluster.workers[w].send(datasets[i]);
+
+            if (counter < wL) counter++;
             else counter = 1;
             break;
           }
         }
       }
+    }
 
-      // Fork workers.
-      for (let i = 0; i < numCPUs; i++) {
-        cluster.fork();
-      }
+    console.log(`Master ${process.pid} ticked`);
+    await sleep(time);
+    tickMaster(time);
 
-      cluster.on('listening', (worker, address) => {
-
-        worker.send(data4workers[worker.id]);
-        console.log(`A worker is now connected to ${address.address}:${address.port}`);
-      });
-  
-      cluster.on('exit', (worker, code, signal) => {
-        console.log(`worker ${worker.process.pid} died`);
-      });
-
-    }).catch(err => {
-        console.error(err)
-      })
-
-  } else {
-    let app = express();
-    app.use(logger);
-
-    // view engine setup
-    app.set('views', path.join(__dirname, 'views'));
-    app.set('view engine', 'pug');
-
-    app.use(express.json());
-    app.use(express.urlencoded({
-      extended: false
-    }));
-    app.use(cookieParser());
-    app.use(express.static(path.join(__dirname, 'public')));
-
-    //make localPath public
-    app.use(express.static(localPath));
-
-    //routes setup
-    const indexRouter = require('./routes/index.js');
-    const apiRouter = require('./routes/api.js');
-    app.use('/', indexRouter);
-    app.use('/api', apiRouter);
-
-    /*
-    fs.readdirSync(path.join(__dirname, 'routes')).map(file => {
-      app.use(require('./routes/' + file));
-    });
-    */
-    // catch 404 and forward to error handler
-    app.use(function (req, res, next) {
-      next(createError(404));
-    });
-
-    // error handler
-    app.use(function (err, req, res, next) {
-      // set locals, only providing error in development
-      res.locals.message = err.message;
-      res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-      // render the error page
-      res.status(err.status || 500);
-      res.render('error');
-    });
-    // Workers can share any TCP connection
-    // In this case it is an HTTP server
-
-    app.set('port', port);
-
-    /**
-     * Create HTTP server.
-     */
-
-    let server = http.createServer(app);
-
-    /**
-     * Listen on provided port, on all network interfaces.
-     */
-
-    server.listen(port);
-    server.on('error', onError);
-    server.on('listening', () => {
-      let addr = server.address();
-      let bind = typeof addr === 'string' ?
-        'pipe ' + addr :
-        'port ' + addr.port;
-      debug('Listening on ' + bind);
-    });
-
-    process.on('message', (datasets) => {
-      for (let dataset of datasets) {
-        let crawler = new Crawler(dataset);
-        console.log(`${process.pid} started: ${crawler.url}`)
-      }
-    });
-
-    console.log(`Worker ${process.pid} started`);
-  }
+  }).catch(err => {
+    console.error(err)
+  })
 }
 
+function startServer() {
+
+  let app = express();
+  app.use(logger);
+
+  // view engine setup
+  app.set('views', path.join(__dirname, 'views'));
+  app.set('view engine', 'pug');
+
+  app.use(express.json());
+  app.use(express.urlencoded({
+    extended: false
+  }));
+  app.use(cookieParser());
+  app.use(express.static(path.join(__dirname, 'public')));
+
+  //make localPath public
+  app.use(express.static(localPath));
+
+  //routes setup
+  const indexRouter = require('./routes/index.js');
+  const apiRouter = require('./routes/api.js');
+  app.use('/', indexRouter);
+  app.use('/api', apiRouter);
+
+  /*
+  fs.readdirSync(path.join(__dirname, 'routes')).map(file => {
+    app.use(require('./routes/' + file));
+  });
+  */
+  // catch 404 and forward to error handler
+  app.use(function (req, res, next) {
+    next(createError(404));
+  });
+
+  // error handler
+  app.use(function (err, req, res, next) {
+    // set locals, only providing error in development
+    res.locals.message = err.message;
+    res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+    // render the error page
+    res.status(err.status || 500);
+    res.render('error');
+  });
+  // Workers can share any TCP connection
+  // In this case it is an HTTP server
+
+  app.set('port', port);
+
+  /**
+   * Create HTTP server.
+   */
+
+  let server = http.createServer(app);
+
+  /**
+   * Listen on provided port, on all network interfaces.
+   */
+
+  server.listen(port);
+  server.on('error', onError);
+  server.on('listening', () => {
+    let addr = server.address();
+    let bind = typeof addr === 'string' ?
+      'pipe ' + addr :
+      'port ' + addr.port;
+    debug('Listening on ' + bind);
+  });
+
+  process.on('message', (dataset) => {
+    let crawler = new Crawler(dataset);
+    console.log(`${process.pid} started: ${crawler.url}`);
+  });
+
+  console.log(`Worker ${process.pid} started`);
+}
 
 /**
  * Normalize a port into a number, string, or false.

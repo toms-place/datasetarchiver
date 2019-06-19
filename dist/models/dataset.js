@@ -2,8 +2,18 @@
 
 let mongoose = require('mongoose');
 
-var versionsSchema = new mongoose.Schema({
+let root = process.env.DATASETPATH || './data';
+let storageSchema = new mongoose.Schema({
+  root: {
+    type: String,
+    default: root
+  },
   path: String,
+  filename: String,
+  host: String
+});
+let versionsSchema = new mongoose.Schema({
+  storage: storageSchema,
   hash: String
 });
 let datasetSchema = new mongoose.Schema({
@@ -16,9 +26,9 @@ let datasetSchema = new mongoose.Schema({
     type: Date,
     default: new Date()
   },
-  waitingTime: {
-    type: Number,
-    default: 300000
+  nextCrawl: {
+    type: Date,
+    default: new Date()
   },
   errorCount: {
     type: Number,
@@ -32,14 +42,8 @@ let datasetSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  path: {
-    type: String
-  },
-  host: {
-    type: String
-  },
-  filename: {
-    type: String
+  storage: {
+    type: storageSchema
   },
   versions: {
     type: [versionsSchema]

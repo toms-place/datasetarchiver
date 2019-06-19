@@ -1,16 +1,27 @@
 {
   "name": "archiver",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.0.2",
+  "description": "crawls added data ressources",
+  "keywords": [
+    "archiver",
+    "crawler",
+    "datasets"
+  ],
+  "author": "Thomas Weber",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/websi96/archiver.git"
+  },
   "engines": {
     "node": "12.1.0"
   },
   "main": "app.js",
   "scripts": {
-    "start": "DATASETPATH=./data npm run prod",
+    "start": "npm run prod",
     "build": "babel src -d dist --copy-files",
     "server": "babel-node ./src/app.js",
-    "server:prod": "node ./dist/app.js",
+    "server:prod": "DATASETPATH=./data node ./dist/app.js",
     "dev": "NODE_ENV=development npm-run-all server",
     "clean": "rimraf dist",
     "prod": "NODE_ENV=production npm-run-all clean build server:prod",
@@ -23,11 +34,9 @@
     "mongodb": "^3.2.7",
     "mongoose": "^5.5.15",
     "morgan": "~1.9.1",
-    "node-gzip": "^1.1.2",
     "pug": "^2.0.3",
     "request": "^2.88.0",
-    "request-promise-native": "^1.0.7",
-    "rimraf": "^2.6.3"
+    "request-promise-native": "^1.0.7"
   },
   "devDependencies": {
     "@babel/cli": "^7.4.4",
@@ -44,6 +53,7 @@
     "gulp-csso": "^3.0.1",
     "gulp-pug": "^4.0.1",
     "gulp-sourcemaps": "^2.6.5",
-    "mocha": "^6.1.4"
+    "mocha": "^6.1.4",
+    "rimraf": "^2.6.3"
   }
 }

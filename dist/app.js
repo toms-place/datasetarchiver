@@ -49,113 +49,122 @@ startCluster();
 
 function startCluster() {
   if (_cluster.default.isMaster) {
-    console.log(`Master ${process.pid} is running`); //start crawlers distributed on clusters at init
+    console.log(`Master ${process.pid} is running`);
 
-    _dataset.default.getDatasets().then(datasets => {
-      let data4workers = {};
+    // Fork workers.
+    for (let i = 0; i < numCPUs; i++) {
+      _cluster.default.fork();
+    }
 
-      for (let w = 1; w < numCPUs + 1; w++) {
-        data4workers[w] = [];
-      } //set up all datasets for the workers
+    _cluster.default.on('listening', async (worker, address) => {
+      console.log(`A worker is now connected to ${address.address}:${address.port}`);
+    });
 
+    _cluster.default.on('exit', (worker, code, signal) => {
+      console.log(`worker ${worker.process.pid} died`);
+    });
+  } else {
+    startServer();
+  }
 
-      let dL = datasets.length;
-      let counter = 1;
+  if (_cluster.default.isMaster) {
+    tickMaster(300000);
+  }
+}
 
-      for (let i = 0; i < dL; i++) {
-        for (let w = 1; w < numCPUs + 1; w++) {
+function tickMaster(time) {
+  _dataset.default.getDatasets().then(async datasets => {
+    //set up all datasets for the workers
+    let wL = Object.keys(_cluster.default.workers).length;
+    let dL = datasets.length;
+    let counter = 1;
+
+    for (let i = 0; i < dL; i++) {
+      if (datasets[i].nextCrawl <= new Date() && datasets[i].stopped != true) {
+        for (let w = 1; w < wL + 1; w++) {
           if (counter == w) {
-            data4workers[w].push(datasets[i]);
-            if (counter < numCPUs) counter++;else counter = 1;
+            _cluster.default.workers[w].send(datasets[i]);
+
+            if (counter < wL) counter++;else counter = 1;
             break;
           }
         }
-      } // Fork workers.
-
-
-      for (let i = 0; i < numCPUs; i++) {
-        _cluster.default.fork();
       }
+    }
 
-      _cluster.default.on('listening', (worker, address) => {
-        worker.send(data4workers[worker.id]);
-        console.log(`A worker is now connected to ${address.address}:${address.port}`);
-      });
+    console.log(`Master ${process.pid} ticked`);
+    await sleep(time);
+    tickMaster(time);
+  }).catch(err => {
+    console.error(err);
+  });
+}
 
-      _cluster.default.on('exit', (worker, code, signal) => {
-        console.log(`worker ${worker.process.pid} died`);
-      });
-    }).catch(err => {
-      console.error(err);
-    });
-  } else {
-    let app = (0, _express.default)();
-    app.use(logger); // view engine setup
+function startServer() {
+  let app = (0, _express.default)();
+  app.use(logger); // view engine setup
 
-    app.set('views', _path.default.join(__dirname, 'views'));
-    app.set('view engine', 'pug');
-    app.use(_express.default.json());
-    app.use(_express.default.urlencoded({
-      extended: false
-    }));
-    app.use((0, _cookieParser.default)());
-    app.use(_express.default.static(_path.default.join(__dirname, 'public'))); //make localPath public
+  app.set('views', _path.default.join(__dirname, 'views'));
+  app.set('view engine', 'pug');
+  app.use(_express.default.json());
+  app.use(_express.default.urlencoded({
+    extended: false
+  }));
+  app.use((0, _cookieParser.default)());
+  app.use(_express.default.static(_path.default.join(__dirname, 'public'))); //make localPath public
 
-    app.use(_express.default.static(localPath)); //routes setup
+  app.use(_express.default.static(localPath)); //routes setup
 
-    const indexRouter = require('./routes/index.js');
+  const indexRouter = require('./routes/index.js');
 
-    const apiRouter = require('./routes/api.js');
+  const apiRouter = require('./routes/api.js');
 
-    app.use('/', indexRouter);
-    app.use('/api', apiRouter);
-    /*
-    fs.readdirSync(path.join(__dirname, 'routes')).map(file => {
-      app.use(require('./routes/' + file));
-    });
-    */
-    // catch 404 and forward to error handler
+  app.use('/', indexRouter);
+  app.use('/api', apiRouter);
+  /*
+  fs.readdirSync(path.join(__dirname, 'routes')).map(file => {
+    app.use(require('./routes/' + file));
+  });
+  */
+  // catch 404 and forward to error handler
 
-    app.use(function (req, res, next) {
-      next((0, _httpErrors.default)(404));
-    }); // error handler
+  app.use(function (req, res, next) {
+    next((0, _httpErrors.default)(404));
+  }); // error handler
 
-    app.use(function (err, req, res, next) {
-      // set locals, only providing error in development
-      res.locals.message = err.message;
-      res.locals.error = req.app.get('env') === 'development' ? err : {}; // render the error page
+  app.use(function (err, req, res, next) {
+    // set locals, only providing error in development
+    res.locals.message = err.message;
+    res.locals.error = req.app.get('env') === 'development' ? err : {}; // render the error page
 
-      res.status(err.status || 500);
-      res.render('error');
-    }); // Workers can share any TCP connection
-    // In this case it is an HTTP server
+    res.status(err.status || 500);
+    res.render('error');
+  }); // Workers can share any TCP connection
+  // In this case it is an HTTP server
 
-    app.set('port', port);
-    /**
-     * Create HTTP server.
-     */
+  app.set('port', port);
+  /**
+   * Create HTTP server.
+   */
 
-    let server = _http.default.createServer(app);
-    /**
-     * Listen on provided port, on all network interfaces.
-     */
+  let server = _http.default.createServer(app);
+  /**
+   * Listen on provided port, on all network interfaces.
+   */
 
 
-    server.listen(port);
-    server.on('error', onError);
-    server.on('listening', () => {
-      let addr = server.address();
-      let bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
-      debug('Listening on ' + bind);
-    });
-    process.on('message', datasets => {
-      for (let dataset of datasets) {
-        let crawler = new _crawler.default(dataset);
-        console.log(`${process.pid} started: ${crawler.url}`);
-      }
-    });
-    console.log(`Worker ${process.pid} started`);
-  }
+  server.listen(port);
+  server.on('error', onError);
+  server.on('listening', () => {
+    let addr = server.address();
+    let bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
+    debug('Listening on ' + bind);
+  });
+  process.on('message', dataset => {
+    let crawler = new _crawler.default(dataset);
+    console.log(`${process.pid} started: ${crawler.url}`);
+  });
+  console.log(`Worker ${process.pid} started`);
 }
 /**
  * Normalize a port into a number, string, or false.

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const DatasetModel = require('../models/dataset.js');
 const Crawler = require('../crawler.js');
-const localPath = process.env.DATASETPATH || './data';
+const root = process.env.DATASETPATH || './data';
 
 /* GET users listing. */
 router.get('/', function (req, res, next) {
@@ -12,19 +12,22 @@ router.get('/', function (req, res, next) {
 router.get('/add', function (req, res, next) {
   if (req.query.url) {
 
-    let waitingTime = Math.floor(getRandomArbitrary(10000000, 10160000));
     let urlPathArray = req.query.url.split('/');
     let host = urlPathArray[2];
     let filename = urlPathArray[urlPathArray.length - 1];
-    let path = localPath + "/" + host + "/" + filename;
+    let path = host + "/" + filename;
     let versions = [];
+
+    let storage = {
+      host: host,
+      filename: filename,
+      root: root,
+      path: path
+    }
 
     new DatasetModel({
         url: req.query.url,
-        waitingTime: waitingTime,
-        host: host,
-        filename: filename,
-        path: path,
+        storage: storage,
         versions: versions
       }).save()
       .then(dataset => {
@@ -97,14 +100,14 @@ router.get('/get', async function (req, res, next) {
 
     if (dataset) {
       if (req.query.v < dataset.nextVersionCount) {
-        res.download(dataset.path + "/" + req.query.v + "/" + dataset.filename + ".gz", dataset.host + "_v" + req.query.v + "_" + dataset.filename + ".gz");
+        res.download(dataset.versions[req.query.v].storage.root + "/" + dataset.versions[req.query.v].storage.path);
       } else if (req.query.v == "all") {
         //TODO send zip!
         console.log("send zip");
         res.status(404).send(`I can not send a zip right now`);
       } else {
         let version = dataset.nextVersionCount - 1;
-        res.download(dataset.path + "/" + version + "/" + dataset.filename + ".gz", dataset.host + "_v" + version + "_" + dataset.filename + ".gz");
+        res.download(dataset.versions[version].storage.root + "/" + dataset.versions[version].storage.path);
       }
     } else {
       res.status(404).send(`${req.query.url} is not in our db. If you want to crawl it, try /api/add?url=`);
