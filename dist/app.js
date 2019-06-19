@@ -1,20 +1,10 @@
 "use strict";
 
-var _fs = _interopRequireDefault(require("fs"));
-
-var _httpErrors = _interopRequireDefault(require("http-errors"));
-
-var _express = _interopRequireDefault(require("express"));
-
-var _path = _interopRequireDefault(require("path"));
-
-var _cookieParser = _interopRequireDefault(require("cookie-parser"));
-
-var _morgan = _interopRequireDefault(require("morgan"));
-
 var _http = _interopRequireDefault(require("http"));
 
 var _debug = _interopRequireDefault(require("debug"));
+
+var _www = _interopRequireDefault(require("./www.js"));
 
 var _cluster = _interopRequireDefault(require("cluster"));
 
@@ -26,19 +16,8 @@ var _crawler = _interopRequireDefault(require("./crawler.js"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-//express
 const debug = (0, _debug.default)('archiver:server');
-const port = normalizePort(process.env.PORT || '3000');
-const localPath = process.env.DATASETPATH || './data'; // create a write stream (in append mode)
-
-const accessLogStream = _fs.default.createWriteStream(_path.default.join(__dirname, 'access.log'), {
-  flags: 'a'
-}); // setup the logger
-
-
-const logger = (0, _morgan.default)('combined', {
-  stream: accessLogStream
-}); //cluster
+const port = normalizePort(process.env.PORT || '3000'); //cluster
 
 const numCPUs = require('os').cpus().length;
 
@@ -49,9 +28,8 @@ startCluster();
 
 function startCluster() {
   if (_cluster.default.isMaster) {
-    console.log(`Master ${process.pid} is running`);
+    console.log(`Master ${process.pid} is running`); // Fork workers.
 
-    // Fork workers.
     for (let i = 0; i < numCPUs; i++) {
       _cluster.default.fork();
     }
@@ -101,53 +79,10 @@ function tickMaster(time) {
 }
 
 function startServer() {
-  let app = (0, _express.default)();
-  app.use(logger); // view engine setup
-
-  app.set('views', _path.default.join(__dirname, 'views'));
-  app.set('view engine', 'pug');
-  app.use(_express.default.json());
-  app.use(_express.default.urlencoded({
-    extended: false
-  }));
-  app.use((0, _cookieParser.default)());
-  app.use(_express.default.static(_path.default.join(__dirname, 'public'))); //make localPath public
-
-  app.use(_express.default.static(localPath)); //routes setup
-
-  const indexRouter = require('./routes/index.js');
-
-  const apiRouter = require('./routes/api.js');
-
-  app.use('/', indexRouter);
-  app.use('/api', apiRouter);
-  /*
-  fs.readdirSync(path.join(__dirname, 'routes')).map(file => {
-    app.use(require('./routes/' + file));
-  });
-  */
-  // catch 404 and forward to error handler
-
-  app.use(function (req, res, next) {
-    next((0, _httpErrors.default)(404));
-  }); // error handler
-
-  app.use(function (err, req, res, next) {
-    // set locals, only providing error in development
-    res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {}; // render the error page
-
-    res.status(err.status || 500);
-    res.render('error');
-  }); // Workers can share any TCP connection
-  // In this case it is an HTTP server
-
-  app.set('port', port);
   /**
    * Create HTTP server.
    */
-
-  let server = _http.default.createServer(app);
+  let server = _http.default.createServer(_www.default);
   /**
    * Listen on provided port, on all network interfaces.
    */

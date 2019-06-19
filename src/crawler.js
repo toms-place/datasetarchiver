@@ -1,6 +1,5 @@
 //From which number of errors should the crawling be stopped
 const errorCountTreshold = 3;
-const secondsBetweenCrawls = 259200;
 const DatasetModel = require('./models/dataset.js')
 
 const rp = require('request-promise-native');
@@ -19,10 +18,12 @@ class Crawler {
 	constructor(dataset) {
 		this.url = dataset.url;
 		this.dataset = dataset;
+		this.secondsBetweenCrawls = getRandomInt(200000, 300000);
 		this.crawl();
 	}
 
 	async crawl() {
+
 		this.dataset = await DatasetModel.findOne({
 			url: this.url
 		}).exec();
@@ -33,12 +34,14 @@ class Crawler {
 				console.log("now crawling:", this.url, new Date());
 				let response = await rp(this.url).catch(async (error) => {
 					this.dataset.errorCount++;
-					let err = new Error('Error requesting: ' + this.url);
-					err.code = error.statusCode;
+					this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));
 					if (this.dataset.errorCount >= errorCountTreshold) {
 						this.dataset.stopped = true;
 					}
 					await this.dataset.save();
+
+					let err = new Error('Error requesting: ' + this.url);
+					err.code = error.statusCode;
 					console.error(err);
 				});
 
@@ -49,10 +52,13 @@ class Crawler {
 
 					if (this.dataset.nextVersionCount == 0 || digest != this.dataset.versions[this.dataset.versions.length - 1].hash) {
 						this.dataset.lastModified = new Date();
+
+						this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + this.secondsBetweenCrawls / 2);
 						await this.saveDataSet(response, digest);
+					} else {
+						this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + this.secondsBetweenCrawls * 2);
 					}
 
-					this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + secondsBetweenCrawls);
 					await this.dataset.save();
 				}
 
@@ -147,3 +153,7 @@ class Crawler {
 }
 
 module.exports = Crawler;
+
+function getRandomInt(min, max) {
+	return Math.floor(Math.random() * (max - min) + min);
+  }

@@ -119,8 +119,3 @@ router.get('/get', async function (req, res, next) {
 
 
 module.exports = router;
-
-
-function getRandomArbitrary(min, max) {
-  return Math.random() * (max - min) + min;
-}
