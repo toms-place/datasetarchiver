@@ -32,7 +32,7 @@ class Crawler {
 				let hash = crypto.createHash('sha1').setEncoding('hex');
 
 				//check header for errors
-				await rp.head(this.dataset.url).then(() => {
+				rp.head(this.dataset.url).then(() => {
 
 					pipeline(
 						request(this.dataset.url),
@@ -52,6 +52,7 @@ class Crawler {
 									this.dataset.lastModified = new Date();
 									this.dataset.crawlInterval = this.dataset.crawlInterval / 2;
 									this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + this.dataset.crawlInterval);
+									//stop crawling while saving the dataset (in case of large dataset)
 									this.dataset.stopped = true;
 									await this.dataset.save();
 									this.saveDataSet(this.dataset.url, hash.read());
@@ -65,7 +66,7 @@ class Crawler {
 						}
 					);
 
-				}).catch((err) => {
+				}).catch(async (err) => {
 					console.error(err)
 					this.dataset.errorCount++;
 					this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));

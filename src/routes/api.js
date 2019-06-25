@@ -5,7 +5,6 @@ const router = express.Router();
 const DatasetModel = require('../models/dataset.js');
 const root = process.env.DATASETPATH || './data';
 
-/* GET users listing. */
 router.get('/', function (req, res, next) {
   res.send('See docs for api');
 });
@@ -13,7 +12,7 @@ router.get('/', function (req, res, next) {
 router.get('/add', function (req, res, next) {
   if (req.query.url) {
 
-    //check header for errors
+    //TODO check header to acquire needed informaiton
     rp.head(req.query.url).then(() => {
 
       let urlPathArray = req.query.url.split('/');
@@ -107,7 +106,7 @@ router.get('/crawl', async function (req, res, next) {
 
     if (dataset) {
       let crawler = new Crawler(dataset);
-      let resp = `Crawling started for: ${crawler.dataset.url}`;
+      let resp = `Worker ${process.pid} started to crawl: ${crawler.dataset.url}`;
       console.log(resp);
       res.send(resp);
     } else {

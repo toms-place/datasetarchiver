@@ -8,16 +8,14 @@ import DatasetModel from './models/dataset.js';
 tick(10000);
 
 function tick(time) {
+  console.log(`Master ticked`);
 
-  DatasetModel.getDatasets().then(async (datasets) => {
+  DatasetModel.getDatasetsToBeCrawled().then(async (datasets) => {
 
     for (let dataset of datasets) {
-      if (dataset.nextCrawl <= new Date() && dataset.stopped != true) {
-        send(dataset);
-      }
+      crawl(dataset);
     }
 
-    console.log(`Master ticked`);
     await sleep(time);
     tick(time);
 
@@ -26,9 +24,11 @@ function tick(time) {
   })
 }
 
-function send(dataset) {
-  console.log(dataset.url)
-  rp('http://localhost:3000/api/crawl?url=' + dataset.url + '&secret=secret').catch((err) => {
+function crawl(dataset) {
+  console.log('crawl', dataset.url)
+  rp('http://localhost:3000/api/crawl?url=' + dataset.url + '&secret=secret').then((resp) => {
+    console.log(resp)
+  }).catch((err) => {
     console.error(err.name)
   })
 }
