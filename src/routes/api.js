@@ -14,22 +14,19 @@ router.get('/add', function (req, res, next) {
 
     //TODO check header to acquire needed informaiton
     rp.head(req.query.url).then(() => {
-
-      let urlPathArray = req.query.url.split('/');
-      let host = urlPathArray[2];
-      let filename = urlPathArray[urlPathArray.length - 1];
-      let path = host + "/" + filename;
+      let url = new URL(req.query.url);
+      let filename = url.pathname.split('/')[url.pathname.split('/').length -1]
+      let path = url.host + "/" + filename;
       let versions = [];
 
       let storage = {
-        host: host,
         filename: filename,
         root: root,
         path: path
       }
 
       new DatasetModel({
-          url: req.query.url,
+          url: url,
           storage: storage,
           versions: versions
         }).save()
@@ -43,7 +40,7 @@ router.get('/add', function (req, res, next) {
         })
 
     }).catch((err) => {
-      res.status(404).send('Url not reachable..');
+      res.status(404).send(err);
     })
 
   } else {
@@ -53,21 +50,22 @@ router.get('/add', function (req, res, next) {
 
 router.get('/quit', async function (req, res, next) {
   if (req.query.url) {
+    let url = new URL(req.query.url);
 
     let dataset = await DatasetModel.findOne({
-      url: req.query.url
+      url: url
     }).exec();
 
     if (dataset) {
       if (dataset.stopped != true) {
         dataset.stopped = true;
         await dataset.save();
-        res.send('Stopped crawling:' + req.query.url);
+        res.send('Stopped crawling:' + url);
       } else {
-        res.status(404).send(`${req.query.url} is already stopped`);
+        res.status(404).send(`${url.href} is already stopped`);
       }
     } else {
-      res.status(404).send(`${req.query.url} is not in our db. If you want to add it, try /api/add?url=`);
+      res.status(404).send(`${url.href} is not in our db. If you want to add it, try /api/add?url=`);
     }
   } else {
     res.status(404).send('give me an url');
@@ -76,21 +74,22 @@ router.get('/quit', async function (req, res, next) {
 
 router.get('/start', async function (req, res, next) {
   if (req.query.url) {
+    let url = new URL(req.query.url);
 
     let dataset = await DatasetModel.findOne({
-      url: req.query.url
+      url: url
     }).exec();
 
     if (dataset) {
       if (dataset.stopped == true) {
         dataset.stopped = false;
         await dataset.save();
-        res.send('Started crawling:' + req.query.url);
+        res.send('Started crawling:' + url.href);
       } else {
-        res.status(404).send(`${req.query.url} already started`);
+        res.status(404).send(`${url.href} already started`);
       }
     } else {
-      res.status(404).send(`${req.query.url} is not in our db. If you want to add it, try /api/add?url=`);
+      res.status(404).send(`${url.href} is not in our db. If you want to add it, try /api/add?url=`);
     }
   } else {
     res.status(404).send('give me an url');
@@ -99,18 +98,19 @@ router.get('/start', async function (req, res, next) {
 
 router.get('/crawl', async function (req, res, next) {
   if (req.query.url && req.query.secret == 'secret') {
+    let url = new URL(req.query.url);
 
     let dataset = await DatasetModel.findOne({
-      url: req.query.url
+      url: url
     }).exec();
 
     if (dataset) {
-      let crawler = new Crawler(dataset);
-      let resp = `Worker ${process.pid} started to crawl: ${crawler.dataset.url}`;
+      new Crawler(dataset);
+      let resp = `Worker ${process.pid} started to crawl: ${url.href}`;
       console.log(resp);
       res.send(resp);
     } else {
-      res.status(404).send(`${req.query.url} is not in our db. If you want to add it, try /api/add?url=`);
+      res.status(404).send(`${url.href} is not in our db. If you want to add it, try /api/add?url=`);
     }
   } else {
     res.status(404).send('give me an url and a secret');
@@ -119,9 +119,10 @@ router.get('/crawl', async function (req, res, next) {
 
 router.get('/get', async function (req, res, next) {
   if (req.query.url) {
+    let url = new URL(req.query.url);
 
     let dataset = await DatasetModel.findOne({
-      url: req.query.url
+      url: url
     }).exec();
 
     if (dataset) {
@@ -136,7 +137,7 @@ router.get('/get', async function (req, res, next) {
         res.download(dataset.versions[version].storage.root + "/" + dataset.versions[version].storage.path);
       }
     } else {
-      res.status(404).send(`${req.query.url} is not in our db. If you want to crawl it, try /api/add?url=`);
+      res.status(404).send(`${url.href} is not in our db. If you want to crawl it, try /api/add?url=`);
     }
   } else {
     res.status(404).send('give me an url');

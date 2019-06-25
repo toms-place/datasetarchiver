@@ -7,8 +7,7 @@ let storageSchema = new mongoose.Schema({
 		default: root
 	},
 	path: String,
-	filename: String,
-	host: String
+	filename: String
 });
 
 let versionsSchema = new mongoose.Schema({
@@ -18,7 +17,7 @@ let versionsSchema = new mongoose.Schema({
 
 let datasetSchema = new mongoose.Schema({
 	url: {
-		type: String,
+		type: mongoose.SchemaTypes.Mixed,
 		required: true,
 		unique: true
 	},

@@ -4,14 +4,16 @@ const errorCountTreshold = 3;
 const {
 	pipeline
 } = require('stream');
-const request = require('request');
 const rp = require('request-promise-native');
 const zlib = require('zlib');
 const fs = require('fs');
 const crypto = require('crypto');
+const http = require('http');
+const https = require('https');
+
 
 /** TODO
- * - crawlrate?!
+ * - header checking
  * - is dataset compressed?
  * - filetype detection
  * - metadata generation
@@ -27,44 +29,25 @@ class Crawler {
 		if (this.dataset.stopped != true) {
 			try {
 
-				console.log("now crawling:", this.dataset.url, new Date());
+				console.log("now crawling:", this.dataset.url.href, new Date());
 
-				let hash = crypto.createHash('sha1').setEncoding('hex');
+				//checking header for errors
+				rp.head(this.dataset.url.href).then((header) => {
 
-				//check header for errors
-				rp.head(this.dataset.url).then(() => {
+					if (header['content-type']) {
+						console.log(header['content-type'])
+					}
 
-					pipeline(
-						request(this.dataset.url),
-						hash,
-						async (err) => {
-							if (err) {
-								console.error(err)
-								this.dataset.errorCount++;
-								this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));
-								if (this.dataset.errorCount >= errorCountTreshold) {
-									this.dataset.stopped = true;
-								};
-								await this.dataset.save();
-							} else {
-								hash.end()
-								if (this.dataset.nextVersionCount == 0 || hash.read() != this.dataset.versions[this.dataset.versions.length - 1].hash) {
-									this.dataset.lastModified = new Date();
-									this.dataset.crawlInterval = this.dataset.crawlInterval / 2;
-									this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + this.dataset.crawlInterval);
-									//stop crawling while saving the dataset (in case of large dataset)
-									this.dataset.stopped = true;
-									await this.dataset.save();
-									this.saveDataSet(this.dataset.url, hash.read());
-								} else {
-									this.dataset.crawlInterval = this.dataset.crawlInterval * 2;
-									this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + this.dataset.crawlInterval);
-									await this.dataset.save();
-								}
-								console.log('hashing done')
-							}
-						}
-					);
+					switch (this.dataset.url.protocol) {
+						case 'https:':
+							this.hashUrl(https)
+							break;
+						case 'http:':
+							this.hashUrl(http)
+							break;
+						default:
+							throw new Error('Neither http nor https...')
+					}
 
 				}).catch(async (err) => {
 					console.error(err)
@@ -77,7 +60,7 @@ class Crawler {
 				})
 
 			} catch (error) {
-				let err = new Error('Stopping: ' + this.dataset.url);
+				let err = new Error('Stopping: ' + this.dataset.url.href);
 				console.error(err)
 				this.dataset.stopped = true;
 				this.dataset.errorCount++;
@@ -87,8 +70,52 @@ class Crawler {
 		}
 	}
 
+	hashUrl(connector) {
+		let hash = crypto.createHash('sha1').setEncoding('hex');
 
-	async saveDataSet(url, hash, compressed) {
+		connector.get(this.dataset.url.href, (resp) => {
+			pipeline(
+				resp,
+				hash,
+				async (err) => {
+					if (err) {
+						console.error(err)
+						this.dataset.errorCount++;
+						this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));
+						if (this.dataset.errorCount >= errorCountTreshold) {
+							this.dataset.stopped = true;
+						};
+						await this.dataset.save();
+					} else {
+						hash.end()
+						this.checkHash(hash.read())
+					}
+				}
+			);
+		}).on("error", (err) => {
+			console.log("Error: " + err.message);
+		});
+	}
+
+	async checkHash(hashValue) {
+		if (this.dataset.nextVersionCount == 0 || hashValue != this.dataset.versions[this.dataset.versions.length - 1].hash) {
+			this.dataset.lastModified = new Date();
+			this.dataset.crawlInterval = this.dataset.crawlInterval / 2;
+			this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + this.dataset.crawlInterval);
+			//stop crawling while saving the dataset (in case of large dataset)
+			this.dataset.stopped = true;
+			await this.dataset.save();
+			this.saveFile(hashValue);
+		} else {
+			this.dataset.crawlInterval = this.dataset.crawlInterval * 2;
+			this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + this.dataset.crawlInterval);
+			await this.dataset.save();
+		}
+		console.log('hashing done')
+	}
+
+
+	async saveFile(hashValue) {
 		try {
 
 			await fs.promises.mkdir(this.dataset.storage.root + "/" + this.dataset.storage.path + "/" + this.dataset.nextVersionCount, {
@@ -97,15 +124,12 @@ class Crawler {
 
 			let storage = {
 				root: this.dataset.storage.root,
-				path: this.dataset.storage.path + "/" + this.dataset.nextVersionCount + "/" + this.dataset.storage.filename
+				path: this.dataset.storage.path + "/" + this.dataset.nextVersionCount + "/" + this.dataset.storage.filename + ".gz"
 			}
 
-			if (compressed != true) {
-
-				storage.path += ".gz"
-
+			http.get(this.dataset.url.href, (resp) => {
 				pipeline(
-					request(url),
+					resp,
 					zlib.createGzip(),
 					fs.createWriteStream(storage.root + "/" + storage.path),
 					async (err) => {
@@ -120,7 +144,7 @@ class Crawler {
 						} else {
 							this.dataset.versions.push({
 								storage: storage,
-								hash: hash
+								hash: hashValue
 							})
 							this.dataset.nextVersionCount++;
 							this.dataset.stopped = false;
@@ -129,37 +153,12 @@ class Crawler {
 						}
 					}
 				);
-
-			} else {
-
-				pipeline(
-					request(url),
-					fs.createWriteStream(storage.root + "/" + storage.path),
-					async (err) => {
-						if (err) {
-							console.error(err)
-							this.dataset.errorCount++;
-							this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));
-							if (this.dataset.errorCount >= errorCountTreshold) {
-								this.dataset.stopped = true;
-							};
-							await this.dataset.save();
-						} else {
-							this.dataset.versions.push({
-								storage: storage,
-								hash: hash
-							})
-							this.dataset.nextVersionCount++;
-							this.dataset.stopped = false;
-							await this.dataset.save();
-							console.log('saved')
-						}
-					}
-				);
-			}
+			}).on("error", (err) => {
+				console.log("Error: " + err.message);
+			});
 
 		} catch (error) {
-			let err = new Error('Stopping: ' + this.dataset.url);
+			let err = new Error('Stopping: ' + this.dataset.url.href);
 			console.error(err)
 			this.dataset.stopped = true;
 			this.dataset.errorCount++;
