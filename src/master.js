@@ -26,13 +26,12 @@ function tick(time) {
 }
 
 function crawl(dataset) {
-  console.log('crawl', dataset.url)
+  console.log('crawl', dataset.url.href)
 
-  try {
-    rp('http://localhost:3000/api/crawl?url=' + dataset.url + '&secret=secret', resp => {
-      console.log(resp)
+    rp.get('http://localhost:3000/api/crawl?url=' + dataset.url.href, (err,httpResponse,body) => {
+      if (err) console.error(err)
+      else {
+        console.log(body)
+      }
     })
-  } catch (error) {
-    console.error(error)
-  }
 }

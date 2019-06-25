@@ -40,10 +40,12 @@ class Crawler {
 
 					switch (this.dataset.url.protocol) {
 						case 'https:':
-							this.hashUrl(https)
+							this.connector = https
+							this.hashUrl()
 							break;
 						case 'http:':
-							this.hashUrl(http)
+							this.connector = http
+							this.hashUrl()
 							break;
 						default:
 							throw new Error('Neither http nor https...')
@@ -70,10 +72,10 @@ class Crawler {
 		}
 	}
 
-	hashUrl(connector) {
+	hashUrl() {
 		let hash = crypto.createHash('sha1').setEncoding('hex');
 
-		connector.get(this.dataset.url.href, (resp) => {
+		this.connector.get(this.dataset.url.href, (resp) => {
 			pipeline(
 				resp,
 				hash,
@@ -127,7 +129,7 @@ class Crawler {
 				path: this.dataset.storage.path + "/" + this.dataset.nextVersionCount + "/" + this.dataset.storage.filename + ".gz"
 			}
 
-			http.get(this.dataset.url.href, (resp) => {
+			this.connector.get(this.dataset.url.href, (resp) => {
 				pipeline(
 					resp,
 					zlib.createGzip(),
