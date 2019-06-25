@@ -1,69 +1,82 @@
 //From which number of errors should the crawling be stopped
 const errorCountTreshold = 3;
-const DatasetModel = require('./models/dataset.js')
 
+const {
+	pipeline
+} = require('stream');
+const request = require('request');
 const rp = require('request-promise-native');
 const zlib = require('zlib');
 const fs = require('fs');
 const crypto = require('crypto');
 
-
 /** TODO
- * - improve dynamic crawling adjustment
+ * - crawlrate?!
  * - is dataset compressed?
  * - filetype detection
  * - metadata generation
  */
 class Crawler {
 	constructor(dataset) {
-		this.url = dataset.url;
 		this.dataset = dataset;
-		this.secondsBetweenCrawls = getRandomInt(200000, 300000);
 		this.crawl();
 	}
 
 	async crawl() {
 
-		this.dataset = await DatasetModel.findOne({
-			url: this.url
-		}).exec();
-
 		if (this.dataset.stopped != true) {
 			try {
 
-				console.log("now crawling:", this.url, new Date());
-				let response = await rp(this.url).catch(async (error) => {
+				console.log("now crawling:", this.dataset.url, new Date());
+
+				let hash = crypto.createHash('sha1').setEncoding('hex');
+
+				//check header for errors
+				await rp.head(this.dataset.url).then(() => {
+
+					pipeline(
+						request(this.dataset.url),
+						hash,
+						async (err) => {
+							if (err) {
+								console.error(err)
+								this.dataset.errorCount++;
+								this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));
+								if (this.dataset.errorCount >= errorCountTreshold) {
+									this.dataset.stopped = true;
+								};
+								await this.dataset.save();
+							} else {
+								hash.end()
+								if (this.dataset.nextVersionCount == 0 || hash.read() != this.dataset.versions[this.dataset.versions.length - 1].hash) {
+									this.dataset.lastModified = new Date();
+									this.dataset.crawlInterval = this.dataset.crawlInterval / 2;
+									this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + this.dataset.crawlInterval);
+									this.dataset.stopped = true;
+									await this.dataset.save();
+									this.saveDataSet(this.dataset.url, hash.read());
+								} else {
+									this.dataset.crawlInterval = this.dataset.crawlInterval * 2;
+									this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + this.dataset.crawlInterval);
+									await this.dataset.save();
+								}
+								console.log('hashing done')
+							}
+						}
+					);
+
+				}).catch((err) => {
+					console.error(err)
 					this.dataset.errorCount++;
 					this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));
 					if (this.dataset.errorCount >= errorCountTreshold) {
 						this.dataset.stopped = true;
-					}
+					};
 					await this.dataset.save();
-
-					let err = new Error('Error requesting: ' + this.url);
-					err.code = error.statusCode;
-					console.error(err);
-				});
-
-				if (response) {
-					let hash = crypto.createHash('sha256');
-					hash.update(response);
-					let digest = hash.digest('hex');
-
-					if (this.dataset.nextVersionCount == 0 || digest != this.dataset.versions[this.dataset.versions.length - 1].hash) {
-						this.dataset.lastModified = new Date();
-
-						this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + this.secondsBetweenCrawls / 2);
-						await this.saveDataSet(response, digest);
-					} else {
-						this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + this.secondsBetweenCrawls * 2);
-					}
-
-					await this.dataset.save();
-				}
+				})
 
 			} catch (error) {
-				let err = new Error('Error crawling! Stopping: ' + this.url);
+				let err = new Error('Stopping: ' + this.dataset.url);
 				console.error(err)
 				this.dataset.stopped = true;
 				this.dataset.errorCount++;
@@ -73,87 +86,86 @@ class Crawler {
 		}
 	}
 
-	async saveDataSet(data, digest, compressed) {
+
+	async saveDataSet(url, hash, compressed) {
 		try {
 
 			await fs.promises.mkdir(this.dataset.storage.root + "/" + this.dataset.storage.path + "/" + this.dataset.nextVersionCount, {
 				recursive: true
 			}).catch(console.error);
 
-			let storage = {};
+			let storage = {
+				root: this.dataset.storage.root,
+				path: this.dataset.storage.path + "/" + this.dataset.nextVersionCount + "/" + this.dataset.storage.filename
+			}
+
 			if (compressed != true) {
-				storage = {
-					root: this.dataset.storage.root,
-					path: this.dataset.storage.path + "/" + this.dataset.nextVersionCount + "/" + this.dataset.storage.filename + ".gz"
-				}
-				zlib.gzip(data, (err, buffer) => {
-					if (!err) {
-						fs.writeFile(storage.root + "/" + storage.path, buffer, async (err) => {
-							if (err) throw err;
+
+				storage.path += ".gz"
+
+				pipeline(
+					request(url),
+					zlib.createGzip(),
+					fs.createWriteStream(storage.root + "/" + storage.path),
+					async (err) => {
+						if (err) {
+							console.error(err)
+							this.dataset.errorCount++;
+							this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));
+							if (this.dataset.errorCount >= errorCountTreshold) {
+								this.dataset.stopped = true;
+							};
+							await this.dataset.save();
+						} else {
 							this.dataset.versions.push({
 								storage: storage,
-								hash: digest
+								hash: hash
 							})
 							this.dataset.nextVersionCount++;
+							this.dataset.stopped = false;
 							await this.dataset.save();
-						});
-					} else {
-						throw err
+							console.log('saved');
+						}
 					}
-				});
-			} else {
-				storage = {
-					host: this.dataset.storage.host,
-					filename: this.dataset.storage.filename,
-					root: this.dataset.storage.root,
-					path: this.dataset.storage.path + "/" + this.dataset.nextVersionCount + "/" + this.dataset.filename
-				}
-				fs.writeFile(path, data, async (err) => {
-					if (err) throw err;
-					this.dataset.versions.push({
-						storage: storage,
-						hash: digest
-					})
-					this.dataset.nextVersionCount++;
-					await this.dataset.save();
-				});
-			}
+				);
 
+			} else {
+
+				pipeline(
+					request(url),
+					fs.createWriteStream(storage.root + "/" + storage.path),
+					async (err) => {
+						if (err) {
+							console.error(err)
+							this.dataset.errorCount++;
+							this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));
+							if (this.dataset.errorCount >= errorCountTreshold) {
+								this.dataset.stopped = true;
+							};
+							await this.dataset.save();
+						} else {
+							this.dataset.versions.push({
+								storage: storage,
+								hash: hash
+							})
+							this.dataset.nextVersionCount++;
+							this.dataset.stopped = false;
+							await this.dataset.save();
+							console.log('saved')
+						}
+					}
+				);
+			}
 
 		} catch (error) {
-			throw error
+			let err = new Error('Stopping: ' + this.dataset.url);
+			console.error(err)
+			this.dataset.stopped = true;
+			this.dataset.errorCount++;
+			await this.dataset.save();
+			throw error;
 		}
 	}
-
-	/*
-	static async uncompressDataSet(host, filename, version) {
-		const localPath = process.env.DATASETPATH || './data';
-
-		const folder = localPath + "/" + host + "/" + filename + "/v" + version;
-		let path2file = folder + "/" + filename + ".gz";
-
-		fs.readFile(path2file, async function (err, file) {
-			if (err) {
-				console.error(err);
-			} else {
-				console.log('Read successfull');
-				const uncompressed = await ungzip(file);
-
-				//
-				fs.writeFile(folder + "/uncompressed_" + filename, uncompressed, function (err) {
-					if (err) {
-						console.error(err);
-					} else {
-						console.log('Write successfully');
-					}
-				});
-			}
-		});
-	}*/
 }
 
 module.exports = Crawler;
-
-function getRandomInt(min, max) {
-	return Math.floor(Math.random() * (max - min) + min);
-  }

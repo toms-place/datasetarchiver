@@ -6,3 +6,5 @@ cp.py
 testserver
 rq.py
 dist
+.env
+testfiles

@@ -26,6 +26,10 @@ let datasetSchema = new mongoose.Schema({
 		type: Date,
 		default: new Date()
 	},
+	crawlInterval: {
+		type: Number,
+		default: 10 //getRandomInt(200000, 300000)
+	},
 	nextCrawl: {
 		type: Date,
 		default: new Date()
@@ -70,3 +74,8 @@ datasetSchema.statics.getDatasets = function () {
 }
 
 module.exports = mongoose.model('datasets', datasetSchema)
+
+
+function getRandomInt(min, max) {
+	return Math.floor(Math.random() * (max - min) + min);
+}

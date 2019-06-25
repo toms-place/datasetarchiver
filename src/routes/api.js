@@ -1,7 +1,8 @@
+import Crawler from '../crawler.js';
+const rp = require('request-promise-native');
 const express = require('express');
 const router = express.Router();
 const DatasetModel = require('../models/dataset.js');
-const Crawler = require('../crawler.js');
 const root = process.env.DATASETPATH || './data';
 
 /* GET users listing. */
@@ -12,33 +13,39 @@ router.get('/', function (req, res, next) {
 router.get('/add', function (req, res, next) {
   if (req.query.url) {
 
-    let urlPathArray = req.query.url.split('/');
-    let host = urlPathArray[2];
-    let filename = urlPathArray[urlPathArray.length - 1];
-    let path = host + "/" + filename;
-    let versions = [];
+    //check header for errors
+    rp.head(req.query.url).then(() => {
 
-    let storage = {
-      host: host,
-      filename: filename,
-      root: root,
-      path: path
-    }
+      let urlPathArray = req.query.url.split('/');
+      let host = urlPathArray[2];
+      let filename = urlPathArray[urlPathArray.length - 1];
+      let path = host + "/" + filename;
+      let versions = [];
 
-    new DatasetModel({
-        url: req.query.url,
-        storage: storage,
-        versions: versions
-      }).save()
-      .then(dataset => {
-        let crawler = new Crawler(dataset);
-        console.log(`${process.pid} started: ${crawler.url}`)
-        res.send('Now crawling:' + req.query.url);
-      })
-      .catch(err => {
-        console.error(err)
-        res.status(404).send(err);
-      })
+      let storage = {
+        host: host,
+        filename: filename,
+        root: root,
+        path: path
+      }
+
+      new DatasetModel({
+          url: req.query.url,
+          storage: storage,
+          versions: versions
+        }).save()
+        .then(dataset => {
+          console.log(`Added ${dataset.url} to the crawling DB`);
+          res.send(`Added ${dataset.url} to the crawling DB`);
+        })
+        .catch(err => {
+          console.error(err)
+          res.status(404).send(err);
+        })
+
+    }).catch((err) => {
+      res.status(404).send('Url not reachable..');
+    })
 
   } else {
     res.status(404).send('give me an url');
@@ -91,8 +98,8 @@ router.get('/start', async function (req, res, next) {
   }
 });
 
-router.get('/init', async function (req, res, next) {
-  if (req.query.url) {
+router.get('/crawl', async function (req, res, next) {
+  if (req.query.url && req.query.secret == 'secret') {
 
     let dataset = await DatasetModel.findOne({
       url: req.query.url
@@ -100,13 +107,14 @@ router.get('/init', async function (req, res, next) {
 
     if (dataset) {
       let crawler = new Crawler(dataset);
-      console.log(`${process.pid} started: ${crawler.url}`)
-      res.send('Started crawling:' + req.query.url);
+      let resp = `Crawling started for: ${crawler.dataset.url}`;
+      console.log(resp);
+      res.send(resp);
     } else {
       res.status(404).send(`${req.query.url} is not in our db. If you want to add it, try /api/add?url=`);
     }
   } else {
-    res.status(404).send('give me an url');
+    res.status(404).send('give me an url and a secret');
   }
 });
 

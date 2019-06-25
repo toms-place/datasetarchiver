@@ -16,16 +16,17 @@
   "engines": {
     "node": "12.1.0"
   },
-  "main": "app.js",
+  "main": "bin/www.js",
   "scripts": {
     "start": "npm run prod",
     "build": "babel src -d dist --copy-files",
-    "server": "babel-node ./src/app.js",
-    "server:prod": "DATASETPATH=./data node ./dist/app.js",
+    "server": "babel-node ./src/bin/www.js",
+    "server:prod": "DATASETPATH=./data node ./dist/worker.js",
     "dev": "NODE_ENV=development npm-run-all server",
     "clean": "rimraf dist",
     "prod": "NODE_ENV=production npm-run-all clean build server:prod",
-    "test": "mocha --require @babel/register"
+    "test": "mocha --require @babel/register",
+    "master": "babel-node ./src/master.js"
   },
   "dependencies": {
     "constantinople": "^3.1.2",
