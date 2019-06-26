@@ -5,7 +5,9 @@ const rp = require('request');
 import db from './database.js';
 import DatasetModel from './models/dataset.js';
 
-tick(10000);
+mongoose.connection.on('connected', function () {
+  tick(10000);
+});
 
 function tick(time) {
   console.log(`Master ticked`);
