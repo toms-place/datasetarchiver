@@ -56,7 +56,8 @@ class Crawler {
 				}).catch(async (err) => {
 					console.error(err)
 					this.dataset.errorCount++;
-					this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));
+					this.dataset.crawlInterval = this.dataset.crawlInterval * 2
+					this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.dataset.crawlInterval));
 					if (this.dataset.errorCount >= errorCountTreshold) {
 						this.dataset.stopped = true;
 					};
@@ -74,36 +75,48 @@ class Crawler {
 		}
 	}
 
-	async checkHash() {
+	async checkHash(bucket) {
 
-		let files = await FileModel.find({
-			filename: this.dataset.filename
-		}).exec();
+		if (this.dataset.nextVersionCount > 0) {
+			let files = await FileModel.find({
+				filename: this.dataset.filename
+			}).or([{
+				'metadata.version': this.dataset.nextVersionCount - 1
+			}, {
+				'metadata.version': this.dataset.nextVersionCount
+			}]).exec();
 
-		if (files.length > 1) {
 			let oldFile = files[files.length - 2]
 			let newFile = files[files.length - 1]
 
 			if (oldFile.md5 != newFile.md5) {
 				this.dataset.versions.push(newFile._id)
 				this.dataset.nextVersionCount++;
+				this.dataset.crawlInterval = this.dataset.crawlInterval / 2
+				this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.dataset.crawlInterval));
 				this.dataset.stopped = false;
 				await this.dataset.save();
-				console.log('saved');
 			} else {
-				this.dataset.stopped = false;
-				await this.dataset.save();
-
-				//TODO delete File!
-				console.log('delete file please!');
+				await bucket.delete(newFile._id).then(async () => {
+					console.log('file deleted');
+					this.dataset.crawlInterval = this.dataset.crawlInterval * 2
+					this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.dataset.crawlInterval));
+					this.dataset.stopped = false;
+					await this.dataset.save();
+				})
 			}
 
 		} else {
+			let files = await FileModel.find({
+				filename: this.dataset.filename
+			}).and([{
+				'metadata.version': this.dataset.nextVersionCount
+			}]).exec();
+
 			this.dataset.versions.push(files[0]._id)
 			this.dataset.nextVersionCount++;
 			this.dataset.stopped = false;
 			await this.dataset.save();
-			console.log('saved');
 		}
 	}
 
@@ -121,7 +134,11 @@ class Crawler {
 					}
 				}),
 				async (err) => {
-					if (err) {
+					if (!err) {
+
+						this.checkHash(bucket)
+
+					} else {
 						console.error(err)
 						this.dataset.errorCount++;
 						this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));
@@ -131,10 +148,6 @@ class Crawler {
 							this.dataset.stopped = false;
 						}
 						await this.dataset.save();
-					} else {
-
-						this.checkHash()
-
 					}
 				}
 			);

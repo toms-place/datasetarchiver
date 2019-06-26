@@ -33,7 +33,7 @@ function crawl(dataset) {
 
   let workhostaddr = process.env.WORKHOSTADDR || 'http://localhost:3000'
 
-  rp.get(`${workhostaddr}/api/crawl?url=' + ${dataset.url.href}`, (err, httpResponse, body) => {
+  rp.get(`${workhostaddr}/api/crawl?url=${dataset.url.href}`, (err, httpResponse, body) => {
     if (err) console.error(err)
     else {
       console.log(body)
