@@ -6,3 +6,9 @@ cp.py
 testserver
 rq.py
 dist
+europeandataportal
+.env
+queries.js
+testfiles
+bulkaddtodb.js
+test.js
