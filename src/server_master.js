@@ -31,10 +31,10 @@ function tick(time) {
 function crawl(dataset) {
   console.log('crawl', dataset.url.href)
 
-    rp.get('http://localhost:3000/api/crawl?url=' + dataset.url.href, (err,httpResponse,body) => {
-      if (err) console.error(err)
-      else {
-        console.log(body)
-      }
-    })
+  rp.get('http://localhost:3000/api/crawl?url=' + dataset.url.href, (err, httpResponse, body) => {
+    if (err) console.error(err)
+    else {
+      console.log(body)
+    }
+  })
 }

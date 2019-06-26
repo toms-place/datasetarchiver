@@ -19,4 +19,7 @@ npm start
 - - Multiply Server Pods
 - - - load balanced by kubernetes
 - - - crawl on request from master
-- mongodb in kubernetes
+- mongodb
+- - url schema? dataportals?
+- - in kubernetes
+- - files in sharded db?
