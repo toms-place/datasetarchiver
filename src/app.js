@@ -5,84 +5,65 @@
  */
 
 const http = require('http');
-const cluster = require('cluster');
-const numCPUs = require('os').cpus().length;
 
+//db setup
+let db = require('./database');
 
-if (cluster.isMaster) {
-  console.log(`Loadbalancer ${process.pid} is running`);
+db.connection.on('connected', function () {
 
-  // Fork workers.
-  for (let i = 0; i < numCPUs; i++) {
-    cluster.fork();
-  }
+  let app = require('./app_worker');
 
-  cluster.on('exit', (worker, code, signal) => {
-    console.log(`worker ${worker.process.pid} died`);
-  });
-} else {
+  /**
+   * Get port from environment and store in Express.
+   */
 
-  //db setup
-  let db = require('./database');
-  let mongoose = require('mongoose');
+  let port = normalizePort(process.env.PORT || '3000');
+  app.set('port', port);
 
-  mongoose.connection.on('connected', function () {
+  /**
+   * Create HTTP server.
+   */
 
-    let app = require('./app_worker');
+  let server = http.createServer(app);
 
-    /**
-     * Get port from environment and store in Express.
-     */
+  /**
+   * Listen on provided port, on all network interfaces.
+   */
+  server.listen(port);
 
-    let port = normalizePort(process.env.PORT || '3000');
-    app.set('port', port);
+  server.on('error', (error) => {
+    if (error.syscall !== 'listen') {
+      throw error;
+    }
 
-    /**
-     * Create HTTP server.
-     */
+    var bind = typeof port === 'string' ?
+      'Pipe ' + port :
+      'Port ' + port;
 
-    let server = http.createServer(app);
-
-    /**
-     * Listen on provided port, on all network interfaces.
-     */
-    server.listen(port);
-
-    server.on('error', (error) => {
-      if (error.syscall !== 'listen') {
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+      case 'EACCES':
+        console.error(bind + ' requires elevated privileges');
+        process.exit(1);
+        break;
+      case 'EADDRINUSE':
+        console.error(bind + ' is already in use');
+        process.exit(1);
+        break;
+      default:
         throw error;
-      }
-
-      var bind = typeof port === 'string' ?
-        'Pipe ' + port :
-        'Port ' + port;
-
-      // handle specific listen errors with friendly messages
-      switch (error.code) {
-        case 'EACCES':
-          console.error(bind + ' requires elevated privileges');
-          process.exit(1);
-          break;
-        case 'EADDRINUSE':
-          console.error(bind + ' is already in use');
-          process.exit(1);
-          break;
-        default:
-          throw error;
-      }
-    });
-
-    server.on('listening', () => {
-      var addr = server.address();
-      var bind = typeof addr === 'string' ?
-        'pipe ' + addr :
-        'port ' + addr.port;
-      console.log(`Worker ${process.pid} is listening on ${bind}`)
-    });
-
+    }
   });
-}
 
+  server.on('listening', () => {
+    var addr = server.address();
+    var bind = typeof addr === 'string' ?
+      'pipe ' + addr :
+      'port ' + addr.port;
+    console.log(`Process ${process.pid}: listening on ${bind}`)
+  });
+
+});
 
 
 

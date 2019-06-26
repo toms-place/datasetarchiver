@@ -1,5 +1,10 @@
 let mongoose = require('mongoose')
 
+const {
+	CRAWL_InitRange,
+	CRAWL_EndRange
+} = require('../config');
+
 let datasetSchema = new mongoose.Schema({
 	url: {
 		type: mongoose.SchemaTypes.Mixed,
@@ -12,7 +17,7 @@ let datasetSchema = new mongoose.Schema({
 	},
 	crawlInterval: {
 		type: Number,
-		default: 10 //getRandomInt(200000, 300000)
+		default: getRandomInt(CRAWL_InitRange, CRAWL_EndRange)
 	},
 	nextCrawl: {
 		type: Date,
@@ -36,10 +41,6 @@ let datasetSchema = new mongoose.Schema({
 
 })
 
-datasetSchema.virtual('publicPath').get(function () {
-	return this.host + "/" + this.filename
-})
-
 datasetSchema.statics.getDatasets = function () {
 	return new Promise((resolve, reject) => {
 		this.find((err, datasets) => {
@@ -49,6 +50,22 @@ datasetSchema.statics.getDatasets = function () {
 			}
 
 			resolve(datasets)
+		})
+	})
+}
+
+datasetSchema.statics.getDataset = function (url) {
+	console.log(url)
+	return new Promise((resolve, reject) => {
+		this.findOne({
+			'url.href': url
+		}, (err, dataset) => {
+			if (err) {
+				console.error(err)
+				return reject(err)
+			}
+
+			resolve(dataset)
 		})
 	})
 }

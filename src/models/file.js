@@ -1,4 +1,5 @@
 let mongoose = require('mongoose')
+
 let fileSchema = new mongoose.Schema({
 	length: Number,
 	chunkSize: Number,
@@ -15,7 +16,6 @@ fileSchema.statics.getFiles = function () {
 				console.error(err)
 				return reject(err)
 			}
-
 			resolve(datasets)
 		})
 	})
@@ -24,7 +24,7 @@ fileSchema.statics.getFiles = function () {
 fileSchema.statics.getFilesById = function (id) {
 	return new Promise((resolve, reject) => {
 		this.find({
-			'id': id
+			_id: id
 		}, (err, datasets) => {
 			if (err) {
 				console.error(err)
@@ -33,6 +33,45 @@ fileSchema.statics.getFilesById = function (id) {
 
 			resolve(datasets)
 		})
+	})
+}
+
+fileSchema.statics.getFilesByNameAndVersions = function (filename, latestVersion, newVersion) {
+	return new Promise((resolve, reject) => {
+
+		this.find({
+			filename: filename
+		}).or([{
+			'metadata.version': latestVersion
+		}, {
+			'metadata.version': newVersion
+		}], (err, files) => {
+			if (err) {
+				console.error(err)
+				return reject(err)
+			}
+
+			resolve(files)
+		})
+
+	})
+}
+
+fileSchema.statics.getFileVersion = function (filename, version) {
+	return new Promise((resolve, reject) => {
+		this.find({
+			filename: filename
+		}).and([{
+			'metadata.version': version
+		}], (err, files) => {
+			if (err) {
+				console.error(err)
+				return reject(err)
+			}
+
+			resolve(files)
+		})
+
 	})
 }
 
@@ -51,7 +90,7 @@ fileSchema.statics.getFileById = function (id) {
 	})
 }
 
-module.exports = mongoose.model('fs.files', fileSchema)
+module.exports = mongoose.model('dataset.files', fileSchema)
 
 
 function getRandomInt(min, max) {

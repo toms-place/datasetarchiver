@@ -22,7 +22,7 @@ router.post('/add', function (req, res, next) {
         let versions = [];
 
         new DatasetModel({
-            url: url,
+          url: url,
             versions: versions,
             filename: filename
           }).save()
@@ -53,9 +53,7 @@ router.get('/crawl', async function (req, res, next) {
   if (req.query.url) {
     let url = new URL(req.query.url);
 
-    let dataset = await DatasetModel.findOne({
-      url: url
-    }).exec();
+    let dataset = await DatasetModel.getDataset(req.query.url)
 
     if (dataset) {
       new Crawler(dataset);

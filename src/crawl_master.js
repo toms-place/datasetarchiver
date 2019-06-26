@@ -1,12 +1,16 @@
 const sleep = require('util').promisify(setTimeout);
 const rp = require('request-promise-native');
+const {
+  host,
+  port,
+  protocol
+} = require('./config');
 
 //db setup
 import db from './database.js';
 import DatasetModel from './models/dataset.js';
-import mongoose from 'mongoose';
 
-mongoose.connection.on('connected', function () {
+db.connection.on('connected', function () {
   tick(10000);
 });
 
@@ -31,9 +35,7 @@ function tick(time) {
 function crawl(dataset) {
   console.log('crawl', dataset.url.href)
 
-  let workhostaddr = process.env.WORKHOSTADDR || 'http://localhost:3000'
-
-  rp.get(`${workhostaddr}/api/crawl?url=${dataset.url.href}`, (err, httpResponse, body) => {
+  rp.get(`${protocol}//${host}:${port}/api/crawl?url=${dataset.url.href}`, (err, httpResponse, body) => {
     if (err) console.error(err)
     else {
       console.log(body)

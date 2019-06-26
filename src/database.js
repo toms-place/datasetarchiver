@@ -1,24 +1,37 @@
 let mongoose = require('mongoose');
 mongoose.set('useFindAndModify', false);
 mongoose.set('useCreateIndex', true);
-
-const server = '127.0.0.1:27017'; // REPLACE WITH YOUR DB SERVER
-const database = 'archiver';      // REPLACE WITH YOUR DB NAME
+const {
+  DB_Server,
+  DB_Name
+} = require('./config');
 
 class Database {
   constructor() {
     this._connect()
+    this.connection = mongoose.connection
+    this.bucket
   }
-  
-_connect() {
-     mongoose.connect(`mongodb://${server}/${database}`, { useNewUrlParser: true })
-       .then(() => {
-         console.log('Database connection successful')
-       })
-       .catch(err => {
-         console.error('Database connection error')
-       })
+
+  _connect() {
+    mongoose.connect(`mongodb://${DB_Server}/${DB_Name}`, {
+        useNewUrlParser: true
+      })
+      .then(() => {
+        console.log(`Process ${process.pid}: Database connection successful`)
+        require('./models/dataset');
+        require('./models/file');
+        this.bucket = new mongoose.mongo.GridFSBucket(this.connection.db, {
+          bucketName: 'datasets'
+        })
+      })
+      .catch(err => {
+        console.error('Database connection error')
+      })
   }
+
+
 }
+
 
 module.exports = new Database()

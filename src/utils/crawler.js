@@ -5,12 +5,9 @@ const {
 	pipeline
 } = require('stream');
 const rp = require('request-promise-native');
-const zlib = require('zlib');
-const fs = require('fs');
-const crypto = require('crypto');
 const http = require('http');
 const https = require('https');
-import mongoose from 'mongoose';
+import db from '../database';
 const FileModel = require('../models/file');
 
 
@@ -75,16 +72,10 @@ class Crawler {
 		}
 	}
 
-	async checkHash(bucket) {
+	async checkHash() {
 
 		if (this.dataset.nextVersionCount > 0) {
-			let files = await FileModel.find({
-				filename: this.dataset.filename
-			}).or([{
-				'metadata.version': this.dataset.nextVersionCount - 1
-			}, {
-				'metadata.version': this.dataset.nextVersionCount
-			}]).exec();
+			let files = await FileModel.getFilesByNameAndVersions(this.dataset.filename, this.dataset.nextVersionCount - 1, this.dataset.nextVersionCount)
 
 			let oldFile = files[files.length - 2]
 			let newFile = files[files.length - 1]
@@ -97,7 +88,7 @@ class Crawler {
 				this.dataset.stopped = false;
 				await this.dataset.save();
 			} else {
-				await bucket.delete(newFile._id).then(async () => {
+				await db.bucket.delete(newFile._id).then(async () => {
 					console.log('file deleted');
 					this.dataset.crawlInterval = this.dataset.crawlInterval * 2
 					this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.dataset.crawlInterval));
@@ -107,13 +98,8 @@ class Crawler {
 			}
 
 		} else {
-			let files = await FileModel.find({
-				filename: this.dataset.filename
-			}).and([{
-				'metadata.version': this.dataset.nextVersionCount
-			}]).exec();
-
-			this.dataset.versions.push(files[0]._id)
+			let file = await FileModel.getFileVersion(this.dataset.filename, this.dataset.nextVersionCount)
+			this.dataset.versions.push(file._id)
 			this.dataset.nextVersionCount++;
 			this.dataset.stopped = false;
 			await this.dataset.save();
@@ -122,13 +108,11 @@ class Crawler {
 
 	async saveFile() {
 
-		let bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db)
-
 		this.connector.get(this.dataset.url.href, (resp) => {
 
 			pipeline(
 				resp,
-				bucket.openUploadStream(this.dataset.filename, {
+				db.bucket.openUploadStream(this.dataset.filename, {
 					metadata: {
 						version: this.dataset.nextVersionCount
 					}
@@ -136,7 +120,7 @@ class Crawler {
 				async (err) => {
 					if (!err) {
 
-						this.checkHash(bucket)
+						this.checkHash()
 
 					} else {
 						console.error(err)

@@ -8,10 +8,7 @@ COPY package*.json ./
 # install
 RUN npm install
 
-# bundle source code
-COPY . .
-
 # expose port 3000
 EXPOSE 3000
 
-CMD [ "npm", "start" ]
+CMD [ "npm", "run prod" ]
