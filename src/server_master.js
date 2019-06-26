@@ -4,6 +4,7 @@ const rp = require('request');
 //db setup
 import db from './database.js';
 import DatasetModel from './models/dataset.js';
+import mongoose from 'mongoose';
 
 mongoose.connection.on('connected', function () {
   tick(10000);
