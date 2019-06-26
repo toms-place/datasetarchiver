@@ -1,4 +1,4 @@
-import Crawler from '../crawler.js';
+import Crawler from '../utils/crawler';
 const rp = require('request-promise-native');
 const express = require('express');
 const router = express.Router();
@@ -35,12 +35,17 @@ router.post('/add', function (req, res, next) {
             versions: versions
           }).save()
           .then(dataset => {
-            console.log(`Added ${dataset.url} to the crawling DB`);
-            res.send(`Added ${dataset.url} to the crawling DB`);
+            console.log(`Worker ${process.pid} added ${dataset.url} to DB`);
+            res.send(`Worker ${process.pid} added ${dataset.url} to DB`);
           })
           .catch(err => {
-            console.error(err)
-            res.status(404).send(err);
+            if (err.code == 11000) {
+              console.error(`${url.href} already in DB`)
+              res.status(404).send(`${url.href} already in DB`);
+            } else {
+              console.error(err)
+              res.status(404).send(err);
+            }
           })
       }
     }).catch((err) => {
@@ -66,7 +71,7 @@ router.get('/crawl', async function (req, res, next) {
       console.log(resp);
       res.send(resp);
     } else {
-      res.status(404).send(`${url.href} is not in our db. If you want to add it, try /api/add?url=`);
+      res.status(404).send(`${url.href} is not in our DB. If you want to add it, try /api/add?url=`);
     }
   } else {
     res.status(404).send('give me an url');
