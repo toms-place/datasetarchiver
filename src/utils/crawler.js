@@ -10,6 +10,8 @@ const fs = require('fs');
 const crypto = require('crypto');
 const http = require('http');
 const https = require('https');
+import mongoose from 'mongoose';
+const FileModel = require('../models/file');
 
 
 /** TODO
@@ -49,7 +51,7 @@ class Crawler {
 						console.log(header['content-type'])
 					}
 
-					this.hashUrl()
+					this.saveFile()
 
 				}).catch(async (err) => {
 					console.error(err)
@@ -72,13 +74,52 @@ class Crawler {
 		}
 	}
 
-	hashUrl() {
-		let hash = crypto.createHash('sha1').setEncoding('hex');
+	async checkHash() {
+
+		let files = await FileModel.find({
+			filename: this.dataset.filename
+		}).exec();
+
+		if (files.length > 1) {
+			let oldFile = files[files.length - 2]
+			let newFile = files[files.length - 1]
+
+			if (oldFile.md5 != newFile.md5) {
+				this.dataset.versions.push(newFile._id)
+				this.dataset.nextVersionCount++;
+				this.dataset.stopped = false;
+				await this.dataset.save();
+				console.log('saved');
+			} else {
+				this.dataset.stopped = false;
+				await this.dataset.save();
+
+				//TODO delete File!
+				console.log('delete file please!');
+			}
+
+		} else {
+			this.dataset.versions.push(files[0]._id)
+			this.dataset.nextVersionCount++;
+			this.dataset.stopped = false;
+			await this.dataset.save();
+			console.log('saved');
+		}
+	}
+
+	async saveFile() {
+
+		let bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db)
 
 		this.connector.get(this.dataset.url.href, (resp) => {
+
 			pipeline(
 				resp,
-				hash,
+				bucket.openUploadStream(this.dataset.filename, {
+					metadata: {
+						version: this.dataset.nextVersionCount
+					}
+				}),
 				async (err) => {
 					if (err) {
 						console.error(err)
@@ -86,87 +127,20 @@ class Crawler {
 						this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));
 						if (this.dataset.errorCount >= errorCountTreshold) {
 							this.dataset.stopped = true;
-						};
+						} else {
+							this.dataset.stopped = false;
+						}
 						await this.dataset.save();
 					} else {
-						hash.end()
-						this.checkHash(hash.read())
+
+						this.checkHash()
+
 					}
 				}
 			);
 		}).on("error", (err) => {
 			console.log("Error: " + err.message);
 		});
-	}
-
-	async checkHash(hashValue) {
-		if (this.dataset.nextVersionCount == 0 || hashValue != this.dataset.versions[this.dataset.versions.length - 1].hash) {
-			this.dataset.lastModified = new Date();
-			this.dataset.crawlInterval = this.dataset.crawlInterval / 2;
-			this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + this.dataset.crawlInterval);
-			//stop crawling while saving the dataset (in case of large dataset)
-			this.dataset.stopped = true;
-			await this.dataset.save();
-			this.saveFile(hashValue);
-		} else {
-			this.dataset.crawlInterval = this.dataset.crawlInterval * 2;
-			this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + this.dataset.crawlInterval);
-			await this.dataset.save();
-		}
-		console.log('hashing done')
-	}
-
-
-	async saveFile(hashValue) {
-		try {
-
-			await fs.promises.mkdir(this.dataset.storage.root + "/" + this.dataset.storage.path + "/" + this.dataset.nextVersionCount, {
-				recursive: true
-			}).catch(console.error);
-
-			let storage = {
-				root: this.dataset.storage.root,
-				path: this.dataset.storage.path + "/" + this.dataset.nextVersionCount + "/" + this.dataset.storage.filename + ".gz"
-			}
-
-			this.connector.get(this.dataset.url.href, (resp) => {
-				pipeline(
-					resp,
-					zlib.createGzip(),
-					fs.createWriteStream(storage.root + "/" + storage.path),
-					async (err) => {
-						if (err) {
-							console.error(err)
-							this.dataset.errorCount++;
-							this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));
-							if (this.dataset.errorCount >= errorCountTreshold) {
-								this.dataset.stopped = true;
-							};
-							await this.dataset.save();
-						} else {
-							this.dataset.versions.push({
-								storage: storage,
-								hash: hashValue
-							})
-							this.dataset.nextVersionCount++;
-							this.dataset.stopped = false;
-							await this.dataset.save();
-							console.log('saved');
-						}
-					}
-				);
-			}).on("error", (err) => {
-				console.log("Error: " + err.message);
-			});
-
-		} catch (error) {
-			let err = new Error('Stopping: ' + this.dataset.url.href);
-			console.error(err)
-			this.dataset.stopped = true;
-			this.dataset.errorCount++;
-			await this.dataset.save();
-			throw error;
-		}
 	}
 }
 

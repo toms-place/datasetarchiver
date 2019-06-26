@@ -1,19 +1,4 @@
 let mongoose = require('mongoose')
-let root = process.env.DATASETPATH || './data';
-
-let storageSchema = new mongoose.Schema({
-	root: {
-		type: String,
-		default: root
-	},
-	path: String,
-	filename: String
-});
-
-let versionsSchema = new mongoose.Schema({
-	storage: storageSchema,
-	hash: String
-});
 
 let datasetSchema = new mongoose.Schema({
 	url: {
@@ -45,12 +30,8 @@ let datasetSchema = new mongoose.Schema({
 		type: Boolean,
 		default: false
 	},
-	storage: {
-		type: storageSchema
-	},
-	versions: {
-		type: [versionsSchema]
-	},
+	filename: String,
+	versions: Array,
 	meta: {}
 
 })
