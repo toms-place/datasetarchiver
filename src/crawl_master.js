@@ -31,12 +31,6 @@ function tick(time) {
 function crawl(dataset) {
   console.log('crawl', dataset.url.href)
 
-<<<<<<< HEAD
-  rp.get(`http://localhost:3000'/api/crawl?url=' + ${dataset.url.href}`).then((resp) => {
- 
-      console.log(header)
-      
-=======
   let workhostaddr = process.env.WORKHOSTADDR || 'http://localhost:3000'
 
   rp.get(`${workhostaddr}/api/crawl?url=${dataset.url.href}`, (err, httpResponse, body) => {
@@ -44,6 +38,5 @@ function crawl(dataset) {
     else {
       console.log(body)
     }
->>>>>>> dev
   })
 }
