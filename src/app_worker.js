@@ -6,9 +6,6 @@ import createError from 'http-errors'
 import express from 'express'
 import cookieParser from 'cookie-parser'
 
-
-
-
 const localPath = process.env.DATASETPATH || './data';
 // create a write stream (in append mode)
 const accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), {

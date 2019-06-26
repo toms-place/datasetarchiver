@@ -28,7 +28,6 @@ if (cluster.isMaster) {
 
   mongoose.connection.on('connected', function () {
 
-
     let app = require('./app_worker');
 
     /**

@@ -29,6 +29,17 @@ class Crawler {
 		if (this.dataset.stopped != true) {
 			try {
 
+				switch (this.dataset.url.protocol) {
+					case 'https:':
+						this.connector = https
+						break;
+					case 'http:':
+						this.connector = http
+						break;
+					default:
+						throw new Error('Neither http nor https...')
+				}
+
 				console.log("now crawling:", this.dataset.url.href, new Date());
 
 				//checking header for errors
@@ -38,18 +49,7 @@ class Crawler {
 						console.log(header['content-type'])
 					}
 
-					switch (this.dataset.url.protocol) {
-						case 'https:':
-							this.connector = https
-							this.hashUrl()
-							break;
-						case 'http:':
-							this.connector = http
-							this.hashUrl()
-							break;
-						default:
-							throw new Error('Neither http nor https...')
-					}
+					this.hashUrl()
 
 				}).catch(async (err) => {
 					console.error(err)
