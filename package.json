@@ -21,7 +21,7 @@
     "start": "npm run prod",
     "build": "babel src -d dist --copy-files",
     "server": "babel-node ./src/app.js",
-    "server:prod": "DATASETPATH=./data node ./dist/app.js",
+    "server:prod": "node ./dist/app.js",
     "dev": "NODE_ENV=development npm-run-all server",
     "clean": "rimraf dist",
     "prod": "NODE_ENV=production npm-run-all clean build server:prod",

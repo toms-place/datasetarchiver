@@ -3,7 +3,6 @@ const rp = require('request-promise-native');
 const express = require('express');
 const router = express.Router();
 const DatasetModel = require('../models/dataset.js');
-const root = process.env.DATASETPATH || './data';
 
 router.get('/', function (req, res, next) {
   res.send('See docs for api');
@@ -20,19 +19,12 @@ router.post('/add', function (req, res, next) {
       } else {
         let url = new URL(req.query.url);
         let filename = url.pathname.split('/')[url.pathname.split('/').length - 1]
-        let path = url.host + "/" + filename;
         let versions = [];
-
-        let storage = {
-          filename: filename,
-          root: root,
-          path: path
-        }
 
         new DatasetModel({
             url: url,
-            storage: storage,
-            versions: versions
+            versions: versions,
+            filename: filename
           }).save()
           .then(dataset => {
             console.log(`Worker ${process.pid} added ${dataset.url} to DB`);
