@@ -5,7 +5,9 @@ const rp = require('request');
 import db from './database.js';
 import DatasetModel from './models/dataset.js';
 
-tick(10000);
+mongoose.connection.on('connected', function () {
+  tick(10000);
+});
 
 function tick(time) {
   console.log(`Master ticked`);
@@ -28,10 +30,10 @@ function tick(time) {
 function crawl(dataset) {
   console.log('crawl', dataset.url.href)
 
-    rp.get('http://localhost:3000/api/crawl?url=' + dataset.url.href, (err,httpResponse,body) => {
-      if (err) console.error(err)
-      else {
-        console.log(body)
-      }
-    })
+  rp.get('http://localhost:3000/api/crawl?url=' + dataset.url.href, (err, httpResponse, body) => {
+    if (err) console.error(err)
+    else {
+      console.log(body)
+    }
+  })
 }
