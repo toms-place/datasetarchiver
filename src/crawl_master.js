@@ -1,5 +1,5 @@
 const sleep = require('util').promisify(setTimeout);
-const rp = require('request');
+const rp = require('request-promise-native');
 
 //db setup
 import db from './database.js';
@@ -31,12 +31,9 @@ function tick(time) {
 function crawl(dataset) {
   console.log('crawl', dataset.url.href)
 
-  let workhostaddr = process.env.WORKHOSTADDR || 'http://localhost:3000'
-
-  rp.get(`${workhostaddr}/api/crawl?url=' + ${dataset.url.href}`, (err, httpResponse, body) => {
-    if (err) console.error(err)
-    else {
-      console.log(body)
-    }
+  rp.get(`http://localhost:3000'/api/crawl?url=' + ${dataset.url.href}`).then((resp) => {
+ 
+      console.log(header)
+      
   })
 }
