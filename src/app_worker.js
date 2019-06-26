@@ -5,7 +5,9 @@ import morgan from 'morgan'
 import createError from 'http-errors'
 import express from 'express'
 import cookieParser from 'cookie-parser'
-import db from './database';
+
+
+
 
 const localPath = process.env.DATASETPATH || './data';
 // create a write stream (in append mode)
@@ -13,7 +15,7 @@ const accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'),
 	flags: 'a'
 });
 // setup the logger
-const logger = morgan('dev' ,{
+const logger = morgan('dev', {
 	stream: accessLogStream
 });
 
