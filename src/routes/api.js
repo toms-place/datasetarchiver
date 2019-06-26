@@ -1,101 +1,95 @@
+import Crawler from '../crawler.js';
+const rp = require('request-promise-native');
 const express = require('express');
 const router = express.Router();
 const DatasetModel = require('../models/dataset.js');
-const Crawler = require('../crawler.js');
 const root = process.env.DATASETPATH || './data';
 
-/* GET users listing. */
 router.get('/', function (req, res, next) {
   res.send('See docs for api');
 });
 
-router.get('/add', function (req, res, next) {
+router.post('/add', function (req, res, next) {
   if (req.query.url) {
 
-    let urlPathArray = req.query.url.split('/');
-    let host = urlPathArray[2];
-    let filename = urlPathArray[urlPathArray.length - 1];
-    let path = host + "/" + filename;
-    let versions = [];
+    //TODO check header to acquire needed informaiton
+    rp.head(req.query.url).then((header) => {
 
-    let storage = {
-      host: host,
-      filename: filename,
-      root: root,
-      path: path
-    }
+      if (header['content-type'].includes('text/html')) {
+        res.status(404).send('This is a Website!!');
+      } else {
+        let url = new URL(req.query.url);
+        let filename = url.pathname.split('/')[url.pathname.split('/').length - 1]
+        let path = url.host + "/" + filename;
+        let versions = [];
 
-    new DatasetModel({
-        url: req.query.url,
-        storage: storage,
-        versions: versions
-      }).save()
-      .then(dataset => {
-        let crawler = new Crawler(dataset);
-        console.log(`${process.pid} started: ${crawler.url}`)
-        res.send('Now crawling:' + req.query.url);
-      })
-      .catch(err => {
-        console.error(err)
-        res.status(404).send(err);
-      })
+        let storage = {
+          filename: filename,
+          root: root,
+          path: path
+        }
+
+        new DatasetModel({
+            url: url,
+            storage: storage,
+            versions: versions
+          }).save()
+          .then(dataset => {
+            console.log(`Added ${dataset.url} to the crawling DB`);
+            res.send(`Added ${dataset.url} to the crawling DB`);
+          })
+          .catch(err => {
+            console.error(err)
+            res.status(404).send(err);
+          })
+      }
+    }).catch((err) => {
+      res.status(404).send(err);
+    })
 
   } else {
     res.status(404).send('give me an url');
   }
 });
 
-router.get('/quit', async function (req, res, next) {
+router.get('/crawl', async function (req, res, next) {
   if (req.query.url) {
+    let url = new URL(req.query.url);
 
     let dataset = await DatasetModel.findOne({
-      url: req.query.url
+      url: url
     }).exec();
 
     if (dataset) {
-      if (dataset.stopped != true) {
-        dataset.stopped = true;
-        await dataset.save();
-        res.send('Stopped crawling:' + req.query.url);
-      } else {
-        res.status(404).send(`${req.query.url} is already stopped`);
-      }
+      new Crawler(dataset);
+      let resp = `Worker ${process.pid} started to crawl: ${url.href}`;
+      console.log(resp);
+      res.send(resp);
     } else {
-      res.status(404).send(`${req.query.url} is not in our db. If you want to add it, try /api/add?url=`);
+      res.status(404).send(`${url.href} is not in our db. If you want to add it, try /api/add?url=`);
     }
   } else {
     res.status(404).send('give me an url');
   }
 });
 
-router.get('/start', async function (req, res, next) {
+module.exports = router;
+
+
+
+
+
+
+
+
+
+/*
+router.get('/get/:url', async function (req, res, next) {
   if (req.query.url) {
+    let url = new URL(req.query.url);
 
     let dataset = await DatasetModel.findOne({
-      url: req.query.url
-    }).exec();
-
-    if (dataset) {
-      if (dataset.stopped == true) {
-        dataset.stopped = false;
-        await dataset.save();
-        res.send('Started crawling:' + req.query.url);
-      } else {
-        res.status(404).send(`${req.query.url} already started`);
-      }
-    } else {
-      res.status(404).send(`${req.query.url} is not in our db. If you want to add it, try /api/add?url=`);
-    }
-  } else {
-    res.status(404).send('give me an url');
-  }
-});
-
-router.get('/get', async function (req, res, next) {
-  if (req.query.url) {
-
-    let dataset = await DatasetModel.findOne({
-      url: req.query.url
+      url: url
     }).exec();
 
     if (dataset) {
@@ -110,7 +104,7 @@ router.get('/get', async function (req, res, next) {
         res.download(dataset.versions[version].storage.root + "/" + dataset.versions[version].storage.path);
       }
     } else {
-      res.status(404).send(`${req.query.url} is not in our db. If you want to crawl it, try /api/add?url=`);
+      res.status(404).send(`${url.href} is not in our db. If you want to crawl it, try /api/add?url=`);
     }
   } else {
     res.status(404).send('give me an url');
@@ -118,4 +112,51 @@ router.get('/get', async function (req, res, next) {
 });
 
 
-module.exports = router;
+router.get('/quit', async function (req, res, next) {
+  if (req.query.url) {
+    let url = new URL(req.query.url);
+
+    let dataset = await DatasetModel.findOne({
+      url: url
+    }).exec();
+
+    if (dataset) {
+      if (dataset.stopped != true) {
+        dataset.stopped = true;
+        await dataset.save();
+        res.send('Stopped crawling:' + url);
+      } else {
+        res.status(404).send(`${url.href} is already stopped`);
+      }
+    } else {
+      res.status(404).send(`${url.href} is not in our db. If you want to add it, try /api/add?url=`);
+    }
+  } else {
+    res.status(404).send('give me an url');
+  }
+});
+
+router.get('/start', async function (req, res, next) {
+  if (req.query.url) {
+    let url = new URL(req.query.url);
+
+    let dataset = await DatasetModel.findOne({
+      url: url
+    }).exec();
+
+    if (dataset) {
+      if (dataset.stopped == true) {
+        dataset.stopped = false;
+        await dataset.save();
+        res.send('Started crawling:' + url.href);
+      } else {
+        res.status(404).send(`${url.href} already started`);
+      }
+    } else {
+      res.status(404).send(`${url.href} is not in our db. If you want to add it, try /api/add?url=`);
+    }
+  } else {
+    res.status(404).send('give me an url');
+  }
+});
+*/

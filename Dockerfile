@@ -1,8 +1,12 @@
 # use latest version of node
-FROM mhart/alpine-node:latest
+FROM node:12.4.0-alpine
 
 # set working directory
-WORKDIR /dist
+WORKDIR /src
+COPY package*.json ./
+
+# install
+RUN npm install
 
 # bundle source code
 COPY . .
@@ -10,5 +14,4 @@ COPY . .
 # expose port 3000
 EXPOSE 3000
 
-# start app with yarn
-CMD ["npm", "start"]
+CMD [ "npm", "start" ]
