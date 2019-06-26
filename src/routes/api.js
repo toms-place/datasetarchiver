@@ -8,7 +8,7 @@ router.get('/', function (req, res, next) {
   res.send('See docs for api');
 });
 
-router.post('/add', function (req, res, next) {
+router.get('/add', function (req, res, next) {
   if (req.query.url) {
 
     //TODO check header to acquire needed informaiton
@@ -68,6 +68,23 @@ router.get('/crawl', async function (req, res, next) {
   }
 });
 
+router.get('/delete', async function (req, res, next) {
+  if (req.query.url) {
+    let url = new URL(req.query.url);
+
+    let status = DatasetModel.deleteOne({ 'url.href': req.query.url });
+
+    if (status.deletedCount == 1) {
+      let resp = `Worker ${process.pid} deleted: ${url.href}`;
+      console.log(resp);
+      res.send(resp);
+    } else {
+      res.status(404).send(`A Problem occured, maybe ${url.href} is not in our DB. If you want to add it, try /api/add?url=`);
+    }
+  } else {
+    res.status(404).send('give me an url');
+  }
+});
 module.exports = router;
 
 

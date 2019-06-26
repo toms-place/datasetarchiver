@@ -25,7 +25,7 @@
     "dev": "npm-run-all server",
     "clean": "rimraf dist",
     "prod": "npm-run-all clean build server:prod",
-    "test": "mocha --require @babel/register",
+    "test": "mocha --delay --require @babel/register",
     "master": "NODE_OPTIONS='--max-old-space-size=4096' babel-node ./src/crawl_master.js"
   },
   "dependencies": {
