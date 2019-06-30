@@ -37,7 +37,7 @@ let datasetSchema = new mongoose.Schema({
 	},
 	filename: String,
 	versions: Array,
-	meta: {}
+	meta: mongoose.SchemaTypes.Mixed
 
 })
 
