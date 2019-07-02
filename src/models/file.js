@@ -6,93 +6,37 @@ let fileSchema = new mongoose.Schema({
 	uploadDate: Date,
 	filename: String,
 	md5: String,
-	metadata: mongoose.SchemaTypes.Mixed,
+	metadata: {
+		version: Number
+	},
 })
 
-fileSchema.statics.getFiles = function () {
-	return new Promise((resolve, reject) => {
-		this.find((err, datasets) => {
-			if (err) {
-				console.error(err)
-				return reject(err)
-			}
-			resolve(datasets)
-		})
-	})
+fileSchema.query.getFiles = function () {
+		return this.find({})
 }
 
-fileSchema.statics.getFilesById = function (id) {
-	return new Promise((resolve, reject) => {
-		this.find({
-			_id: id
-		}, (err, datasets) => {
-			if (err) {
-				console.error(err)
-				return reject(err)
-			}
-
-			resolve(datasets)
-		})
-	})
+fileSchema.query.getFileById = function (id) {
+	return this.where({
+		'_id': id
+	});
 }
 
-fileSchema.statics.getFilesByNameAndVersions = function (filename, latestVersion, newVersion) {
-	return new Promise((resolve, reject) => {
-
-		this.find({
-			filename: filename
-		}).or([{
-			'metadata.version': latestVersion
-		}, {
-			'metadata.version': newVersion
-		}], (err, files) => {
-			if (err) {
-				console.error(err)
-				return reject(err)
-			}
-
-			resolve(files)
-		})
-
-	})
+fileSchema.query.getFileByVersion = async function (name, version) {
+	return this.where({
+		filename: name
+	}).where({
+		'metadata.version': version
+	});
 }
 
-fileSchema.statics.getFileVersion = function (filename, version) {
-	return new Promise((resolve, reject) => {
-		this.find({
-			filename: filename
-		}).and([{
-			'metadata.version': version
-		}], (err, files) => {
-			if (err) {
-				console.error(err)
-				return reject(err)
-			}
-
-			resolve(files)
-		})
-
-	})
+fileSchema.query.getFilesByNameAndVersions = async function (name, version1, version2) {
+	return this.where({
+		filename: name
+	}).or([{
+		'metadata.version': version1
+	}, {
+		'metadata.version': version2
+	}]);
 }
 
-fileSchema.statics.getFileById = function (id) {
-	return new Promise((resolve, reject) => {
-		this.find({
-			'_id': id
-		}, (err, datasets) => {
-			if (err) {
-				console.error(err)
-				return reject(err)
-			}
-
-			resolve(datasets)
-		})
-	})
-}
-
-module.exports = mongoose.model('dataset.files', fileSchema)
-
-
-function getRandomInt(min, max) {
-	return Math.floor(Math.random() * (max - min) + min);
-}
+module.exports = mongoose.model('datasets.files', fileSchema)

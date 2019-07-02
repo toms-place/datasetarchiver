@@ -1,5 +1,4 @@
 let mongoose = require('mongoose')
-
 const {
 	CRAWL_InitRange,
 	CRAWL_EndRange
@@ -35,18 +34,25 @@ let datasetSchema = new mongoose.Schema({
 		type: Boolean,
 		default: false
 	},
+	currentlycrawling: {
+		type: Boolean,
+		default: false
+	},
 	filename: String,
 	versions: Array,
-	meta: mongoose.SchemaTypes.Mixed
+	meta: {
+		source: String,
+		versioncount: Number
+	}
 
 })
 
 datasetSchema.statics.getDatasets = function () {
 	return new Promise((resolve, reject) => {
-		this.find((err, datasets) => {
-			if (err) {
-				console.error(err)
-				return reject(err)
+		this.find((error, datasets) => {
+			if (error) {
+				console.error(error)
+				return reject(error)
 			}
 
 			resolve(datasets)
@@ -57,11 +63,11 @@ datasetSchema.statics.getDatasets = function () {
 datasetSchema.statics.getDataset = function (url) {
 	return new Promise((resolve, reject) => {
 		this.findOne({
-			'url.href': url
-		}, (err, dataset) => {
-			if (err) {
-				console.error(err)
-				return reject(err)
+			url: url
+		}, (error, dataset) => {
+			if (error) {
+				console.error(error)
+				return reject(error)
 			}
 
 			resolve(dataset)
@@ -76,10 +82,10 @@ datasetSchema.statics.getDatasetsToBeCrawled = function () {
 			'nextCrawl': {
 				$lt: new Date()
 			}
-		}, (err, datasets) => {
-			if (err) {
-				console.error(err)
-				return reject(err)
+		}, (error, datasets) => {
+			if (error) {
+				console.error(error)
+				return reject(error)
 			}
 
 			resolve(datasets)

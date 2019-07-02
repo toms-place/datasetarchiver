@@ -27,16 +27,16 @@ function tick(time) {
     await sleep(time);
     tick(time);
 
-  }).catch(err => {
-    console.error(err)
+  }).catch(error => {
+    console.error(error)
   })
 }
 
 function crawl(dataset) {
   console.log('crawl', dataset.url.href)
 
-  rp.get(`${protocol}//${host}:${port}/api/crawl?url=${dataset.url.href}`, (err, httpResponse, body) => {
-    if (err) console.error(err)
+  rp.get(`${protocol}//${host}:${port}/api/crawl?url=${dataset.url.href}`, (error, httpResponse, body) => {
+    if (error) console.error(error)
     else {
       console.log(body)
     }

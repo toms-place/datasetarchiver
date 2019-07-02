@@ -8,11 +8,9 @@ const rp = require('request-promise-native');
 const http = require('http');
 const https = require('https');
 import db from '../database';
-const FileModel = require('../models/file');
 
 
 /** TODO
- * - header checking
  * - is dataset compressed?
  * - filetype detection
  * - metadata generation
@@ -44,14 +42,10 @@ class Crawler {
 				//checking header for errors
 				rp.head(this.dataset.url.href).then((header) => {
 
-					if (header['content-type']) {
-						console.log(header['content-type'])
-					}
-
 					this.saveFile()
 
-				}).catch(async (err) => {
-					console.error(err)
+				}).catch(async (error) => {
+					console.error(error)
 					this.dataset.errorCount++;
 					this.dataset.crawlInterval = this.dataset.crawlInterval * 2
 					this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.dataset.crawlInterval));
@@ -62,12 +56,10 @@ class Crawler {
 				})
 
 			} catch (error) {
-				let err = new Error('Stopping: ' + this.dataset.url.href);
-				console.error(err)
 				this.dataset.stopped = true;
 				this.dataset.errorCount++;
 				await this.dataset.save();
-				throw error;
+				throw new Error('Stopping: ' + this.dataset.url.href);;
 			}
 		}
 	}
@@ -75,7 +67,7 @@ class Crawler {
 	async checkHash() {
 
 		if (this.dataset.nextVersionCount > 0) {
-			let files = await FileModel.getFilesByNameAndVersions(this.dataset.filename, this.dataset.nextVersionCount - 1, this.dataset.nextVersionCount)
+			let files = await db.file.find().getFilesByNameAndVersions(this.dataset.filename, this.dataset.nextVersionCount - 1, this.dataset.nextVersionCount)
 
 			let oldFile = files[files.length - 2]
 			let newFile = files[files.length - 1]
@@ -98,8 +90,8 @@ class Crawler {
 			}
 
 		} else {
-			let file = await FileModel.getFileVersion(this.dataset.filename, this.dataset.nextVersionCount)
-			this.dataset.versions.push(file._id)
+			let file = await db.file.findOne().getFileByVersion(this.dataset.filename, this.dataset.nextVersionCount);
+			this.dataset.versions.push(file._id);
 			this.dataset.nextVersionCount++;
 			this.dataset.stopped = false;
 			await this.dataset.save();
@@ -117,13 +109,13 @@ class Crawler {
 						version: this.dataset.nextVersionCount
 					}
 				}),
-				async (err) => {
-					if (!err) {
+				async (error) => {
+					if (!error) {
 
-						this.checkHash()
+						await this.checkHash()
 
 					} else {
-						console.error(err)
+						console.error(error)
 						this.dataset.errorCount++;
 						this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));
 						if (this.dataset.errorCount >= errorCountTreshold) {
@@ -135,8 +127,8 @@ class Crawler {
 					}
 				}
 			);
-		}).on("error", (err) => {
-			console.log("Error: " + err.message);
+		}).on("error", (error) => {
+			console.log("Error: " + error.message);
 		});
 	}
 }
