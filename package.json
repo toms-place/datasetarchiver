@@ -16,24 +16,32 @@
   "engines": {
     "node": "12.1.0"
   },
-  "main": "app.js",
+  "main": "api.js",
   "scripts": {
     "start": "npm run prod",
-    "build": "babel src -d dist --copy-files",
+    "build": "babel src -d dist/crawler --copy-files",
+    "build:master": "babel src/crawl_master.js src/database.js src/config.js -d dist/master & babel src/models/* -d dist/master/models",
     "server": "babel-node ./src/app.js",
-    "server:prod": "DATASETPATH=./data node ./dist/app.js",
-    "dev": "NODE_ENV=development npm-run-all server",
+    "server:prod": "node ./dist/crawler/app.js",
+    "server:master": "node ./dist/master/crawl_master.js",
+    "dev": "npm-run-all server",
     "clean": "rimraf dist",
-    "prod": "NODE_ENV=production npm-run-all clean build server:prod",
-    "test": "mocha --require @babel/register"
+    "clean:crawler": "rimraf dist/crawlter",
+    "clean:master": "rimraf dist/master",
+    "prod": "npm-run-all clean build server:prod",
+    "test": "mocha --delay --require @babel/register",
+    "prod:master": "npm run master",
+    "master": "npm-run-all clean:master build:master server:master"
   },
   "dependencies": {
     "constantinople": "^3.1.2",
     "cookie-parser": "~1.4.4",
+    "csv-parser": "^2.3.0",
+    "dotenv": "^8.0.0",
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
     "mongodb": "^3.2.7",
-    "mongoose": "^5.5.15",
+    "mongoose": "^5.6.2",
     "morgan": "~1.9.1",
     "pug": "^2.0.3",
     "request": "^2.88.0",
@@ -46,7 +54,6 @@
     "@babel/preset-env": "^7.4.5",
     "@babel/preset-typescript": "^7.3.3",
     "@babel/register": "^7.4.4",
-    "npm-run-all": "^4.1.5",
     "babel-polyfill": "^6.26.0",
     "gulp": "^4.0.2",
     "gulp-babel": "^8.0.0-beta.2",
@@ -55,6 +62,7 @@
     "gulp-pug": "^4.0.1",
     "gulp-sourcemaps": "^2.6.5",
     "mocha": "^6.1.4",
+    "npm-run-all": "^4.1.5",
     "rimraf": "^2.6.3"
   }
 }

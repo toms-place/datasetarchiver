@@ -1,24 +1,55 @@
 let mongoose = require('mongoose');
+mongoose.set('useNewUrlParser', true);
 mongoose.set('useFindAndModify', false);
 mongoose.set('useCreateIndex', true);
-
-const server = '127.0.0.1:27017'; // REPLACE WITH YOUR DB SERVER
-const database = 'archiver';      // REPLACE WITH YOUR DB NAME
+const {
+  DB_Server,
+  DB_Name
+} = require('./config');
 
 class Database {
   constructor() {
+    this.connection = mongoose.connection
     this._connect()
+    this._models()
+    this.bucket
   }
-  
-_connect() {
-     mongoose.connect(`mongodb://${server}/${database}`, { useNewUrlParser: true })
-       .then(() => {
-         console.log('Database connection successful')
-       })
-       .catch(err => {
-         console.error('Database connection error')
-       })
+
+  _connect() {
+    mongoose.connect(`mongodb://${DB_Server}/${DB_Name}`)
+      .then(() => {
+        console.log(`Process ${process.pid}: Database connection successful`)
+        this.bucket = new mongoose.mongo.GridFSBucket(this.connection.db, {
+          bucketName: 'datasets'
+        })
+      })
+      .catch(error => {
+        console.error('Database connection error')
+      })
   }
+
+  _models() {
+
+    // Mongoose URL schema type setup
+    function Url(key, options) {
+      mongoose.SchemaType.call(this, key, options, 'Url');
+    }
+    Url.prototype = Object.create(mongoose.SchemaType.prototype);
+    Url.prototype.cast = function (url) {
+      if (url instanceof URL) {
+        return url;
+      } else {
+        throw new Error('Url: ' + url + ' is not an url');
+      }
+    };
+    //add to registry
+    mongoose.Schema.Types.Url = Url;
+
+    this.dataset = require('./models/dataset');
+    this.file = require('./models/file');
+  }
+
 }
+
 
 module.exports = new Database()

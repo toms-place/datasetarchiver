@@ -1,30 +1,22 @@
 let mongoose = require('mongoose')
-let root = process.env.DATASETPATH || './data';
-
-let storageSchema = new mongoose.Schema({
-	root: {
-		type: String,
-		default: root
-	},
-	path: String,
-	filename: String,
-	host: String
-});
-
-let versionsSchema = new mongoose.Schema({
-	storage: storageSchema,
-	hash: String
-});
+const {
+	CRAWL_InitRange,
+	CRAWL_EndRange
+} = require('../config');
 
 let datasetSchema = new mongoose.Schema({
 	url: {
-		type: String,
+		type: mongoose.SchemaTypes.Mixed,
 		required: true,
 		unique: true
 	},
 	lastModified: {
 		type: Date,
 		default: new Date()
+	},
+	crawlInterval: {
+		type: Number,
+		default: getRandomInt(CRAWL_InitRange, CRAWL_EndRange)
 	},
 	nextCrawl: {
 		type: Date,
@@ -42,26 +34,25 @@ let datasetSchema = new mongoose.Schema({
 		type: Boolean,
 		default: false
 	},
-	storage: {
-		type: storageSchema
+	currentlycrawling: {
+		type: Boolean,
+		default: false
 	},
-	versions: {
-		type: [versionsSchema]
-	},
-	meta: {}
+	filename: String,
+	versions: Array,
+	meta: {
+		source: String,
+		versioncount: Number
+	}
 
-})
-
-datasetSchema.virtual('publicPath').get(function () {
-	return this.host + "/" + this.filename
 })
 
 datasetSchema.statics.getDatasets = function () {
 	return new Promise((resolve, reject) => {
-		this.find((err, datasets) => {
-			if (err) {
-				console.error(err)
-				return reject(err)
+		this.find((error, datasets) => {
+			if (error) {
+				console.error(error)
+				return reject(error)
 			}
 
 			resolve(datasets)
@@ -69,4 +60,41 @@ datasetSchema.statics.getDatasets = function () {
 	})
 }
 
+datasetSchema.statics.getDataset = function (url) {
+	return new Promise((resolve, reject) => {
+		this.findOne({
+			url: url
+		}, (error, dataset) => {
+			if (error) {
+				console.error(error)
+				return reject(error)
+			}
+
+			resolve(dataset)
+		})
+	})
+}
+
+datasetSchema.statics.getDatasetsToBeCrawled = function () {
+	return new Promise((resolve, reject) => {
+		this.find({
+			'stopped': false,
+			'nextCrawl': {
+				$lt: new Date()
+			}
+		}, (error, datasets) => {
+			if (error) {
+				console.error(error)
+				return reject(error)
+			}
+
+			resolve(datasets)
+		})
+	})
+}
 module.exports = mongoose.model('datasets', datasetSchema)
+
+
+function getRandomInt(min, max) {
+	return Math.floor(Math.random() * (max - min) + min);
+}

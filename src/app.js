@@ -1,106 +1,70 @@
-import http from 'http'
-import debugLib from 'debug'
-import www from './www.js';
-const debug = debugLib('archiver:server');
-const port = normalizePort(process.env.PORT || '3000');
+#!/usr/bin/env node
 
-//cluster
-import cluster from 'cluster';
-const numCPUs = require('os').cpus().length;
-const sleep = require('util').promisify(setTimeout);
+/**
+ * Module dependencies.
+ */
 
-//crawler & db setup
-import db from './database.js';
-import DatasetModel from './models/dataset.js';
-import Crawler from './crawler.js';
+const http = require('http');
 
-startCluster();
+//db setup
+let db = require('./database');
 
-function startCluster() {
-  if (cluster.isMaster) {
-    console.log(`Master ${process.pid} is running`);
+db.connection.on('connected', function () {
 
-    // Fork workers.
-    for (let i = 0; i < numCPUs; i++) {
-      cluster.fork();
-    }
+  let app = require('./app_worker');
 
-    cluster.on('listening', async (worker, address) => {
-      console.log(`A worker is now connected to ${address.address}:${address.port}`);
-    });
+  /**
+   * Get port from environment and store in Express.
+   */
 
-    cluster.on('exit', (worker, code, signal) => {
-      console.log(`worker ${worker.process.pid} died`);
-    });
-
-  } else {
-    startServer();
-  }
-  if (cluster.isMaster) {
-    tickMaster(300000);
-  }
-}
-
-function tickMaster(time) {
-
-  DatasetModel.getDatasets().then(async (datasets) => {
-
-    //set up all datasets for the workers
-    let wL = Object.keys(cluster.workers).length
-    let dL = datasets.length;
-    let counter = 1;
-    for (let i = 0; i < dL; i++) {
-      if (datasets[i].nextCrawl <= new Date() && datasets[i].stopped != true) {
-        for (let w = 1; w < wL + 1; w++) {
-          if (counter == w) {
-
-            cluster.workers[w].send(datasets[i]);
-
-            if (counter < wL) counter++;
-            else counter = 1;
-            break;
-          }
-        }
-      }
-    }
-
-    console.log(`Master ${process.pid} ticked`);
-    await sleep(time);
-    tickMaster(time);
-
-  }).catch(err => {
-    console.error(err)
-  })
-}
-
-function startServer() {
-
+  let port = normalizePort(process.env.PORT || '3000');
+  app.set('port', port);
 
   /**
    * Create HTTP server.
    */
-  let server = http.createServer(www);
+
+  let server = http.createServer(app);
 
   /**
    * Listen on provided port, on all network interfaces.
    */
   server.listen(port);
-  server.on('error', onError);
+
+  server.on('error', (error) => {
+    if (error.syscall !== 'listen') {
+      throw error;
+    }
+
+    var bind = typeof port === 'string' ?
+      'Pipe ' + port :
+      'Port ' + port;
+
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+      case 'EACCES':
+        console.error(bind + ' requires elevated privileges');
+        process.exit(1);
+        break;
+      case 'EADDRINUSE':
+        console.error(bind + ' is already in use');
+        process.exit(1);
+        break;
+      default:
+        throw error;
+    }
+  });
+
   server.on('listening', () => {
-    let addr = server.address();
-    let bind = typeof addr === 'string' ?
+    var addr = server.address();
+    var bind = typeof addr === 'string' ?
       'pipe ' + addr :
       'port ' + addr.port;
-    debug('Listening on ' + bind);
+    console.log(`Process ${process.pid}: listening on ${bind}`)
   });
 
-  process.on('message', (dataset) => {
-    let crawler = new Crawler(dataset);
-    console.log(`${process.pid} started: ${crawler.url}`);
-  });
+});
 
-  console.log(`Worker ${process.pid} started`);
-}
 
 
 /**
@@ -108,7 +72,7 @@ function startServer() {
  */
 
 function normalizePort(val) {
-  let port = parseInt(val, 10);
+  var port = parseInt(val, 10);
 
   if (isNaN(port)) {
     // named pipe
@@ -121,33 +85,4 @@ function normalizePort(val) {
   }
 
   return false;
-}
-
-
-/**
- * Event listener for HTTP server "error" event.
- */
-
-function onError(error) {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
-
-  let bind = typeof port === 'string' ?
-    'Pipe ' + port :
-    'Port ' + port;
-
-  // handle specific listen errors with friendly messages
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
 }
