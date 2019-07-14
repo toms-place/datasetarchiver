@@ -4,6 +4,7 @@ FROM node:12.4.0-alpine
 # set working directory
 WORKDIR /src
 COPY package*.json ./
+COPY .env ./
 
 # install
 RUN npm install
