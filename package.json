@@ -19,14 +19,19 @@
   "main": "api.js",
   "scripts": {
     "start": "npm run prod",
-    "build": "babel src -d dist --copy-files",
+    "build": "babel src -d dist/crawler --copy-files",
+    "build:master": "babel src/crawl_master.js src/database.js src/config.js -d dist/master & babel src/models/* -d dist/master/models",
     "server": "babel-node ./src/app.js",
-    "server:prod": "node ./dist/app.js",
+    "server:prod": "node ./dist/crawler/app.js",
+    "server:master": "node ./dist/master/crawl_master.js",
     "dev": "npm-run-all server",
     "clean": "rimraf dist",
+    "clean:crawler": "rimraf dist/crawlter",
+    "clean:master": "rimraf dist/master",
     "prod": "npm-run-all clean build server:prod",
     "test": "mocha --delay --require @babel/register",
-    "master": "NODE_OPTIONS='--max-old-space-size=4096' babel-node ./src/crawl_master.js"
+    "prod:master": "npm run master",
+    "master": "npm-run-all clean:master build:master server:master"
   },
   "dependencies": {
     "constantinople": "^3.1.2",
