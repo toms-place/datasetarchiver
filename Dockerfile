@@ -13,4 +13,4 @@ RUN npm audit fix
 # expose port 3000
 EXPOSE 3000
 
-CMD [ "npm", "run prod" ]
+CMD [ "npm", "start" ]
