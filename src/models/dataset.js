@@ -10,10 +10,6 @@ let datasetSchema = new mongoose.Schema({
 		required: true,
 		unique: true
 	},
-	lastModified: {
-		type: Date,
-		default: new Date()
-	},
 	crawlInterval: {
 		type: Number,
 		default: getRandomInt(CRAWL_InitRange, CRAWL_EndRange)
@@ -21,6 +17,10 @@ let datasetSchema = new mongoose.Schema({
 	nextCrawl: {
 		type: Date,
 		default: new Date()
+	},
+	changeDistribution: {
+		type: Array,
+		default: []
 	},
 	errorCount: {
 		type: Number,
@@ -34,14 +34,17 @@ let datasetSchema = new mongoose.Schema({
 		type: Boolean,
 		default: false
 	},
-	currentlycrawling: {
-		type: Boolean,
-		default: false
-	},
 	filename: String,
-	versions: Array,
+	versions: {
+		type: Array,
+		default: []
+	},
 	meta: {
-		source: Array,
+		source: {
+			type: Array,
+			default: []
+		},
+		filetype: String,
 		versioncount: Number
 	}
 

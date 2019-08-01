@@ -4,13 +4,17 @@ const errorCountTreshold = 3;
 const {
 	pipeline
 } = require('stream');
-const rp = require('request-promise-native');
 const http = require('http');
 const https = require('https');
 const db = require('../database');
 const {
 	CRAWL_HostInterval
 } = require('../config');
+import {PythonShell} from 'python-shell';
+const path = require('path');
+const fs = require('fs');
+
+
 
 
 /** TODO
@@ -21,141 +25,192 @@ const {
 class Crawler {
 	constructor(dataset) {
 		this.dataset = dataset;
-		this.crawl();
+		this.socket;
+		this.host;
+		this.init();
 	}
 
-	async crawl() {
+	async init() {
 
-		//host initialisation
-		let host;
 		try {
-			host = await db.host.getHostByName(this.dataset.url.hostname);
-			if (host == null) host = await new db.host({
-				hostname: this.dataset.url.hostname,
-				currentlyCrawled: false
+
+			//socket initialisation
+			switch (this.dataset.url.protocol) {
+				case 'https:':
+					this.socket = https
+					break;
+				case 'http:':
+					this.socket = http
+					break;
+				default:
+					throw new Error('Neither http nor https...')
+			}
+
+			//host initialisation
+			this.host = await db.host.getHostByName(this.dataset.url.hostname);
+			if (this.host == null) this.host = await new db.host({
+				hostname: this.dataset.url.hostname
 			})
+
+			this.crawl();
 
 		} catch (error) {
 			console.error(error)
 		}
 
+	}
+
+	async crawl() {
+
 		//check if crawl is permitted
-		if (this.dataset.stopped != true && host.currentlyCrawled != true && host.nextCrawl < new Date()) {
-			host.currentlyCrawled = true
-			host.nextCrawl = new Date(new Date().getTime() + CRAWL_HostInterval * 60000);
-			await host.save()
+		if (this.dataset.stopped != true && this.host.currentlyCrawled == false && this.host.nextCrawl < new Date()) {
 
 			try {
-
-				switch (this.dataset.url.protocol) {
-					case 'https:':
-						this.connector = https
-						break;
-					case 'http:':
-						this.connector = http
-						break;
-					default:
-						throw new Error('Neither http nor https...')
-				}
+				this.host.currentlyCrawled = true
+				this.host.nextCrawl = new Date(new Date().getTime() + CRAWL_HostInterval * 60000);
+				await this.host.save()
 
 				console.log("now crawling:", this.dataset.url.href, new Date());
+				this.socket.get(this.dataset.url.href, (resp) => {
 
-				//checking header for errors
-				rp.head(this.dataset.url.href).then((header) => {
+					pipeline(
+						resp,
+						db.bucket.openUploadStream(this.dataset.filename, {
+							metadata: {
+								version: this.dataset.nextVersionCount
+							}
+						}), async (error) => {
+							if (!error) {
 
-					this.saveFile()
+								//compare old an new file
+								await this.checkHash()
 
-				}).catch(async (error) => {
-					console.error(error)
-					this.dataset.errorCount++;
-					this.dataset.crawlInterval = this.dataset.crawlInterval * 2
-					this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.dataset.crawlInterval));
-					if (this.dataset.errorCount >= errorCountTreshold) {
-						this.dataset.stopped = true;
-					};
-					await this.dataset.save();
-				})
+							} else {
+								console.error(error)
+								this.dataset.errorCount++;
+								if (this.dataset.errorCount >= errorCountTreshold) {
+									this.dataset.stopped = true;
+								} else {
+									this.dataset.stopped = false;
+								}
+								this.calcNextCrawl(false);
+							}
+						}
+					);
+				}).on('error', (error) => {
+					console.log("Error: " + error.message);
+				});
+
+				this.host.currentlyCrawled = false
+				await this.host.save()
 
 			} catch (error) {
-				this.dataset.stopped = true;
+				console.error(error)
 				this.dataset.errorCount++;
-				await this.dataset.save();
-				throw new Error('Stopping: ' + this.dataset.url.href);;
+				if (this.dataset.errorCount >= errorCountTreshold) {
+					this.dataset.stopped = true;
+					throw new Error('Stopping: ' + this.dataset.url.href);
+				};
+				this.calcNextCrawl(false);
 			}
-
-			console.log('Host free')
-			host.currentlyCrawled = false
-			await host.save()
+		} else {
+			console.log('not crawling now, host busy')
 		}
 	}
 
 	async checkHash() {
 
-		if (this.dataset.nextVersionCount > 0) {
-			let files = await db.file.find().getFilesByNameAndVersions(this.dataset.filename, this.dataset.nextVersionCount - 1, this.dataset.nextVersionCount)
+		try {
+			if (this.dataset.nextVersionCount > 0) {
+				let files = await db.file.find().getFilesByNameAndVersions(this.dataset.filename, this.dataset.nextVersionCount - 1, this.dataset.nextVersionCount)
 
-			let oldFile = files[files.length - 2]
-			let newFile = files[files.length - 1]
+				let oldFile = files[files.length - 2]
+				let newFile = files[files.length - 1]
 
-			if (oldFile.md5 != newFile.md5) {
-				this.dataset.versions.push(newFile._id)
-				this.dataset.nextVersionCount++;
-				this.dataset.crawlInterval = this.dataset.crawlInterval / 2
-				this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.dataset.crawlInterval));
-				this.dataset.stopped = false;
-				await this.dataset.save();
-			} else {
-				await db.bucket.delete(newFile._id).then(async () => {
-					console.log('file deleted');
-					this.dataset.crawlInterval = this.dataset.crawlInterval * 2
-					this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.dataset.crawlInterval));
+				if (oldFile.md5 != newFile.md5) {
+					//new file saved
+					this.dataset.versions.push(newFile._id);
+					this.dataset.nextVersionCount++;
 					this.dataset.stopped = false;
-					await this.dataset.save();
-				})
+					this.calcNextCrawl(true)
+				} else {
+					await db.bucket.delete(newFile._id).then(async () => {
+						//file deleted because of duplicate
+						this.calcNextCrawl(false)
+					})
+				}
+
+			} else {
+				//in case there is no existing file
+				let file = await db.file.findOne().getFileByVersion(this.dataset.filename, this.dataset.nextVersionCount);
+				this.dataset.versions.push(file._id);
+				this.dataset.nextVersionCount++;
+				this.dataset.stopped = false;
+				this.calcNextCrawl(true);
 			}
 
-		} else {
-			let file = await db.file.findOne().getFileByVersion(this.dataset.filename, this.dataset.nextVersionCount);
-			this.dataset.versions.push(file._id);
-			this.dataset.nextVersionCount++;
-			this.dataset.stopped = false;
-			await this.dataset.save();
+		} catch (error) {
+			console.error(error)
 		}
 	}
+	async calcNextCrawl(hasChanged = false) {
 
-	async saveFile() {
+		let interval;
+		if (this.dataset.changeDistribution.length == 0) {
+			interval = this.dataset.crawlInterval
+		} else {
+			let referenceDate = this.dataset.changeDistribution[this.dataset.changeDistribution.length - 1].date
+			interval = (this.dataset.nextCrawl - referenceDate) / 1000; //to get seconds
+		}
 
-		this.connector.get(this.dataset.url.href, (resp) => {
+		this.dataset.changeDistribution.push({
+			newFile: hasChanged,
+			interval: interval,
+			date: new Date()
+		})
 
-			pipeline(
-				resp,
-				db.bucket.openUploadStream(this.dataset.filename, {
-					metadata: {
-						version: this.dataset.nextVersionCount
-					}
-				}),
-				async (error) => {
-					if (!error) {
+		if (this.dataset.changeDistribution.length < 2) {
 
-						await this.checkHash()
+			switch (hasChanged) {
+				case true:
+					this.dataset.crawlInterval = this.dataset.crawlInterval / 2;
+					break;
+				case false:
+					this.dataset.crawlInterval = this.dataset.crawlInterval * 2;
+					break;
+				default:
+					this.dataset.crawlInterval = this.dataset.crawlInterval * 2;
+					break;
+			}
 
-					} else {
-						console.error(error)
-						this.dataset.errorCount++;
-						this.dataset.nextCrawl = new Date().setSeconds(new Date().getSeconds() + (this.secondsBetweenCrawls * 2));
-						if (this.dataset.errorCount >= errorCountTreshold) {
-							this.dataset.stopped = true;
-						} else {
-							this.dataset.stopped = false;
-						}
-						await this.dataset.save();
-					}
-				}
-			);
-		}).on("error", (error) => {
-			console.log("Error: " + error.message);
-		});
+			this.dataset.nextCrawl = new Date(new Date().getTime() + this.dataset.crawlInterval * 1000);
+
+		} else {
+			//TODO calc next crawl
+			//console.log(this.dataset.changeDistribution)var PythonShell = require('python-shell');
+
+			this.dataset.nextCrawl = new Date(new Date().getTime() + this.dataset.crawlInterval * 1000);
+		}
+		this.dataset.stopped = false;
+		await this.dataset.save();
 	}
 }
 
 module.exports = Crawler;
+
+
+
+/* RUN PYTHON
+
+			var options = {
+				scriptPath: path.dirname(fs.realpathSync(__filename)),
+				args: [this.dataset.changeDistribution]
+			};
+
+			PythonShell.run('calcNextCrawl.py', options, function (err, results) {
+				if (err)
+					throw err;
+				// Results is an array consisting of messages collected during execution
+				console.log('results: %j', results);
+			});
+ */

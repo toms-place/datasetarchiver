@@ -6,7 +6,10 @@ let hostSchema = new mongoose.Schema({
 		required: true,
 		unique: true
 	},
-	currentlyCrawled: Boolean,
+	currentlyCrawled: {
+		type: Boolean,
+		default: false
+	},
 	nextCrawl: {
 		type: Date,
 		default: new Date()

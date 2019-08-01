@@ -28,3 +28,8 @@
 * politeness!
   * robots.txt of host
   * db with host robots
+  * library to parse
+* file extension
+  * header mime-type and filename=contentdispostions
+  * dictionary
+  * parsing

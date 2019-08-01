@@ -3,14 +3,11 @@ let db = require('../database');
 let Crawler = require('../utils/crawler');
 const rp = require('request-promise-native');
 
-async function addUrlToDB(href, source_href='') {
+async function addUrlToDB(href, source_href = '') {
 	let url = new URL(href);
-	let source_url;
-	if (source_href.length > 0) source_url = new URL(source_href)
 
 	try {
 		let filename = url.pathname.split('/')[url.pathname.split('/').length - 1]
-		let versions = [];
 
 		//TODO check header to acquire needed informaiton
 		let header = await rp.head(url.href)
@@ -21,12 +18,15 @@ async function addUrlToDB(href, source_href='') {
 
 			let dataset = await new db.dataset({
 				url: url,
-				versions: versions,
-				filename: filename,
-				meta: {
-					source: [source_url]
-				}
-			}).save()
+				filename: filename
+			})
+
+			if (source_href.length > 0) {
+				dataset.meta.source.push(new URL(source_href))
+			}
+
+			await dataset.save()
+
 			let resp = `Worker ${process.pid} added ${dataset.url} to DB`;
 			return resp
 		}
