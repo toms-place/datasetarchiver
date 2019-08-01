@@ -18,6 +18,10 @@ let datasetSchema = new mongoose.Schema({
 		type: Date,
 		default: new Date()
 	},
+	lastCrawlAttempt: {
+		type: Date,
+		default: new Date()
+	},
 	changeDistribution: {
 		type: Array,
 		default: []

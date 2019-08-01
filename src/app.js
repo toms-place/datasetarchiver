@@ -11,7 +11,7 @@ let db = require('./database');
 
 db.connection.on('connected', function () {
 
-  let app = require('./app_worker');
+  let app = require('./app_setup');
 
   /**
    * Get port from environment and store in Express.

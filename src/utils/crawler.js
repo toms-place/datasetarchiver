@@ -8,11 +8,10 @@ const http = require('http');
 const https = require('https');
 const db = require('../database');
 const {
-	CRAWL_HostInterval
+	CRAWL_HostInterval,
+	CRAWL_EndRange,
+	CRAWL_InitRange
 } = require('../config');
-import {PythonShell} from 'python-shell';
-const path = require('path');
-const fs = require('fs');
 
 
 
@@ -155,42 +154,39 @@ class Crawler {
 	}
 	async calcNextCrawl(hasChanged = false) {
 
-		let interval;
-		if (this.dataset.changeDistribution.length == 0) {
-			interval = this.dataset.crawlInterval
-		} else {
-			let referenceDate = this.dataset.changeDistribution[this.dataset.changeDistribution.length - 1].date
-			interval = (this.dataset.nextCrawl - referenceDate) / 1000; //to get seconds
-		}
+		let interval = (this.dataset.nextCrawl - this.dataset.lastCrawlAttempt) / 1000; //to get seconds
+		this.dataset.lastCrawlAttempt = new Date();
 
 		this.dataset.changeDistribution.push({
 			newFile: hasChanged,
-			interval: interval,
-			date: new Date()
+			interval: interval
 		})
 
-		if (this.dataset.changeDistribution.length < 2) {
+		if (this.dataset.changeDistribution.length > 2 && !(this.dataset.crawlInterval < CRAWL_InitRange / 4)) {
+			var intervalBetweenNewFiles = this.dataset.changeDistribution.reduce((acc, curr) => {
+				if (curr.newFile == true) {
+					acc.push(curr.interval)
+				} else {
+					acc[acc.length - 1] += curr.interval
+				}
+				return acc;
+			}, []);
 
-			switch (hasChanged) {
-				case true:
-					this.dataset.crawlInterval = this.dataset.crawlInterval / 2;
-					break;
-				case false:
-					this.dataset.crawlInterval = this.dataset.crawlInterval * 2;
-					break;
-				default:
-					this.dataset.crawlInterval = this.dataset.crawlInterval * 2;
-					break;
+			var sum = intervalBetweenNewFiles.reduce(function (a, b) {
+				return a + b;
+			});
+			//TODO make it better than average
+			this.dataset.crawlInterval = sum / intervalBetweenNewFiles.length;
+
+			if (hasChanged) {
+				this.dataset.crawlInterval = this.dataset.crawlInterval / 2
 			}
-
 			this.dataset.nextCrawl = new Date(new Date().getTime() + this.dataset.crawlInterval * 1000);
-
 		} else {
-			//TODO calc next crawl
-			//console.log(this.dataset.changeDistribution)var PythonShell = require('python-shell');
-
-			this.dataset.nextCrawl = new Date(new Date().getTime() + this.dataset.crawlInterval * 1000);
+			console.log('trapped')
+			this.dataset.nextCrawl = new Date(new Date().getTime() + CRAWL_EndRange * 1000);
 		}
+
 		this.dataset.stopped = false;
 		await this.dataset.save();
 	}
@@ -214,3 +210,29 @@ module.exports = Crawler;
 				console.log('results: %j', results);
 			});
  */
+
+
+// function for dynamic sorting
+function compareValues(key, order = 'asc') {
+	return function (a, b) {
+		if (!a.hasOwnProperty(key) || !b.hasOwnProperty(key)) {
+			// property doesn't exist on either object
+			return 0;
+		}
+
+		const varA = (typeof a[key] === 'string') ?
+			a[key].toUpperCase() : a[key];
+		const varB = (typeof b[key] === 'string') ?
+			b[key].toUpperCase() : b[key];
+
+		let comparison = 0;
+		if (varA > varB) {
+			comparison = 1;
+		} else if (varA < varB) {
+			comparison = -1;
+		}
+		return (
+			(order == 'desc') ? (comparison * -1) : comparison
+		);
+	};
+}
