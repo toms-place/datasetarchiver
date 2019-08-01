@@ -8,5 +8,6 @@ module.exports = {
   DB_Server: process.env.DB_Server,
   DB_Name: process.env.DB_Name,
   CRAWL_InitRange: process.env.CRAWL_InitRange,
-  CRAWL_EndRange: process.env.CRAWL_EndRange
+  CRAWL_EndRange: process.env.CRAWL_EndRange,
+  CRAWL_HostInterval: process.env.CRAWL_HostInterval,
 };

@@ -12,9 +12,11 @@ router.get('/', function (req, res, next) {
 });
 
 router.get('/add', async function (req, res, next) {
+  let source;
   if (req.query.url) {
     try {
-      let response = await addUrlToDB(req.query.url)
+      if (req.query.source) source = req.query.source;
+      let response = await addUrlToDB(req.query.url, source);
       res.send(response);
     } catch (error) {
       next(error);

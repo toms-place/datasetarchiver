@@ -7,7 +7,10 @@ const {
 const rp = require('request-promise-native');
 const http = require('http');
 const https = require('https');
-import db from '../database';
+const db = require('../database');
+const {
+	CRAWL_HostInterval
+} = require('../config');
 
 
 /** TODO
@@ -23,7 +26,25 @@ class Crawler {
 
 	async crawl() {
 
-		if (this.dataset.stopped != true) {
+		//host initialisation
+		let host;
+		try {
+			host = await db.host.getHostByName(this.dataset.url.hostname);
+			if (host == null) host = await new db.host({
+				hostname: this.dataset.url.hostname,
+				currentlyCrawled: false
+			})
+
+		} catch (error) {
+			console.error(error)
+		}
+
+		//check if crawl is permitted
+		if (this.dataset.stopped != true && host.currentlyCrawled != true && host.nextCrawl < new Date()) {
+			host.currentlyCrawled = true
+			host.nextCrawl = new Date(new Date().getTime() + CRAWL_HostInterval * 60000);
+			await host.save()
+
 			try {
 
 				switch (this.dataset.url.protocol) {
@@ -61,6 +82,10 @@ class Crawler {
 				await this.dataset.save();
 				throw new Error('Stopping: ' + this.dataset.url.href);;
 			}
+
+			console.log('Host free')
+			host.currentlyCrawled = false
+			await host.save()
 		}
 	}
 

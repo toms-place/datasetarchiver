@@ -2,6 +2,7 @@ let mongoose = require('mongoose');
 mongoose.set('useNewUrlParser', true);
 mongoose.set('useFindAndModify', false);
 mongoose.set('useCreateIndex', true);
+
 const {
   DB_Server,
   DB_Name
@@ -47,6 +48,7 @@ class Database {
 
     this.dataset = require('./models/dataset');
     this.file = require('./models/file');
+    this.host = require('./models/host');
   }
 
 }

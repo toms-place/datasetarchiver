@@ -41,7 +41,7 @@ let datasetSchema = new mongoose.Schema({
 	filename: String,
 	versions: Array,
 	meta: {
-		source: String,
+		source: Array,
 		versioncount: Number
 	}
 
@@ -92,6 +92,7 @@ datasetSchema.statics.getDatasetsToBeCrawled = function () {
 		})
 	})
 }
+
 module.exports = mongoose.model('datasets', datasetSchema)
 
 
