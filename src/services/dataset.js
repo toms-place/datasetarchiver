@@ -10,11 +10,12 @@ async function addUrlToDB(href, source_href = '') {
 		let filename = url.pathname.split('/')[url.pathname.split('/').length - 1]
 
 		//TODO check header to acquire needed informaiton
+		/*
 		let header = await rp.head(url.href)
 
 		if (header['content-type'].includes('text/html')) {
 			throw new Error('text/html:', url.href);
-		} else {
+		} else {*/
 
 			let dataset = await new db.dataset({
 				url: url,
@@ -29,7 +30,7 @@ async function addUrlToDB(href, source_href = '') {
 
 			let resp = `Worker ${process.pid} added ${dataset.url} to DB`;
 			return resp
-		}
+		//}
 
 	} catch (error) {
 		if (error.code == 11000) {
@@ -48,7 +49,7 @@ async function addUrlToDB(href, source_href = '') {
 				return `${url.href} already in DB`
 			}
 		} else {
-			return error;
+			return error.message;
 		}
 	}
 }
