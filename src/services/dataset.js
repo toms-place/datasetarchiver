@@ -126,9 +126,12 @@ async function getDatasetsToBeCrawled() {
 	for (let dataset of datasets) {
 
 		let host = await db.host.getHostByName(dataset.url.hostname)
-		if (host == null) host = await new db.host({
-			hostname: dataset.url.hostname
-		})
+		if (host == null) {
+			host = await new db.host({
+				hostname: dataset.url.hostname
+			})
+			await host.save()
+		}
 		if (host.currentlyCrawled == false && host.nextCrawl < new Date()) {
 			datasetsToBeCrawled.push(dataset)
 		}
