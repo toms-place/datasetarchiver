@@ -13,9 +13,7 @@ async function addUrlToDB(href, source_href = '') {
 		let header = await rp.head(url.href)
 
 		if (header['content-type'].includes('text/html')) {
-			let err = new Error('text/html');
-			err.status = 100;
-			throw err
+			throw new Error('text/html:', url.href);
 		} else {
 
 			let dataset = await new db.dataset({
@@ -42,7 +40,6 @@ async function addUrlToDB(href, source_href = '') {
 					dataset.meta.source.push(src)
 					await dataset.save();
 					let resp = `Worker ${process.pid} added ${src.href} to Meta`;
-					console.log(resp)
 					return resp;
 				} else {
 					return `${url.href} already in DB and source already added`
@@ -50,10 +47,8 @@ async function addUrlToDB(href, source_href = '') {
 			} else {
 				return `${url.href} already in DB`
 			}
-		} else if (error.status == 100) {
-			return 'this is a website'
 		} else {
-			throw error;
+			return error;
 		}
 	}
 }
