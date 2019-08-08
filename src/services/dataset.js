@@ -34,13 +34,14 @@ async function addUrlToDB(href, source_href = '') {
 	} catch (error) {
 		if (error.code == 11000) {
 			let dataset = await db.dataset.getDataset(url)
+			console.log(source_href)
 			if (source_href.length > 0) {
 				let source = new URL(source_href)
 				if (!dataset.meta.source.some(e => e.host === source.host)) {
 					dataset.meta.source.push(source)
-					await dataset.save()
+					await dataset.save();
 					let resp = `Worker ${process.pid} added ${source.href} to Meta`;
-					return resp
+					return resp;
 				}
 			} else {
 				throw new Error(`${url.href} already in DB`)
@@ -104,9 +105,37 @@ async function getDatasets() {
 
 }
 
+
+async function getDatasetsToBeCrawled() {
+
+	let datasetsToBeCrawled = [];
+
+	let datasets = await db.dataset.find({
+		'stopped': false,
+		'nextCrawl': {
+			$lt: new Date()
+		}
+	})
+
+	for (let dataset of datasets) {
+
+		let host = await db.host.getHostByName(dataset.url.hostname)
+		if (host == null) host = await new db.host({
+			hostname: dataset.url.hostname
+		})
+		if (host.currentlyCrawled == false && host.nextCrawl < new Date()) {
+			datasetsToBeCrawled.push(dataset)
+		}
+	}
+
+	return datasetsToBeCrawled
+}
+
+
 module.exports = {
 	addUrlToDB,
 	deleteFromDB,
 	crawlUrl,
-	getDatasets
+	getDatasets,
+	getDatasetsToBeCrawled
 }

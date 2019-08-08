@@ -1,35 +1,34 @@
 const sleep = require('util').promisify(setTimeout);
-const rp = require('request-promise-native');
+const rp = require('request');
 const {
   host,
   port,
   protocol
 } = require('./config');
+const {
+  getDatasetsToBeCrawled
+} = require('./services/dataset');
 
 //db setup
 import db from './database.js';
-import DatasetModel from './models/dataset.js';
 
 db.connection.on('connected', function () {
   tick(10000);
 });
 
-function tick(time) {
+async function tick(time) {
   console.log(`Master ticked`);
 
-  DatasetModel.getDatasetsToBeCrawled().then(async (datasets) => {
+  let datasets = await getDatasetsToBeCrawled()
 
-    for (let dataset of datasets) {
-      crawl(dataset);
-      await sleep(0.1);
-    }
+  for (let dataset of datasets) {
+    crawl(dataset);
+    await sleep(0.1);
+  }
 
-    await sleep(time);
-    tick(time);
+  await sleep(time);
+  tick(time);
 
-  }).catch(error => {
-    console.error(error)
-  })
 }
 
 function crawl(dataset) {

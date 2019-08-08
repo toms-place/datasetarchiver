@@ -82,24 +82,6 @@ datasetSchema.statics.getDataset = function (url) {
 	})
 }
 
-datasetSchema.statics.getDatasetsToBeCrawled = function () {
-	return new Promise((resolve, reject) => {
-		this.find({
-			'stopped': false,
-			'nextCrawl': {
-				$lt: new Date()
-			}
-		}, (error, datasets) => {
-			if (error) {
-				console.error(error)
-				return reject(error)
-			}
-
-			resolve(datasets)
-		})
-	})
-}
-
 module.exports = mongoose.model('datasets', datasetSchema)
 
 
