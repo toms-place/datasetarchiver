@@ -8,9 +8,6 @@ const {
 const {
   getDatasetsToBeCrawled
 } = require('./services/dataset');
-const {
-  addHost
-} = require('./services/host');
 
 //db setup
 import db from './database.js';
