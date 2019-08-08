@@ -3,11 +3,25 @@ let db = require('../database');
 let Crawler = require('../utils/crawler');
 const rp = require('request-promise-native');
 
-async function addUrlToDB(href, source_href = '') {
+async function addUrlToDB(href, source_href = '', filename = '') {
 	let url = new URL(href);
 
 	try {
-		let filename = url.pathname.split('/')[url.pathname.split('/').length - 1]
+		let host = await new db.host({
+			hostname: url.hostname
+		})
+		await host.save()
+	} catch (error) {
+		if (error.code == 11000) {
+			console.log(url.hostname, 'already added')
+		}
+	}
+
+	try {
+		//TODO filename generation?
+		if (!(filename.length > 0)) {
+			filename = url.pathname.split('/')[url.pathname.split('/').length - 1]
+		}
 
 		//TODO check header to acquire needed informaiton
 		/*

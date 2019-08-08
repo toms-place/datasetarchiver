@@ -13,25 +13,23 @@ const {
 import db from './database.js';
 
 db.connection.on('connected', function () {
-  tick(10000);
+  tick();
 });
 
-async function tick(time) {
-  console.log(`Master ticked`);
+async function tick() {
 
   let datasets = await getDatasetsToBeCrawled()
 
   for (let dataset of datasets) {
     crawl(dataset);
-    await sleep(1);
+    await sleep(0.5);
   }
-  tick(time);
+
+  tick();
 
 }
 
 function crawl(dataset) {
-  console.log('crawl', dataset.url.href)
-
   rp.get(`${protocol}//${host}:${port}/api/crawl?url=${dataset.url.href}`, (error, httpResponse, body) => {
     if (error) console.error(error)
     else {

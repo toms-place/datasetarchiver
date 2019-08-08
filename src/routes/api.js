@@ -13,10 +13,12 @@ router.get('/', function (req, res, next) {
 
 router.get('/add', async function (req, res, next) {
   let source;
+  let filename;
   if (req.query.url) {
     try {
       if (req.query.source) source = req.query.source;
-      let response = await addUrlToDB(req.query.url, source);
+      if (req.query.filename) filename = req.query.filename;
+      let response = await addUrlToDB(req.query.url, source, filename);
       res.send(response);
     } catch (error) {
       next(error);
@@ -35,7 +37,7 @@ router.get('/crawl', async function (req, res, next) {
       next(error)
     }
   } else {
-    res.status(404).send('give me an url');
+    res.status(401).send('give me an url');
   }
 });
 
@@ -48,7 +50,7 @@ router.get('/delete', async function (req, res, next) {
       next(error)
     }
   } else {
-    res.status(404).send('give me an url');
+    res.status(401).send('give me an url');
   }
 });
 
@@ -61,7 +63,7 @@ router.get('/get', async function (req, res, next) {
       next(error)
     }
   } else {
-    res.status(404).send('give me an url and secret');
+    res.status(401).send('give me an url');
   }
 });
 

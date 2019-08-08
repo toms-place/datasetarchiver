@@ -9,7 +9,6 @@ const https = require('https');
 const db = require('../database');
 const {
 	CRAWL_HostInterval,
-	CRAWL_EndRange,
 	CRAWL_InitRange
 } = require('../config');
 
@@ -24,7 +23,7 @@ const {
 class Crawler {
 	constructor(dataset) {
 		this.dataset = dataset;
-		this.socket;
+		this.protocol;
 		this.host;
 		this.init();
 	}
@@ -33,13 +32,13 @@ class Crawler {
 
 		try {
 
-			//socket initialisation
+			//protocol initialisation
 			switch (this.dataset.url.protocol) {
 				case 'https:':
-					this.socket = https
+					this.protocol = https
 					break;
 				case 'http:':
-					this.socket = http
+					this.protocol = http
 					break;
 				default:
 					throw new Error('Neither http nor https...')
@@ -47,9 +46,6 @@ class Crawler {
 
 			//host initialisation
 			this.host = await db.host.getHostByName(this.dataset.url.hostname);
-			if (this.host == null) this.host = await new db.host({
-				hostname: this.dataset.url.hostname
-			})
 
 			this.crawl();
 
@@ -70,7 +66,7 @@ class Crawler {
 				await this.host.save()
 
 				console.log("now crawling:", this.dataset.url.href, new Date());
-				this.socket.get(this.dataset.url.href, (resp) => {
+				this.protocol.get(this.dataset.url.href, (resp) => {
 
 					pipeline(
 						resp,
@@ -97,7 +93,7 @@ class Crawler {
 						}
 					);
 				}).on('error', (error) => {
-					console.log("Error: " + error.message);
+					console.error("Error: " + error.message);
 				});
 
 				this.host.currentlyCrawled = false
@@ -113,7 +109,7 @@ class Crawler {
 				this.calcNextCrawl(false);
 			}
 		} else {
-			console.log('not crawling now, host busy')
+			console.log('not crawling now, host busy');
 		}
 	}
 
@@ -163,7 +159,13 @@ class Crawler {
 		})
 
 		if (this.dataset.changeDistribution.length > 2 && !(this.dataset.crawlInterval < CRAWL_InitRange / 4)) {
-			var intervalBetweenNewFiles = this.dataset.changeDistribution.reduce((acc, curr) => {
+
+			//prevent infinite array
+			if (this.dataset.changeDistribution.length > 50) {
+				this.dataset.changeDistribution.shift()
+			}
+
+			let intervalBetweenNewFiles = this.dataset.changeDistribution.reduce((acc, curr) => {
 				if (curr.newFile == true) {
 					acc.push(curr.interval)
 				} else {
@@ -172,10 +174,11 @@ class Crawler {
 				return acc;
 			}, []);
 
-			var sum = intervalBetweenNewFiles.reduce(function (a, b) {
+			let sum = intervalBetweenNewFiles.reduce(function (a, b) {
 				return a + b;
 			});
-			//TODO make it better than average
+
+			//TODO make it better than average haha
 			this.dataset.crawlInterval = sum / intervalBetweenNewFiles.length;
 
 			if (hasChanged) {
@@ -183,8 +186,7 @@ class Crawler {
 			}
 			this.dataset.nextCrawl = new Date(new Date().getTime() + this.dataset.crawlInterval * 1000);
 		} else {
-			console.log('trapped')
-			this.dataset.nextCrawl = new Date(new Date().getTime() + CRAWL_EndRange * 1000);
+			this.dataset.nextCrawl = new Date(new Date().getTime() + this.dataset.crawlInterval * 1000);
 		}
 
 		this.dataset.stopped = false;
@@ -193,46 +195,3 @@ class Crawler {
 }
 
 module.exports = Crawler;
-
-
-
-/* RUN PYTHON
-
-			var options = {
-				scriptPath: path.dirname(fs.realpathSync(__filename)),
-				args: [this.dataset.changeDistribution]
-			};
-
-			PythonShell.run('calcNextCrawl.py', options, function (err, results) {
-				if (err)
-					throw err;
-				// Results is an array consisting of messages collected during execution
-				console.log('results: %j', results);
-			});
- */
-
-
-// function for dynamic sorting
-function compareValues(key, order = 'asc') {
-	return function (a, b) {
-		if (!a.hasOwnProperty(key) || !b.hasOwnProperty(key)) {
-			// property doesn't exist on either object
-			return 0;
-		}
-
-		const varA = (typeof a[key] === 'string') ?
-			a[key].toUpperCase() : a[key];
-		const varB = (typeof b[key] === 'string') ?
-			b[key].toUpperCase() : b[key];
-
-		let comparison = 0;
-		if (varA > varB) {
-			comparison = 1;
-		} else if (varA < varB) {
-			comparison = -1;
-		}
-		return (
-			(order == 'desc') ? (comparison * -1) : comparison
-		);
-	};
-}
