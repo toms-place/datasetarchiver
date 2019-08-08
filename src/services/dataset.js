@@ -34,11 +34,14 @@ async function addUrlToDB(href, source_href = '') {
 	} catch (error) {
 		if (error.code == 11000) {
 			let dataset = await db.dataset.getDataset(url)
-			if (source_url != null && !dataset.meta.source.some(e => e.host === source_url.host)) {
-				dataset.meta.source.push(source_url)
-				await dataset.save()
-				let resp = `Worker ${process.pid} added ${source_url} to Meta`;
-				return resp
+			if (source_href.length > 0) {
+				let source = new URL(source_href)
+				if (!dataset.meta.source.some(e => e.host === source.host)) {
+					dataset.meta.source.push(source)
+					await dataset.save()
+					let resp = `Worker ${process.pid} added ${source.href} to Meta`;
+					return resp
+				}
 			} else {
 				throw new Error(`${url.href} already in DB`)
 			}
