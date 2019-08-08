@@ -13,7 +13,9 @@ async function addUrlToDB(href, source_href = '') {
 		let header = await rp.head(url.href)
 
 		if (header['content-type'].includes('text/html')) {
-			throw new Error('This is a Website!!');
+			let err = new Error('text/html');
+			err.status = 100;
+			throw err
 		} else {
 
 			let dataset = await new db.dataset({
@@ -34,18 +36,22 @@ async function addUrlToDB(href, source_href = '') {
 	} catch (error) {
 		if (error.code == 11000) {
 			let dataset = await db.dataset.getDataset(url)
-			console.log(source_href)
 			if (source_href.length > 0) {
-				let source = new URL(source_href)
-				if (!dataset.meta.source.some(e => e.host === source.host)) {
-					dataset.meta.source.push(source)
+				let src = new URL(source_href)
+				if (!dataset.meta.source.some(e => e.host === src.host)) {
+					dataset.meta.source.push(src)
 					await dataset.save();
-					let resp = `Worker ${process.pid} added ${source.href} to Meta`;
+					let resp = `Worker ${process.pid} added ${src.href} to Meta`;
+					console.log(resp)
 					return resp;
+				} else {
+					return `${url.href} already in DB and source already added`
 				}
 			} else {
-				throw new Error(`${url.href} already in DB`)
+				return `${url.href} already in DB`
 			}
+		} else if (error.status == 100) {
+			return 'this is a website'
 		} else {
 			throw error;
 		}
