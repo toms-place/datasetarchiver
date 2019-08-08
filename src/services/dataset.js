@@ -17,19 +17,19 @@ async function addUrlToDB(href, source_href = '') {
 			throw new Error('text/html:', url.href);
 		} else {*/
 
-			let dataset = await new db.dataset({
-				url: url,
-				filename: filename
-			})
+		let dataset = await new db.dataset({
+			url: url,
+			filename: filename
+		})
 
-			if (source_href.length > 0) {
-				dataset.meta.source.push(new URL(source_href))
-			}
+		if (source_href.length > 0) {
+			dataset.meta.source.push(new URL(source_href))
+		}
 
-			await dataset.save()
+		await dataset.save()
 
-			let resp = `Worker ${process.pid} added ${dataset.url} to DB`;
-			return resp
+		let resp = `Worker ${process.pid} added ${dataset.url} to DB`;
+		return resp
 		//}
 
 	} catch (error) {
@@ -110,30 +110,41 @@ async function getDatasets() {
 
 async function getDatasetsToBeCrawled() {
 
-	let datasetsToBeCrawled = [];
+	let datasets = await db.dataset.aggregate([
+		[{
+				"$match": {
+					"$and": [{
+							'stopped': false
+						},
+						{
+							'nextCrawl': {
+								$lt: new Date()
+							}
+						}
+					]
+				},
+			}, {
+				"$lookup": {
+					"from": "hosts",
+					"localField": "url.hostname",
+					"foreignField": "hostname",
+					"as": "host"
+				}
+			},
+			{
+				"$unwind": "$host"
+			},
+			{
+				"$match": {
+					"host.nextCrawl": {
+						"$lt": new Date()
+					}
+				}
+			}
+		]
+	])
 
-	let datasets = await db.dataset.find({
-		'stopped': false,
-		'nextCrawl': {
-			$lt: new Date()
-		}
-	})
-
-	for (let dataset of datasets) {
-
-		let host = await db.host.getHostByName(dataset.url.hostname)
-		if (host == null) {
-			host = await new db.host({
-				hostname: dataset.url.hostname
-			})
-			await host.save()
-		}
-		if (host.currentlyCrawled == false && host.nextCrawl < new Date()) {
-			datasetsToBeCrawled.push(dataset)
-		}
-	}
-
-	return datasetsToBeCrawled
+	return datasets
 }
 
 
