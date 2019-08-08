@@ -4,10 +4,12 @@
 
 ## prerequisits
 
+* npm
 * a running mongodb
 
 ## how to start production
 
+* provide .env file
 * npm install
 * npm start
 

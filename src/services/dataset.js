@@ -90,7 +90,6 @@ async function getDatasets() {
 	try {
 
 		let datasets = await db.dataset.getDatasets()
-		console.log(datasets)
 		if (datasets) {
 			return datasets;
 		} else {

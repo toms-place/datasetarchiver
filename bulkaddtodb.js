@@ -1,10 +1,9 @@
 const fs = require('fs');
 const csv = require('csv-parser')
-const sleep = require('util').promisify(setTimeout);
 
 const {
   addUrlToDB
-} = require('./services/dataset')
+} = require('./src/services/dataset')
 
 for (let i = 0; i <= 24; i++) {
 
