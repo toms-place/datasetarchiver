@@ -22,7 +22,7 @@ async function tick() {
 
   for (let dataset of datasets) {
     crawl(dataset);
-    await sleep(0.5);
+    await sleep(1);
   }
 
   tick();
