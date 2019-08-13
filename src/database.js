@@ -8,50 +8,53 @@ const {
   DB_Name
 } = require('./config');
 
+let instance = null;
+
 class Database {
   constructor() {
-    this.connection = mongoose.connection
-    this._connect()
+    this._conn = null
+    this._bucket = null
     this._models()
-    this.bucket
   }
 
-  _connect() {
-    mongoose.connect(`mongodb://${DB_Server}/${DB_Name}`)
-      .then(() => {
-        console.log(`Process ${process.pid}: Database connection successful`)
-        this.bucket = new mongoose.mongo.GridFSBucket(this.connection.db, {
-          bucketName: 'datasets'
-        })
+  async connect() {
+    try {
+      this._conn = await mongoose.connect(`mongodb://${DB_Server}/${DB_Name}`, {
+        autoIndex: false
       })
-      .catch(error => {
-        console.error('Database connection error')
+      console.log(`Process ${process.pid}: Database connection successful`)
+
+      this._bucket = new mongoose.mongo.GridFSBucket(this._conn.connections[0].db, {
+        bucketName: 'datasets'
       })
+      console.log(`Process ${process.pid}: Bucket connection successful`)
+
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  get conn() {
+    return this._conn
+  }
+
+  get bucket() {
+    return this._bucket
   }
 
   _models() {
-
-    // Mongoose URL schema type setup
-    function Url(key, options) {
-      mongoose.SchemaType.call(this, key, options, 'Url');
-    }
-    Url.prototype = Object.create(mongoose.SchemaType.prototype);
-    Url.prototype.cast = function (url) {
-      if (url instanceof URL) {
-        return url;
-      } else {
-        throw new Error('Url: ' + url + ' is not an url');
-      }
-    };
-    //add to registry
-    mongoose.Schema.Types.Url = Url;
-
     this.dataset = require('./models/dataset');
     this.file = require('./models/file');
-    this.host = require('./models/host');
+  }
+
+  static getInstance() {
+    if (!instance) {
+      instance = new Database()
+    }
+    return instance;
   }
 
 }
 
 
-module.exports = new Database()
+module.exports = Database;

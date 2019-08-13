@@ -1,14 +1,41 @@
-let mongoose = require('mongoose')
+let mongoose = require('mongoose');
 const {
 	CRAWL_InitRange,
 	CRAWL_EndRange
 } = require('../config');
 
-let datasetSchema = new mongoose.Schema({
-	url: {
-		type: mongoose.SchemaTypes.Mixed,
-		required: true,
-		unique: true
+let metaSchema = new mongoose.Schema({
+	source: {
+		type: Array,
+		default: []
+	},
+	filetype: String,
+	versionCount: {
+		type: Number,
+		default: 0
+	},
+	filename: String
+})
+
+let hostSchema = new mongoose.Schema({
+	name: {
+		type: String,
+		required: true
+	},
+	currentlyCrawled: {
+		type: Boolean,
+		default: false
+	},
+	nextCrawl: {
+		type: Date,
+		default: new Date()
+	}
+})
+
+let crawlingInfoSchema = new mongoose.Schema({
+	firstCrawl: {
+		type: Boolean,
+		default: true
 	},
 	crawlInterval: {
 		type: Number,
@@ -30,60 +57,28 @@ let datasetSchema = new mongoose.Schema({
 		type: Number,
 		default: 0
 	},
-	nextVersionCount: {
-		type: Number,
-		default: 0
-	},
 	stopped: {
 		type: Boolean,
 		default: false
 	},
-	filename: String,
-	versions: {
-		type: Array,
-		default: []
-	},
-	meta: {
-		source: {
-			type: Array,
-			default: []
-		},
-		filetype: String,
-		versioncount: Number
-	}
-
+	host: hostSchema,
 })
 
-datasetSchema.statics.getDatasets = function () {
-	return new Promise((resolve, reject) => {
-		this.find((error, datasets) => {
-			if (error) {
-				console.error(error)
-				return reject(error)
-			}
-
-			resolve(datasets)
-		})
-	})
-}
-
-datasetSchema.statics.getDataset = function (url) {
-	return new Promise((resolve, reject) => {
-		this.findOne({
-			url: url
-		}, (error, dataset) => {
-			if (error) {
-				console.error(error)
-				return reject(error)
-			}
-
-			resolve(dataset)
-		})
-	})
-}
+let datasetSchema = new mongoose.Schema({
+	url: {
+		type: mongoose.Schema.Types.Mixed,
+		required: true,
+		unique: true
+	},
+	crawlingInfo: crawlingInfoSchema,
+	versions: [{
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'files'
+	}],
+	meta: metaSchema
+})
 
 module.exports = mongoose.model('datasets', datasetSchema)
-
 
 function getRandomInt(min, max) {
 	return Math.floor(Math.random() * (max - min) + min);

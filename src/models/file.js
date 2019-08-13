@@ -7,12 +7,13 @@ let fileSchema = new mongoose.Schema({
 	filename: String,
 	md5: String,
 	metadata: {
+		dataset_ref_id: mongoose.SchemaTypes.ObjectId,
 		version: Number
 	},
 })
 
 fileSchema.query.getFiles = function () {
-		return this.find({})
+	return this.find({})
 }
 
 fileSchema.query.getFileById = function (id) {
@@ -21,17 +22,17 @@ fileSchema.query.getFileById = function (id) {
 	});
 }
 
-fileSchema.query.getFileByVersion = async function (name, version) {
+fileSchema.query.getFileByVersion = async function (dataset_ref_id, version) {
 	return this.where({
-		filename: name
+		'metadata.dataset_ref_id': dataset_ref_id
 	}).where({
 		'metadata.version': version
 	});
 }
 
-fileSchema.query.getFilesByNameAndVersions = async function (name, version1, version2) {
+fileSchema.query.getFilesByNameAndVersions = async function (dataset_ref_id, version1, version2) {
 	return this.where({
-		filename: name
+		'metadata.dataset_ref_id': dataset_ref_id
 	}).or([{
 		'metadata.version': version1
 	}, {

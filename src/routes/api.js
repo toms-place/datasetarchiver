@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 import {
-  addUrlToDB,
+  addHrefToDB,
   deleteFromDB,
-  crawlUrl,
+  crawlHref,
   getDatasets
 } from '../services/dataset'
 
@@ -18,26 +18,32 @@ router.get('/add', async function (req, res, next) {
     try {
       if (req.query.source) source = req.query.source;
       if (req.query.filename) filename = req.query.filename;
-      let response = await addUrlToDB(req.query.url, source, filename);
-      res.send(response);
+      let response = await addHrefToDB(req.query.url, source, filename);
+      res.json({success:response});
     } catch (error) {
       next(error);
     }
   } else {
-    res.status(401).send('give me an url');
+    res.status(401).json({
+      error: 'give me an url'
+    });
   }
 });
 
 router.get('/crawl', async function (req, res, next) {
   if (req.query.url) {
     try {
-      let response = await crawlUrl(req.query.url)
-      res.send(response);
+      let response = await crawlHref(req.query.url)
+      res.json({
+        success: response
+      });
     } catch (error) {
       next(error)
     }
   } else {
-    res.status(401).send('give me an url');
+    res.status(401).json({
+      error: 'give me an url'
+    });
   }
 });
 
@@ -45,25 +51,33 @@ router.get('/delete', async function (req, res, next) {
   if (req.query.url) {
     try {
       let response = await deleteFromDB(req.query.url)
-      res.send(response);
+      res.json({
+        success: response
+      });
     } catch (error) {
       next(error)
     }
   } else {
-    res.status(401).send('give me an url');
+    res.status(401).json({
+      error: 'give me an url'
+    });
   }
 });
 
 router.get('/get', async function (req, res, next) {
   if (req.query) {
     try {
-      let response = await getDatasets()
-      res.json(response);
+      let datasets = await getDatasets()
+      res.json({
+        datasets: datasets
+      });
     } catch (error) {
       next(error)
     }
   } else {
-    res.status(401).send('give me an url');
+    res.status(401).json({
+      error: 'give me an url'
+    });
   }
 });
 

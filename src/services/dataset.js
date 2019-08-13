@@ -1,27 +1,11 @@
 //db setup
-let db = require('../database');
+const db = require('../database').getInstance();
 let Crawler = require('../utils/crawler');
-const rp = require('request-promise-native');
 
-async function addUrlToDB(href, source_href = '', filename = '') {
+async function addHrefToDB(href, source_href = '', filename = '') {
 	let url = new URL(href);
 
 	try {
-		let host = await new db.host({
-			hostname: url.hostname
-		})
-		await host.save()
-	} catch (error) {
-		if (error.code == 11000) {
-			console.log(url.hostname, 'already added')
-		}
-	}
-
-	try {
-		//TODO filename generation?
-		if (!(filename.length > 0)) {
-			filename = url.pathname.split('/')[url.pathname.split('/').length - 1]
-		}
 
 		//TODO check header to acquire needed informaiton
 		/*
@@ -33,7 +17,8 @@ async function addUrlToDB(href, source_href = '', filename = '') {
 
 		let dataset = await new db.dataset({
 			url: url,
-			filename: filename
+			'meta.filename': filename,
+			'crawlingInfo.host.name': url.hostname
 		})
 
 		if (source_href.length > 0) {
@@ -48,19 +33,21 @@ async function addUrlToDB(href, source_href = '', filename = '') {
 
 	} catch (error) {
 		if (error.code == 11000) {
-			let dataset = await db.dataset.getDataset(url)
+			let dataset = await db.dataset.find({
+				url: url
+			})
 			if (source_href.length > 0) {
 				let src = new URL(source_href)
 				if (!dataset.meta.source.some(e => e.host === src.host)) {
 					dataset.meta.source.push(src)
 					await dataset.save();
-					let resp = `Worker ${process.pid} added ${src.href} to Meta`;
+					let resp = `Worker ${process.pid} added ${src.host} to Meta`;
 					return resp;
 				} else {
-					return `${url.href} already in DB and source already added`
+					return new Error(`${url.href} already in DB and source already added`)
 				}
 			} else {
-				return `${url.href} already in DB`
+				return new Error(`${url.href} already in DB`)
 			}
 		} else {
 			return error.message;
@@ -80,40 +67,52 @@ async function deleteFromDB(href) {
 		if (status.deletedCount == 1) {
 			return `Worker ${process.pid} deleted: ${url.href}`;
 		} else {
-			throw new Error(`A Problem occured, maybe ${url.href} is not in our DB. If you want to add it, try /api/add?url=`);
+			return new Error(`A Problem occured, maybe ${url.href} is not in our DB. If you want to add it, try /api/add?url=`);
 		}
 	} catch (error) {
 		throw error
 	}
 }
 
-async function crawlUrl(href) {
+async function crawlHref(href) {
 	try {
 
+
 		let url = new URL(href);
-		let dataset = await db.dataset.getDataset(url)
+		let dataset = await db.dataset.findOne({
+			url: url
+		})
 
 		if (dataset) {
 			new Crawler(dataset);
 			let resp = `Worker ${process.pid} started to crawl: ${url.href}`;
 			return resp;
 		} else {
-			throw new Error(`${url.href} is not in our DB. If you want to add it, try /api/add?url=`);
+			return new Error(`${url.href} is not in our DB. If you want to add it, try /api/add?url=`);
 		}
 	} catch (error) {
 		throw error
 	}
+}
 
+async function crawlDataset(dataset) {
+	try {
+		new Crawler(dataset);
+		let resp = `Worker ${process.pid} started to crawl: ${url.href}`;
+		return resp;
+	} catch (error) {
+		throw error
+	}
 }
 
 async function getDatasets() {
 	try {
 
-		let datasets = await db.dataset.getDatasets()
+		let datasets = await db.dataset.find({})
 		if (datasets) {
 			return datasets;
 		} else {
-			throw new Error(`no datasets`);
+			return new Error(`no datasets`);
 		}
 	} catch (error) {
 		throw error
@@ -121,51 +120,33 @@ async function getDatasets() {
 
 }
 
-
 async function getDatasetsToBeCrawled() {
 
-	let datasets = await db.dataset.aggregate([
-		[{
-				"$match": {
-					"$and": [{
-							'stopped': false
-						},
-						{
-							'nextCrawl': {
-								$lt: new Date()
-							}
-						}
-					]
-				},
-			}, {
-				"$lookup": {
-					"from": "hosts",
-					"localField": "url.hostname",
-					"foreignField": "hostname",
-					"as": "host"
+	let datasets = await db.dataset.find({
+		$and: [{
+				'crawlingInfo.stopped': false
+			},
+			{
+				'crawlingInfo.nextCrawl': {
+					$lt: new Date()
 				}
-			},
-			{
-				"$unwind": "$host"
-			},
-			{
-				"$match": {
-					"host.nextCrawl": {
-						"$lt": new Date()
-					}
+			}, {
+				"crawlingInfo.host.nextCrawl": {
+					$lt: new Date()
 				}
 			}
 		]
-	])
+	})
 
 	return datasets
 }
 
 
 module.exports = {
-	addUrlToDB,
+	addHrefToDB,
 	deleteFromDB,
-	crawlUrl,
+	crawlHref,
 	getDatasets,
-	getDatasetsToBeCrawled
+	getDatasetsToBeCrawled,
+	crawlDataset
 }

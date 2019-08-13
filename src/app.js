@@ -7,9 +7,8 @@
 const http = require('http');
 
 //db setup
-let db = require('./database');
-
-db.connection.on('connected', function () {
+const db = require('./database').getInstance()
+db.connect().then(() => {
 
   let app = require('./app_setup');
 
