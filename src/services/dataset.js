@@ -2,22 +2,15 @@
 const db = require('../database').getInstance();
 let Crawler = require('../utils/crawler');
 
-async function addHrefToDB(href, source_href = '', filename = '') {
+async function addHrefToDB(href, source_href = '', filename = '', filetype = '') {
 	let url = new URL(href);
 
 	try {
 
-		//TODO check header to acquire needed informaiton
-		/*
-		let header = await rp.head(url.href)
-
-		if (header['content-type'].includes('text/html')) {
-			throw new Error('text/html:', url.href);
-		} else {*/
-
 		let dataset = await new db.dataset({
 			url: url,
 			'meta.filename': filename,
+			'meta.filetype': filetype,
 			'crawlingInfo.host.name': url.hostname
 		})
 
@@ -29,7 +22,6 @@ async function addHrefToDB(href, source_href = '', filename = '') {
 
 		let resp = `Worker ${process.pid} added ${dataset.url} to DB`;
 		return resp
-		//}
 
 	} catch (error) {
 		if (error.code == 11000) {
