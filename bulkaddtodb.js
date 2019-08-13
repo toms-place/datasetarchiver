@@ -2,7 +2,7 @@ const fs = require('fs');
 const csv = require('csv-parser')
 
 const {
-  addUrlToDB
+  addHrefToDB
 } = require('./src/services/dataset')
 
 for (let i = 0; i <= 24; i++) {
@@ -15,7 +15,7 @@ for (let i = 0; i <= 24; i++) {
 
 			for (let result of results) {
 
-				let response = await addUrlToDB(result.url, result.dataset);
+				let response = await addHrefToDB(result.url, result.dataset);
 				console.log(response)
 
 			}
