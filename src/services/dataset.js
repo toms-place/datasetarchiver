@@ -1,16 +1,21 @@
 //db setup
 const db = require('../database').getInstance();
 let Crawler = require('../utils/crawler');
+const {
+	CRAWL_InitRange,
+	CRAWL_EndRange
+} = require('../config');
 
 async function addHrefToDB(href, source_href = '', filename = '', filetype = '') {
 	let url = new URL(href);
-
 	try {
 
 		let dataset = await new db.dataset({
 			url: url,
 			'meta.filename': filename,
 			'meta.filetype': filetype,
+
+			'crawlingInfo.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_EndRange),
 			'crawlingInfo.host.name': url.hostname
 		})
 
@@ -141,4 +146,9 @@ module.exports = {
 	getDatasets,
 	getDatasetsToBeCrawled,
 	crawlDataset
+}
+
+
+function getRandomInt(min, max) {
+	return Math.floor(Math.random() * (max - min) + min);
 }

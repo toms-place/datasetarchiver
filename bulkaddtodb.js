@@ -8,6 +8,7 @@ const {
 
 
 db.connect().then(() => {
+
 	for (let i = 0; i <= 24; i++) {
 
 		let results = [];
@@ -23,7 +24,10 @@ db.connect().then(() => {
 
 				}
 
-				process.exit()
-			});
+				if (i == 24) {
+					process.exit()
+				}
+
+			})
 	}
-})
+});

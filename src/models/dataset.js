@@ -1,6 +1,5 @@
 let mongoose = require('mongoose');
 const {
-	CRAWL_InitRange,
 	CRAWL_EndRange
 } = require('../config');
 
@@ -39,7 +38,7 @@ let crawlingInfoSchema = new mongoose.Schema({
 	},
 	crawlInterval: {
 		type: Number,
-		default: getRandomInt(CRAWL_InitRange, CRAWL_EndRange)
+		default: CRAWL_EndRange
 	},
 	nextCrawl: {
 		type: Date,
@@ -79,7 +78,3 @@ let datasetSchema = new mongoose.Schema({
 })
 
 module.exports = mongoose.model('datasets', datasetSchema)
-
-function getRandomInt(min, max) {
-	return Math.floor(Math.random() * (max - min) + min);
-}
