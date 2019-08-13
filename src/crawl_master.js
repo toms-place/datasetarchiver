@@ -12,7 +12,7 @@ const {
 //db setup
 import db from './database.js';
 
-db.connection.on('connected', function () {
+db.connect().then(() => {
   tick();
 });
 
