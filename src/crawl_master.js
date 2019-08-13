@@ -10,7 +10,7 @@ const {
 } = require('./services/dataset');
 
 //db setup
-import db from './database.js';
+const db = require('./database.js').getInstance();
 
 db.connect().then(() => {
   tick();
