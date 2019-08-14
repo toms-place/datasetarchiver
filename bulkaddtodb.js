@@ -1,6 +1,7 @@
 const fs = require('fs');
 const csv = require('csv-parser')
 const db = require('./src/database').getInstance();
+const sleep = require('util').promisify(setTimeout);
 
 const {
 	addHrefToDB
@@ -21,6 +22,7 @@ db.connect().then(() => {
 
 					let response = await addHrefToDB(result.url, result.dataset, '', result.format);
 					console.log(response)
+					await sleep(100);
 
 				}
 
