@@ -74,7 +74,7 @@ hostSchema.query.getDatasetToCrawl = async function (url, hostname) {
 		}
 	}).exec()
 
-	if (host.datasets.length > 0) {
+	if (host) {
 		return host.datasets[0]
 	} else {
 		return null
