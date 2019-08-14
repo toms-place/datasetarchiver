@@ -25,7 +25,7 @@ async function tick() {
       } catch (error) {
         console.error(error)
       }
-      await sleep(500);
+      await sleep(100);
     }
   } else await sleep(5000);
 

@@ -44,7 +44,7 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 	} catch (error) {
 		if (error.name == 'ValidationError') {
 			if (source_href.length > 0) {
-				let dataset = await db.dataset.find({
+				let dataset = await db.dataset.findOne({
 					url: url
 				})
 				let src = new URL(source_href)
