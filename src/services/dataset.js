@@ -5,18 +5,19 @@ const {
 	CRAWL_InitRange,
 	CRAWL_EndRange
 } = require('../config');
+const getRandomInt = require('../utils/randomInt');
 
 async function addHrefToDB(href, source_href = '', filename = '', filetype = '') {
 	let url = new URL(href);
+
 	try {
 
 		let dataset = await new db.dataset({
 			url: url,
 			'meta.filename': filename,
 			'meta.filetype': filetype,
-
 			'crawlingInfo.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_EndRange),
-			'crawlingInfo.host.name': url.hostname
+			'crawlingInfo.host': url.hostname
 		})
 
 		if (source_href.length > 0) {
@@ -25,15 +26,27 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 
 		await dataset.save()
 
+
+		await db.host.updateOne({
+			name: url.hostname
+		}, {
+			$push: {
+				datasets: dataset._id
+			}
+		}, {
+			upsert: true,
+			setDefaultsOnInsert: true
+		}).exec();
+
 		let resp = `Worker ${process.pid} added ${dataset.url} to DB`;
 		return resp
 
 	} catch (error) {
-		if (error.code == 11000) {
-			let dataset = await db.dataset.find({
-				url: url
-			})
+		if (error.name == 'ValidationError') {
 			if (source_href.length > 0) {
+				let dataset = await db.dataset.find({
+					url: url
+				})
 				let src = new URL(source_href)
 				if (!dataset.meta.source.some(e => e.host === src.host)) {
 					dataset.meta.source.push(src)
@@ -41,15 +54,17 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 					let resp = `Worker ${process.pid} added ${src.host} to Meta`;
 					return resp;
 				} else {
-					return new Error(`${url.href} already in DB and source already added`)
+					throw new Error(`${url.href} already in DB and source already added`)
 				}
 			} else {
-				return new Error(`${url.href} already in DB`)
+				console.log(error)
+				throw new Error(`${url.href} already in DB`)
 			}
 		} else {
-			return error.message;
+			throw error;
 		}
 	}
+
 }
 
 async function deleteFromDB(href) {
@@ -73,7 +88,6 @@ async function deleteFromDB(href) {
 
 async function crawlHref(href) {
 	try {
-
 
 		let url = new URL(href);
 		let dataset = await db.dataset.findOne({
@@ -117,38 +131,11 @@ async function getDatasets() {
 
 }
 
-async function getDatasetsToBeCrawled() {
-
-	let datasets = await db.dataset.find({
-		$and: [{
-				'crawlingInfo.stopped': false
-			},
-			{
-				'crawlingInfo.nextCrawl': {
-					$lt: new Date()
-				}
-			}, {
-				"crawlingInfo.host.nextCrawl": {
-					$lt: new Date()
-				}
-			}
-		]
-	})
-
-	return datasets
-}
-
 
 module.exports = {
 	addHrefToDB,
 	deleteFromDB,
 	crawlHref,
 	getDatasets,
-	getDatasetsToBeCrawled,
 	crawlDataset
-}
-
-
-function getRandomInt(min, max) {
-	return Math.floor(Math.random() * (max - min) + min);
 }

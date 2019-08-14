@@ -13,13 +13,13 @@ let fileSchema = new mongoose.Schema({
 })
 
 fileSchema.query.getFiles = function () {
-	return this.find({})
+	return this.find({}).exec();
 }
 
 fileSchema.query.getFileById = function (id) {
 	return this.where({
 		'_id': id
-	});
+	}).exec();
 }
 
 fileSchema.query.getFileByVersion = async function (dataset_ref_id, version) {
@@ -27,7 +27,7 @@ fileSchema.query.getFileByVersion = async function (dataset_ref_id, version) {
 		'metadata.dataset_ref_id': dataset_ref_id
 	}).where({
 		'metadata.version': version
-	});
+	}).exec();
 }
 
 fileSchema.query.getFilesByNameAndVersions = async function (dataset_ref_id, version1, version2) {
@@ -37,7 +37,7 @@ fileSchema.query.getFilesByNameAndVersions = async function (dataset_ref_id, ver
 		'metadata.version': version1
 	}, {
 		'metadata.version': version2
-	}]);
+	}]).exec();
 }
 
 module.exports = mongoose.model('datasets.files', fileSchema)

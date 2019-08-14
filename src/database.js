@@ -45,6 +45,7 @@ class Database {
   _models() {
     this.dataset = require('./models/dataset');
     this.file = require('./models/file');
+    this.host = require('./models/host');
   }
 
   static getInstance() {

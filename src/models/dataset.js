@@ -1,4 +1,6 @@
 let mongoose = require('mongoose');
+var uniqueValidator = require('mongoose-unique-validator');
+
 const {
 	CRAWL_EndRange
 } = require('../config');
@@ -14,21 +16,6 @@ let metaSchema = new mongoose.Schema({
 		default: 0
 	},
 	filename: String
-})
-
-let hostSchema = new mongoose.Schema({
-	name: {
-		type: String,
-		required: true
-	},
-	currentlyCrawled: {
-		type: Boolean,
-		default: false
-	},
-	nextCrawl: {
-		type: Date,
-		default: new Date()
-	}
 })
 
 let crawlingInfoSchema = new mongoose.Schema({
@@ -60,7 +47,10 @@ let crawlingInfoSchema = new mongoose.Schema({
 		type: Boolean,
 		default: false
 	},
-	host: hostSchema,
+	host: {
+		type: mongoose.Schema.Types.String,
+		ref: 'hosts'
+	},
 })
 
 let datasetSchema = new mongoose.Schema({
@@ -76,5 +66,7 @@ let datasetSchema = new mongoose.Schema({
 	}],
 	meta: metaSchema
 })
+
+datasetSchema.plugin(uniqueValidator);
 
 module.exports = mongoose.model('datasets', datasetSchema)

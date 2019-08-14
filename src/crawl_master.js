@@ -5,9 +5,6 @@ const {
   port,
   protocol
 } = require('./config');
-const {
-  getDatasetsToBeCrawled
-} = require('./services/dataset');
 
 //db setup
 const db = require('./database.js').getInstance();
@@ -17,19 +14,27 @@ db.connect().then(() => {
 });
 
 async function tick() {
+  console.log('master ticked')
 
-  let datasets = await getDatasetsToBeCrawled()
+  let datasets = await db.host.find().getDatasetsToCrawl();
 
-  for (let dataset of datasets) {
-    crawl(dataset);
-    await sleep(1);
-  }
+  if (datasets) {
+    for (let dataset of datasets) {
+      try {
+        crawl(dataset);
+      } catch (error) {
+        console.error(error)
+      }
+      await sleep(500);
+    }
+  } else await sleep(5000);
 
+  await sleep(5000);
   tick();
 
 }
 
-function crawl(dataset) {
+async function crawl(dataset) {
   rp.get(`${protocol}//${host}:${port}/api/crawl?url=${dataset.url.href}`, (error, httpResponse, body) => {
     if (error) console.error(error)
     else {

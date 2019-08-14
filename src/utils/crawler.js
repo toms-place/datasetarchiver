@@ -9,12 +9,15 @@ const https = require('https');
 const db = require('../database').getInstance();
 const {
 	CRAWL_HostInterval,
-	CRAWL_InitRange
+	CRAWL_InitRange,
+	CRAWL_EndRange
 } = require('../config');
 
 const rp = require('request-promise-native');
 var contentDisposition = require('content-disposition')
 const mime = require('mime');
+
+const getRandomInt = require('./randomInt');
 
 
 
@@ -47,6 +50,15 @@ class Crawler {
 					throw new Error('Neither http nor https...')
 			}
 
+			//tell db host is crawled
+			await db.host.updateOne({
+				'name': this.dataset.crawlingInfo.host
+			}, {
+				$set: {
+					'nextCrawl': new Date(new Date().getTime() + CRAWL_HostInterval * 1000)
+				}
+			}).exec();
+
 			//meta init
 			if (this.dataset.crawlingInfo.firstCrawl == true) {
 
@@ -69,11 +81,19 @@ class Crawler {
 				}
 
 				this.dataset.crawlingInfo.firstCrawl = false
-				this.dataset.save()
+				this.calcNextCrawl(true);
 
 			} else {
-				this.crawl();
+				await this.crawl();
 			}
+
+			db.host.updateOne({
+				'name': this.dataset.crawlingInfo.host
+			}, {
+				$set: {
+					'currentlyCrawled': false
+				}
+			}).exec();
 
 		} catch (error) {
 			console.error(error)
@@ -83,71 +103,49 @@ class Crawler {
 
 	async crawl() {
 
-		//check if crawl is permitted
-		if (this.dataset.stopped != true && this.dataset.crawlingInfo.host.currentlyCrawled == false && this.dataset.crawlingInfo.host.nextCrawl < new Date()) {
+		try {
 
-			try {
+			console.log("now crawling:", this.dataset.url.href, new Date());
+			this.protocol.get(this.dataset.url.href, (resp) => {
 
-				await db.dataset.updateMany({
-						'crawlingInfo.host.name': this.dataset.crawlingInfo.host.name
-					},
-					[{
-						'crawlingInfo.host.currentlyCrawled': true
-					}, {
-						'crawlingInfo.host.nextCrawl': new Date(new Date().getTime() + CRAWL_HostInterval * 60000)
-					}]
-				).exec();
-
-				console.log("now crawling:", this.dataset.url.href, new Date());
-				this.protocol.get(this.dataset.url.href, (resp) => {
-
-					pipeline(
-						resp,
-						db.bucket.openUploadStream(this.dataset.meta.filename, {
-							metadata: {
-								dataset_ref_id: this.dataset._id,
-								version: this.dataset.meta.versionCount
-							}
-						}), async (error) => {
-							if (!error) {
-
-								//compare old an new file
-								await this.checkHash()
-
-							} else {
-								console.error(error)
-								this.dataset.crawlingInfo.errorCount++;
-								if (this.dataset.crawlingInfo.errorCount >= errorCountTreshold) {
-									this.dataset.crawlingInfo.stopped = true;
-								} else {
-									this.dataset.crawlingInfo.stopped = false;
-								}
-								this.calcNextCrawl(false);
-							}
+				pipeline(
+					resp,
+					db.bucket.openUploadStream(this.dataset.meta.filename, {
+						metadata: {
+							dataset_ref_id: this.dataset._id,
+							version: this.dataset.meta.versionCount
 						}
-					);
-				}).on('error', (error) => {
-					console.error("Error: " + error.message);
-				});
+					}), (error) => {
+						if (!error) {
 
-				await db.dataset.updateMany({
-					'crawlingInfo.host.name': this.dataset.crawlingInfo.host.name
-				}, {
-					'crawlingInfo.host.currentlyCrawled': false
-				}).exec();
+							//compare old and new file
+							this.checkHash()
 
-			} catch (error) {
-				console.error(error)
-				this.dataset.crawlingInfo.errorCount++;
-				if (this.dataset.crawlingInfo.errorCount >= errorCountTreshold) {
-					this.dataset.crawlingInfo.stopped = true;
-					await this.dataset.save()
-					throw new Error('Stopping: ' + this.dataset.url.href);
-				};
-				this.calcNextCrawl(false);
-			}
-		} else {
-			console.log('not crawling now, host busy');
+						} else {
+							console.error(error)
+							this.dataset.crawlingInfo.errorCount++;
+							if (this.dataset.crawlingInfo.errorCount >= errorCountTreshold) {
+								this.dataset.crawlingInfo.stopped = true;
+							} else {
+								this.dataset.crawlingInfo.stopped = false;
+							}
+							this.calcNextCrawl(false);
+						}
+					}
+				);
+			}).on('error', (error) => {
+				console.error("Error: " + error.message);
+			});
+
+		} catch (error) {
+			console.error(error)
+			this.dataset.crawlingInfo.errorCount++;
+			if (this.dataset.crawlingInfo.errorCount >= errorCountTreshold) {
+				this.dataset.crawlingInfo.stopped = true;
+				await this.dataset.save()
+				throw new Error('Stopping: ' + this.dataset.url.href);
+			};
+			this.calcNextCrawl(false);
 		}
 	}
 
@@ -203,6 +201,8 @@ class Crawler {
 				this.dataset.crawlingInfo.changeDistribution.shift()
 			}
 
+			console.log(this.dataset.crawlingInfo.changeDistribution)
+
 			let intervalBetweenNewFiles = this.dataset.crawlingInfo.changeDistribution.reduce((acc, curr) => {
 				if (curr.newFile == true) {
 					acc.push(curr.interval)
@@ -211,6 +211,8 @@ class Crawler {
 				}
 				return acc;
 			}, []);
+
+			console.log(intervalBetweenNewFiles)
 
 			let sum = intervalBetweenNewFiles.reduce(function (a, b) {
 				return a + b;
