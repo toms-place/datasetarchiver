@@ -57,7 +57,6 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 					throw new Error(`${url.href} already in DB and source already added`)
 				}
 			} else {
-				console.log(error)
 				throw new Error(`${url.href} already in DB`)
 			}
 		} else {
@@ -90,9 +89,7 @@ async function crawlHref(href) {
 	try {
 
 		let url = new URL(href);
-		let dataset = await db.dataset.findOne({
-			url: url
-		})
+		let dataset = await db.host.find().getDatasetToCrawl(url, url.hostname)
 
 		if (dataset) {
 			new Crawler(dataset);

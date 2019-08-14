@@ -39,7 +39,6 @@ hostSchema.query.getDatasetsToCrawl = async function () {
 				$lt: new Date()
 			}
 		}
-
 	}).exec()
 
 	if (hosts) {
@@ -50,6 +49,33 @@ hostSchema.query.getDatasetsToCrawl = async function () {
 			}
 		}
 		return datasets
+	} else {
+		return null
+	}
+}
+
+
+
+hostSchema.query.getDatasetToCrawl = async function (url, hostname) {
+	let host = await this.findOne({
+		$and: [{
+			name: hostname
+		}, {
+			currentlyCrawled: false
+		}, {
+			nextCrawl: {
+				$lt: new Date()
+			}
+		}]
+	}).populate({
+		path: 'datasets',
+		match: {
+			url: url
+		}
+	}).exec()
+
+	if (host.datasets.length > 0) {
+		return host.datasets[0]
 	} else {
 		return null
 	}
