@@ -201,7 +201,6 @@ class Crawler {
 				this.dataset.crawlingInfo.changeDistribution.shift()
 			}
 
-			console.log(this.dataset.crawlingInfo.changeDistribution)
 
 			let intervalBetweenNewFiles = this.dataset.crawlingInfo.changeDistribution.reduce((acc, curr) => {
 				if (curr.newFile == true) {
@@ -212,7 +211,6 @@ class Crawler {
 				return acc;
 			}, []);
 
-			console.log(intervalBetweenNewFiles)
 
 			let sum = intervalBetweenNewFiles.reduce(function (a, b) {
 				return a + b;
