@@ -20,9 +20,14 @@ db.connect().then(() => {
 
 				for (let result of results) {
 
-					let response = await addHrefToDB(result.url, result.dataset, '', result.format);
-					console.log(response)
-					await sleep(100);
+					try {
+						let response = await addHrefToDB(result.url, result.dataset, '', result.format);
+						console.log(response)
+						await sleep(100);
+						
+					} catch (error) {
+						console.error(error)
+					}
 
 				}
 
