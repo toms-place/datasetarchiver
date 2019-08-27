@@ -8,7 +8,7 @@ COPY package*.json ./
 
 # install
 RUN npm install
-RUN npm run build:prod
+RUN npm run build
 
 # SERVICE
 # use latest version of node

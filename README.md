@@ -19,7 +19,7 @@
   * Master service
     * initiating the crawls via requests to loadbalancer
   * Multiply Server Pods
-    * load balanced by kubernetes
+    * load balanced by Ingress
     * crawl on request from master
 * mongodb
   * in kubernetes
