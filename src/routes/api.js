@@ -19,7 +19,9 @@ router.get('/add', async function (req, res, next) {
       if (req.query.source) source = req.query.source;
       if (req.query.filename) filename = req.query.filename;
       let response = await addHrefToDB(req.query.url, source, filename);
-      res.json({success:response});
+      res.json({
+        success: response
+      });
     } catch (error) {
       next(error);
     }
@@ -34,9 +36,15 @@ router.get('/crawl', async function (req, res, next) {
   if (req.query.url) {
     try {
       let response = await crawlHref(req.query.url)
-      res.json({
-        success: response
-      });
+      if (response == true) {
+        res.json({
+          success: `Worker ${process.pid} started to crawl: ${req.query.url}`
+        });
+      } else {
+        res.status(423).json({
+          error: `Worker ${process.pid} cannot crawl: ${req.query.url}`
+        });
+      }
     } catch (error) {
       next(error)
     }

@@ -89,14 +89,13 @@ async function crawlHref(href) {
 	try {
 
 		let url = new URL(href);
-		let dataset = await db.host.find().getDatasetToCrawl(url, url.hostname)
+		let dataset = await db.host.find().getDatasetToCrawl(url)
 
 		if (dataset) {
 			new Crawler(dataset);
-			let resp = `Worker ${process.pid} started to crawl: ${url.href}`;
-			return resp;
+			return true;
 		} else {
-			return new Error(`${url.href} is not in our DB. If you want to add it, try /api/add?url=`);
+			return false;
 		}
 	} catch (error) {
 		throw error

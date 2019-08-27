@@ -46,6 +46,7 @@ hostSchema.query.getDatasetsToCrawl = async function () {
 		for (let host of hosts) {
 			for (let dataset of host.datasets) {
 				datasets.push(dataset)
+				break;
 			}
 		}
 		return datasets
@@ -56,10 +57,10 @@ hostSchema.query.getDatasetsToCrawl = async function () {
 
 
 
-hostSchema.query.getDatasetToCrawl = async function (url, hostname) {
+hostSchema.query.getDatasetToCrawl = async function (url) {
 	let host = await this.findOne({
 		$and: [{
-			name: hostname
+			name: url.hostname
 		}, {
 			currentlyCrawled: false
 		}, {
