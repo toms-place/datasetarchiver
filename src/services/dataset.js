@@ -42,7 +42,7 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 		return resp
 
 	} catch (error) {
-		if (error.name == 'ValidationError') {
+		if (error.name == 'ValidationError' || error.code == 'E11000') {
 			if (source_href.length > 0) {
 				let dataset = await db.dataset.findOne({
 					url: url

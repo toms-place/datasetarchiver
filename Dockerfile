@@ -3,7 +3,9 @@
 FROM node:12.4.0-alpine AS builder
 
 # set working directory
+WORKDIR /
 COPY ./src ./src
+COPY .babelrc ./
 COPY package*.json ./
 
 # install
@@ -16,6 +18,7 @@ FROM node:12.4.0-alpine
 RUN apk add --no-cache bash
 
 # set working directory
+WORKDIR /
 COPY --from=builder ./dist/crawler ./dist/crawler
 COPY package*.json ./
 COPY .env ./

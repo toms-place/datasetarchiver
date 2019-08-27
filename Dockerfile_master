@@ -4,6 +4,7 @@ FROM node:12.4.0-alpine AS builder
 
 # set working directory
 COPY ./src ./src
+COPY .babelrc ./
 COPY package*.json ./
 
 # install
