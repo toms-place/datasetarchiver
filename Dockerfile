@@ -16,7 +16,7 @@ FROM node:12.4.0-alpine
 RUN apk add --no-cache bash
 
 # set working directory
-COPY --from=builder ./datasetarchiver/dist/crawler ./dist/crawler
+COPY --from=builder ./dist/crawler ./dist/crawler
 COPY package*.json ./
 COPY .env ./
 
