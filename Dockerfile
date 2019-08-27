@@ -18,7 +18,7 @@ RUN apk add --no-cache bash
 
 # set working directory
 WORKDIR /datasetarchiver
-COPY --from=builder ./dist/crawler ./dist/crawler
+COPY --from=builder ./datasetarchiver/dist/crawler ./dist/crawler
 COPY package*.json ./
 COPY .env ./
 
