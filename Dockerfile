@@ -3,7 +3,6 @@
 FROM node:12.4.0-alpine AS builder
 
 # set working directory
-WORKDIR /datasetarchiver
 COPY ./src ./src
 COPY package*.json ./
 
@@ -17,7 +16,6 @@ FROM node:12.4.0-alpine
 RUN apk add --no-cache bash
 
 # set working directory
-WORKDIR /datasetarchiver
 COPY --from=builder ./datasetarchiver/dist/crawler ./dist/crawler
 COPY package*.json ./
 COPY .env ./
