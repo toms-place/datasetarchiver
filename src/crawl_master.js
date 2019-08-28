@@ -35,6 +35,6 @@ async function crawl(dataset) {
     let res = await rp.get(`${protocol}//${host}:${port}/api/crawl?url=${dataset.url.href}`)
     console.log(res)
   } catch (error) {
-    console.error(error)
+    console.error(error.message)
   }
 }
