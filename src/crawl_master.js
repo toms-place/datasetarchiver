@@ -20,9 +20,9 @@ async function tick() {
   if (datasets) {
     for (let dataset of datasets) {
       crawl(dataset);
-      await sleep(1000);
+      await sleep(100);
     }
-  } else await sleep(5000);
+  } else await sleep(500);
 
   await sleep(1000)
 
