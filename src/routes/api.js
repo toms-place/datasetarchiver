@@ -14,14 +14,30 @@ router.get('/', function (req, res, next) {
 router.get('/add', async function (req, res, next) {
   let source;
   let filename;
+  let filetype;
   if (req.query.url) {
     try {
       if (req.query.source) source = req.query.source;
       if (req.query.filename) filename = req.query.filename;
-      let response = await addHrefToDB(req.query.url, source, filename);
-      res.json({
-        success: response
-      });
+      if (req.query.filetype) filetype = req.query.filetype;
+      let response = await addHrefToDB(req.query.url, source, filename, filetype);
+      if (response.datasetstatus == 200 && response.hoststatus == 200) {
+        res.json({
+          success: `Worker ${process.pid} added: ${req.query.url}`
+        });
+      } else if (response.datasetstatus == 200) {
+        res.json({
+          success: `Worker ${process.pid} added: ${req.query.url}.`
+        });
+      } else if (response.hoststatus == 200) {
+        res.json({
+          success: `Worker ${process.pid} added host for: ${req.query.url}.`
+        });
+      } else {
+        res.status(423).json({
+          error: `Worker ${process.pid} cannot add: ${req.query.url}. (${response.datasetmessage}, ${response.hostmessage})`
+        });
+      }
     } catch (error) {
       next(error);
     }

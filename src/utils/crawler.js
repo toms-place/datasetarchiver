@@ -1,6 +1,3 @@
-//From which number of errors should the crawling be stopped
-const errorCountTreshold = 3;
-
 const {
 	pipeline
 } = require('stream');
@@ -9,16 +6,14 @@ const https = require('https');
 const db = require('../database').getInstance();
 const {
 	CRAWL_HostInterval,
-	CRAWL_InitRange,
-	CRAWL_EndRange
+	CRAWL_minRange,
+	CRAWL_maxRange,
+	ErrorCountTreshold
 } = require('../config');
 
 const rp = require('request-promise-native');
 var contentDisposition = require('content-disposition')
 const mime = require('mime');
-
-const getRandomInt = require('./randomInt');
-
 
 
 /** TODO
@@ -47,7 +42,9 @@ class Crawler {
 					this.protocol = http
 					break;
 				default:
-					throw new Error('Neither http nor https...')
+					this.protocol = http
+					console.error(new Error(`Neither http nor https: ${this.dataset.url.href}`))
+					break;
 			}
 
 			//tell db host is crawled
@@ -124,7 +121,7 @@ class Crawler {
 						} else {
 							console.error(error)
 							this.dataset.crawlingInfo.errorCount++;
-							if (this.dataset.crawlingInfo.errorCount >= errorCountTreshold) {
+							if (this.dataset.crawlingInfo.errorCount >= ErrorCountTreshold) {
 								this.dataset.crawlingInfo.stopped = true;
 							} else {
 								this.dataset.crawlingInfo.stopped = false;
@@ -140,7 +137,7 @@ class Crawler {
 		} catch (error) {
 			console.error(error)
 			this.dataset.crawlingInfo.errorCount++;
-			if (this.dataset.crawlingInfo.errorCount >= errorCountTreshold) {
+			if (this.dataset.crawlingInfo.errorCount >= ErrorCountTreshold) {
 				this.dataset.crawlingInfo.stopped = true;
 				await this.dataset.save()
 				throw new Error('Stopping: ' + this.dataset.url.href);
@@ -187,6 +184,9 @@ class Crawler {
 
 		let now = new Date()
 		let interval = (now - this.dataset.crawlingInfo.lastCrawlAttempt) / 1000; //to get seconds
+		if (interval > CRAWL_maxRange) {
+			interval = parseInt(CRAWL_maxRange)
+		}
 		this.dataset.crawlingInfo.lastCrawlAttempt = now;
 
 		this.dataset.crawlingInfo.changeDistribution.push({
@@ -194,7 +194,7 @@ class Crawler {
 			interval: interval
 		})
 
-		if (this.dataset.crawlingInfo.changeDistribution.length > 2 && !(this.dataset.crawlingInfo.crawlInterval < CRAWL_InitRange / 4)) {
+		if (this.dataset.crawlingInfo.changeDistribution.length > 2 && !(this.dataset.crawlingInfo.crawlInterval < CRAWL_minRange)) {
 
 			//prevent infinite array
 			if (this.dataset.crawlingInfo.changeDistribution.length > 50) {

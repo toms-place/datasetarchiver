@@ -10,4 +10,7 @@ module.exports = {
   CRAWL_InitRange: process.env.CRAWL_InitRange,
   CRAWL_EndRange: process.env.CRAWL_EndRange,
   CRAWL_HostInterval: process.env.CRAWL_HostInterval,
+  CRAWL_minRange: process.env.CRAWL_minRange,
+  CRAWL_maxRange: process.env.CRAWL_maxRange,
+  ErrorCountTreshold: process.env.ErrorCountTreshold
 };

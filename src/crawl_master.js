@@ -14,7 +14,6 @@ db.connect().then(() => {
 });
 
 async function tick() {
-  //console.log('master ticked')
 
   let datasets = await db.host.find().getDatasetsToCrawl();
 
@@ -24,6 +23,8 @@ async function tick() {
       await sleep(1000);
     }
   } else await sleep(5000);
+
+  await sleep(1000)
 
   tick();
 

@@ -9,10 +9,12 @@ const getRandomInt = require('../utils/randomInt');
 
 async function addHrefToDB(href, source_href = '', filename = '', filetype = '') {
 	let url = new URL(href);
+	let resp = {};
+	let dataset;
 
 	try {
 
-		let dataset = await new db.dataset({
+		dataset = await new db.dataset({
 			url: url,
 			'meta.filename': filename,
 			'meta.filetype': filetype,
@@ -26,7 +28,43 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 
 		await dataset.save()
 
+		resp = {
+			datasetstatus: 200,
+			datasetmessage: 'dataset added'
+		};
 
+	} catch (error) {
+		if (error.name == 'ValidationError' || error.code == 11000) {
+			if (source_href.length > 0) {
+				let dataset = await db.dataset.findOne({
+					url: url
+				})
+				let src = new URL(source_href)
+				if (!dataset.meta.source.some(e => e.host === src.host)) {
+					dataset.meta.source.push(src)
+					await dataset.save();
+					resp = {
+						datasetstatus: 200,
+						datasetmessage: 'src added'
+					};
+				} else {
+					resp = {
+						datasetstatus: 401,
+						datasetmessage: 'src and url already added'
+					};
+				}
+			} else {
+				resp = {
+					datasetstatus: 401,
+					datasetmessage: 'url already added'
+				};
+			}
+		} else {
+			throw error;
+		}
+	}
+
+	try {
 		await db.host.updateOne({
 			name: url.hostname
 		}, {
@@ -38,31 +76,15 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 			setDefaultsOnInsert: true
 		}).exec();
 
-		let resp = `Worker ${process.pid} added ${dataset.url} to DB`;
-		return resp
+		resp.hoststatus = 200;
+		resp.hostmessage = 'host added';
 
 	} catch (error) {
-		if (error.name == 'ValidationError' || error.code == 'E11000') {
-			if (source_href.length > 0) {
-				let dataset = await db.dataset.findOne({
-					url: url
-				})
-				let src = new URL(source_href)
-				if (!dataset.meta.source.some(e => e.host === src.host)) {
-					dataset.meta.source.push(src)
-					await dataset.save();
-					let resp = `Worker ${process.pid} added ${src.host} to Meta`;
-					return resp;
-				} else {
-					throw new Error(`${url.href} already in DB and source already added`)
-				}
-			} else {
-				throw new Error(`${url.href} already in DB`)
-			}
-		} else {
-			throw error;
-		}
+		resp.hoststatus = 404;
+		resp.hostmessage = 'host not added';
 	}
+
+	return resp
 
 }
 
