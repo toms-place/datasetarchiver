@@ -1,7 +1,7 @@
 {
   "name": "archiver",
-  "version": "0.0.3",
-  "description": "crawls added data ressources",
+  "version": "0.1.0",
+  "description": "microservice to crawl added web ressources",
   "keywords": [
     "archiver",
     "crawler",
