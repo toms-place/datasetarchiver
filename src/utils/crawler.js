@@ -24,7 +24,7 @@ const mime = require('mime');
 class Crawler {
 	constructor(dataset) {
 		this.dataset = dataset;
-		this.protocol;
+		this.agent;
 		this.host;
 		this.init();
 	}
@@ -33,16 +33,16 @@ class Crawler {
 
 		try {
 
-			//protocol initialisation
+			//agent initialisation
 			switch (this.dataset.url.protocol) {
 				case 'https:':
-					this.protocol = https
+					this.agent = https
 					break;
 				case 'http:':
-					this.protocol = http
+					this.agent = http
 					break;
 				default:
-					this.protocol = http
+					this.agent = http
 					console.error(new Error(`Neither http nor https: ${this.dataset.url.href}`))
 					break;
 			}
@@ -103,7 +103,7 @@ class Crawler {
 		try {
 
 			console.log("now crawling:", this.dataset.url.href, new Date());
-			this.protocol.get(this.dataset.url.href, (resp) => {
+			this.agent.get(this.dataset.url.href, (resp) => {
 
 				pipeline(
 					resp,
@@ -159,11 +159,11 @@ class Crawler {
 					this.dataset.versions.push(newFile._id);
 					this.dataset.meta.versionCount++;
 					this.dataset.crawlingInfo.stopped = false;
-					this.calcNextCrawl(true)
+					this.calcNextCrawl(true);
 				} else {
 					db.bucket.delete(newFile._id).then(async () => {
 						//file deleted because of duplicate
-						this.calcNextCrawl(false)
+						this.calcNextCrawl(false);
 					})
 				}
 

@@ -61,8 +61,7 @@ let datasetSchema = new mongoose.Schema({
 	},
 	crawlingInfo: crawlingInfoSchema,
 	versions: [{
-		type: mongoose.Schema.Types.ObjectId,
-		ref: 'files'
+		type: mongoose.Schema.Types.ObjectId
 	}],
 	meta: metaSchema
 })

@@ -16,6 +16,12 @@ fileSchema.query.getFiles = function () {
 	return this.find({}).exec();
 }
 
+fileSchema.query.getFilesByDataset = function (dataset_ref_id) {
+	return this.where({
+		'metadata.dataset_ref_id': dataset_ref_id
+	}).exec();
+}
+
 fileSchema.query.getFileById = function (id) {
 	return this.where({
 		'_id': id
