@@ -22,9 +22,9 @@ async function tick() {
       crawl(dataset);
       await sleep(100);
     }
-  } else await sleep(500);
+  }
 
-  await sleep(1000)
+  await sleep(500)
 
   tick();
 
