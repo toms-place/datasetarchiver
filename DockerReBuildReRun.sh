@@ -1,6 +1,6 @@
 #!/bin/bash
 
-docker container prune --filter "label=datasetarchiver"
+docker container stop --filter "label=datasetarchiver"
 docker rmi datasetarchiver/crawler datasetarchiver/master --force
 docker build --no-cache=true --rm -t datasetarchiver/crawler .
 docker build --no-cache=true --rm -t datasetarchiver/master -f Dockerfile_master .
