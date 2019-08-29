@@ -24,6 +24,8 @@ let hostSchema = new mongoose.Schema({
 hostSchema.plugin(uniqueValidator);
 
 hostSchema.query.getDatasetsToCrawl = async function () {
+
+	//TODO optimize lookup
 	let hosts = await this.find({
 		$and: [{
 			currentlyCrawled: false

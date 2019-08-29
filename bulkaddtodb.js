@@ -1,6 +1,7 @@
 const fs = require('fs');
 const csv = require('csv-parser')
 const db = require('./src/database').getInstance();
+const dbEmitter = require('./src/events/dbEvents');
 const sleep = require('util').promisify(setTimeout);
 
 const {
@@ -8,11 +9,11 @@ const {
 } = require('./src/services/dataset')
 
 
-db.connect().then(() => {
+dbEmitter.on('connected', () => {
 
 	let results = [];
 
-	for (let i = 0; i <= 24; i++) {
+	for (let i = 2; i <= 24; i++) {
 
 		fs.createReadStream(`./europeandataportal/${i}.csv`)
 			.pipe(csv())
@@ -30,7 +31,7 @@ async function bulk(results) {
 	for (let i = 0; i < results.length; i++) {
 		try {
 			bulk.push(results[i])
-			if (i%1000 == 0) {
+			if (i%5000 == 0) {
 				let added = await addManyHrefsToDB(bulk)
 				console.log(i, added.length)
 				bulk = []
