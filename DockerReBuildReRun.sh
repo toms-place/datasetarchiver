@@ -1,5 +1,6 @@
 #!/bin/bash
 
+sudo git pull
 docker container stop $(docker ps -f name=datasetarchiver -q)
 docker rmi datasetarchiver/crawler datasetarchiver/master --force
 docker build --no-cache=true -t datasetarchiver/crawler .
