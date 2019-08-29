@@ -4,8 +4,10 @@ import {
   addHrefToDB,
   deleteFromDB,
   crawlHref,
-  getDatasets
+  getDatasets,
+  getAllVersionsOfDatasetAsStream
 } from '../services/dataset'
+const Archiver = require('archiver');
 
 router.get('/', function (req, res, next) {
   res.send('See docs for api');
@@ -23,7 +25,7 @@ router.get('/add', async function (req, res, next) {
       let response = await addHrefToDB(req.query.url, source, filename, filetype);
       if (response.datasetstatus == 200 || response.hoststatus == 200) {
         res.json({
-          success: `Worker ${process.pid}: ${response}`
+          success: response
         });
       } else {
         res.status(423).json({
@@ -34,7 +36,7 @@ router.get('/add', async function (req, res, next) {
       next(error);
     }
   } else {
-    res.status(401).json({
+    res.status(404).json({
       error: 'give me an url'
     });
   }
@@ -57,7 +59,7 @@ router.get('/crawl', async function (req, res, next) {
       next(error)
     }
   } else {
-    res.status(401).json({
+    res.status(404).json({
       error: 'give me an url'
     });
   }
@@ -74,7 +76,7 @@ router.get('/delete', async function (req, res, next) {
       next(error)
     }
   } else {
-    res.status(401).json({
+    res.status(404).json({
       error: 'give me an url'
     });
   }
@@ -91,7 +93,40 @@ router.get('/get', async function (req, res, next) {
       next(error)
     }
   } else {
-    res.status(401).json({
+    res.status(404).json({
+      error: 'give me an url'
+    });
+  }
+});
+
+router.get('/getAllVersions', async function (req, res, next) {
+  if (req.query.url) {
+    try {
+
+      let versions = await getAllVersionsOfDatasetAsStream(req.query.url)
+
+      let zip = Archiver('zip');
+      res.type('application/zip')
+      res.header('Content-disposition', `attachment; filename=${req.query.url}.zip`);
+
+      // Send the file to the page output.
+      zip.pipe(res);
+
+      for (let i = 0; i < versions.length; i++) {
+        // Create zip with some all versions
+        zip.append(versions[i], {
+            name: `${i}.txt`
+          })
+        if (i == versions.length - 1) {
+          zip.finalize();
+        }
+      }
+
+    } catch (error) {
+      next(error)
+    }
+  } else {
+    res.status(404).json({
       error: 'give me an url'
     });
   }

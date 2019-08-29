@@ -161,11 +161,27 @@ async function getDatasets() {
 
 }
 
+async function getAllVersionsOfDatasetAsStream(href) {
+	try {
+		let url = new URL(href);
+		let dataset = await db.dataset.findOne({url:url})
+		let versions = []
+		for (let version of dataset.versions) {
+			let downloadStream = db.bucket.openDownloadStream(version)
+			versions.push(downloadStream)
+		}
+		return versions
+	} catch (error) {
+		throw error
+	}
+
+}
 
 module.exports = {
 	addHrefToDB,
 	deleteFromDB,
 	crawlHref,
 	getDatasets,
-	crawlDataset
+	crawlDataset,
+	getAllVersionsOfDatasetAsStream
 }
