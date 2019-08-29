@@ -29,7 +29,7 @@ async function bulk(results) {
 	let bulk = [];
 	for (let i = 0; i < results.length; i++) {
 		bulk.push(results[i])
-		if (i%1000 == 0) {
+		if (i%100 == 0) {
 			await addManyHrefsToDB(bulk)
 			bulk = []
 		} else if (i == results.length - 1) {

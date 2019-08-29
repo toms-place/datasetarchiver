@@ -35,3 +35,4 @@
   * header mime-type and filename=contentdispostions
   * dictionary
   * parsing
+  * <https://www.npmjs.com/package/file-type>

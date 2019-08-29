@@ -18,6 +18,7 @@ FROM node:12.4.0-alpine
 RUN apk add --no-cache bash
 
 # set working directory
+WORKDIR /master
 COPY --from=builder ./dist/master ./dist/master
 COPY package*.json ./
 COPY .env ./
