@@ -30,7 +30,7 @@ class Database {
       console.log(`Process ${process.pid}: Bucket connection successful`)
 
     } catch (error) {
-      console.error(error)
+      throw(error)
     }
   }
 
