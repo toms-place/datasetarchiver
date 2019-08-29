@@ -20,8 +20,7 @@ async function tick() {
 
   if (datasets) {
     for (let dataset of datasets) {
-      let res = await crawl(dataset);
-      console.log(res)
+      await crawl(dataset);
     }
   }
 
@@ -33,7 +32,8 @@ async function tick() {
 
 async function crawl(dataset) {
   try {
-    return rp.get(`${protocol}//${host}:${port}/api/crawl?url=${dataset.url.href}`)
+    let resp = await rp.get(`${protocol}//${host}:${port}/api/crawl?url=${dataset.url.href}`)
+    console.log(resp)
   } catch (error) {
     if (error.name == 'RequestError') {
       console.log('waiting for connection')
