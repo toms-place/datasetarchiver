@@ -9,7 +9,7 @@ let fileSchema = new mongoose.Schema({
 	metadata: {
 		dataset_ref_id: mongoose.SchemaTypes.ObjectId,
 		version: Number
-	},
+	}
 })
 
 fileSchema.query.getFiles = function () {

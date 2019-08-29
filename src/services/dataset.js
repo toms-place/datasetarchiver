@@ -17,7 +17,7 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 			url: url,
 			'meta.filename': filename,
 			'meta.filetype': filetype,
-			'crawlingInfo.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange*4),
+			'crawlingInfo.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4),
 			'crawlingInfo.host': url.hostname
 		})
 
@@ -79,7 +79,7 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 				upsert: true,
 				setDefaultsOnInsert: true
 			}).exec();
-	
+
 			resp.hoststatus = 200;
 			resp.hostmessage = 'host added';
 			resp.hosturl = url.hostname;
@@ -164,7 +164,9 @@ async function getDatasets() {
 async function getAllVersionsOfDatasetAsStream(href) {
 	try {
 		let url = new URL(href);
-		let dataset = await db.dataset.findOne({url:url})
+		let dataset = await db.dataset.findOne({
+			url: url
+		})
 		let versions = []
 		for (let version of dataset.versions) {
 			let downloadStream = db.bucket.openDownloadStream(version)
@@ -177,11 +179,53 @@ async function getAllVersionsOfDatasetAsStream(href) {
 
 }
 
+async function addManyHrefsToDB(hrefs) {
+
+	let datasets = [];
+
+	for (let i = 0; i < hrefs.length; i++) {
+
+		try {
+			let url = new URL(hrefs[i].url)
+
+			let dataset = await new db.dataset({
+				url: url,
+				'meta.filetype': '',
+				'meta.filename': '',
+				'meta.source': [],
+				'crawlingInfo.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4),
+				'crawlingInfo.host': url.hostname
+			});
+
+			if (hrefs[i].format) {
+				dataset.meta.filetype = hrefs[i].format
+			}
+
+			if (hrefs[i].dataset) {
+				dataset.meta.source.push(new URL(hrefs[i].dataset))
+			}
+
+			datasets.push(dataset)
+
+		} catch (error) {
+			console.error(error.message)
+		}
+
+	}
+
+	let response = await db.dataset.insertMany(datasets, {
+		ordered: false
+	})
+	return response
+
+}
+
 module.exports = {
 	addHrefToDB,
 	deleteFromDB,
 	crawlHref,
 	getDatasets,
 	crawlDataset,
-	getAllVersionsOfDatasetAsStream
+	getAllVersionsOfDatasetAsStream,
+	addManyHrefsToDB
 }
