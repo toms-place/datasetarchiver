@@ -207,16 +207,29 @@ async function addManyHrefsToDB(hrefs) {
 
 			datasets.push(dataset)
 
+			await db.host.updateOne({
+				name: url.hostname
+			}, {
+				$push: {
+					datasets: dataset._id
+				}
+			}, {
+				upsert: true,
+				setDefaultsOnInsert: true
+			}).exec();
+
 		} catch (error) {
-			console.error(error.message)
+			console.log(error.message)
 		}
 
 	}
 
-	let response = await db.dataset.insertMany(datasets, {
-		ordered: false
-	})
-	return response
+	console.log('inserting:', datasets.length)
+
+	return db.dataset.insertMany(datasets, {
+		ordered: false,
+		rawResult: true
+	});
 
 }
 

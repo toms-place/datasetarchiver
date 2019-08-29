@@ -19,8 +19,7 @@ db.connect().then(() => {
 			.on('data', (data) => results.push(data))
 			.on('end', async () => {
 				if (i == 24) {
-					await bulk(results)
-					process.exit()
+					bulk(results)
 				}
 			})
 	}
@@ -29,16 +28,21 @@ db.connect().then(() => {
 async function bulk(results) {
 	let bulk = [];
 	for (let i = 0; i < results.length; i++) {
-		bulk.push(results[i])
-		if (i%1000 == 0) {
-			let added = await addManyHrefsToDB(bulk)
-			console.log(added)
-			bulk = []
-			await sleep(100);
-		} else if (i == results.length - 1) {
-			let added = await addManyHrefsToDB(bulk)
-			console.log(added)
-			return
+		try {
+			bulk.push(results[i])
+			if (i%1000 == 0) {
+				let added = await addManyHrefsToDB(bulk)
+				console.log(i, added.length)
+				bulk = []
+				await sleep(10000);
+			} else if (i == results.length - 1) {
+				let added = await addManyHrefsToDB(bulk)
+				console.log(i, added.length)
+				process.exit()
+			}
+			
+		} catch (error) {
+			console.log(error)
 		}
 	}
 }
