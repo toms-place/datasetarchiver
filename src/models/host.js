@@ -37,7 +37,9 @@ hostSchema.query.getDatasetsToCrawl = async function () {
 		match: {
 			'crawlingInfo.nextCrawl': {
 				$lt: new Date()
-			}
+			},
+			'crawlingInfo.stopped': false
+
 		}
 	}).exec()
 
@@ -71,7 +73,8 @@ hostSchema.query.getDatasetToCrawl = async function (url) {
 	}).populate({
 		path: 'datasets',
 		match: {
-			url: url
+			url: url,
+			'crawlingInfo.stopped': false
 		}
 	}).exec()
 

@@ -43,6 +43,10 @@ let crawlingInfoSchema = new mongoose.Schema({
 		type: Number,
 		default: 0
 	},
+	errorStore: {
+		type: Array,
+		default: []
+	},
 	stopped: {
 		type: Boolean,
 		default: false

@@ -8,7 +8,8 @@ const {
 	CRAWL_HostInterval,
 	CRAWL_minRange,
 	CRAWL_maxRange,
-	ErrorCountTreshold
+	ErrorCountTreshold,
+	MaxFileSizeInBytes
 } = require('../config');
 
 const rp = require('request-promise-native');
@@ -58,8 +59,15 @@ class Crawler {
 
 			//meta init
 			if (this.dataset.crawlingInfo.firstCrawl == true) {
+				this.dataset.crawlingInfo.firstCrawl = false
+				let head;
 
-				let head = await rp.head(this.dataset.url.href)
+				try {
+					head = await rp.head(this.dataset.url.href)
+				} catch (error) {
+					this.addError(error.message, false)
+				}
+
 				if (!(this.dataset.meta.filename.length > 0)) {
 
 					try {
@@ -77,8 +85,16 @@ class Crawler {
 					this.dataset.meta.filetype = (fileSplit.length > 1) ? fileSplit[fileSplit.length - 1] : 'unknown'
 				}
 
-				this.dataset.crawlingInfo.firstCrawl = false
-				this.calcNextCrawl(true);
+				try {
+					if (head['content-length'] > MaxFileSizeInBytes) {
+						this.dataset.crawlingInfo.stopped = true;
+						this.addError('max file size exceeded', true);
+					} else {
+						this.calcNextCrawl(true);
+					}
+				} catch (error) {
+					this.addError(error.message, true);
+				}
 
 			} else {
 				await this.crawl();
@@ -93,7 +109,7 @@ class Crawler {
 			}).exec();
 
 		} catch (error) {
-			console.error(error)
+			this.addError(error.message, true);
 		}
 
 	}
@@ -102,7 +118,7 @@ class Crawler {
 
 		try {
 
-			console.log("now crawling:", this.dataset.url.href, new Date());
+			console.log(new Date(), "crawling:", this.dataset.url.href);
 			this.agent.get(this.dataset.url.href, (resp) => {
 
 				pipeline(
@@ -119,30 +135,16 @@ class Crawler {
 							this.checkHash()
 
 						} else {
-							console.error(error)
-							this.dataset.crawlingInfo.errorCount++;
-							if (this.dataset.crawlingInfo.errorCount >= ErrorCountTreshold) {
-								this.dataset.crawlingInfo.stopped = true;
-							} else {
-								this.dataset.crawlingInfo.stopped = false;
-							}
-							this.calcNextCrawl(false);
+							this.addError(error.message, true);
 						}
 					}
 				);
 			}).on('error', (error) => {
-				console.error("Error: " + error.message);
+				this.addError(error.message, true);
 			});
 
 		} catch (error) {
-			console.error(error)
-			this.dataset.crawlingInfo.errorCount++;
-			if (this.dataset.crawlingInfo.errorCount >= ErrorCountTreshold) {
-				this.dataset.crawlingInfo.stopped = true;
-				await this.dataset.save()
-				throw new Error('Stopping: ' + this.dataset.url.href);
-			};
-			this.calcNextCrawl(false);
+			this.addError(error);
 		}
 	}
 
@@ -154,16 +156,24 @@ class Crawler {
 				let oldFile = files[files.length - 2]
 				let newFile = files[files.length - 1]
 
-				if (oldFile.md5 != newFile.md5) {
-					//new file saved
-					this.dataset.versions.push(newFile._id);
-					this.dataset.meta.versionCount++;
-					this.dataset.crawlingInfo.stopped = false;
-					this.calcNextCrawl(true);
+				if (newFile.length < MaxFileSizeInBytes) {
+
+					if (oldFile.md5 != newFile.md5) {
+						//new file saved
+						this.dataset.versions.push(newFile._id);
+						this.dataset.meta.versionCount++;
+						this.dataset.crawlingInfo.stopped = false;
+						this.calcNextCrawl(true);
+					} else {
+						db.bucket.delete(newFile._id).then(async () => {
+							//file deleted because of duplicate
+							this.calcNextCrawl(false);
+						})
+					}
 				} else {
 					db.bucket.delete(newFile._id).then(async () => {
-						//file deleted because of duplicate
-						this.calcNextCrawl(false);
+						this.dataset.crawlingInfo.stopped = true;
+						this.addError('max file size exceeded', true);
 					})
 				}
 
@@ -177,7 +187,7 @@ class Crawler {
 			}
 
 		} catch (error) {
-			console.error(error)
+			this.addError(error.message, true);
 		}
 	}
 	async calcNextCrawl(hasChanged = false) {
@@ -211,7 +221,6 @@ class Crawler {
 				return acc;
 			}, []);
 
-
 			let sum = intervalBetweenNewFiles.reduce(function (a, b) {
 				return a + b;
 			});
@@ -227,9 +236,18 @@ class Crawler {
 			this.dataset.crawlingInfo.nextCrawl = new Date(now.getTime() + this.dataset.crawlingInfo.crawlInterval * 1000);
 		}
 
-		this.dataset.crawlingInfo.stopped = false;
 		await this.dataset.save();
 	}
+
+	async addError(error, calcNextCrawl) {
+		this.dataset.crawlingInfo.errorStore.push(error);
+		this.dataset.crawlingInfo.errorCount++;
+		if (this.dataset.crawlingInfo.errorCount >= ErrorCountTreshold) {
+			this.dataset.crawlingInfo.stopped = true;
+		}
+		if (calcNextCrawl == true) this.calcNextCrawl(false);
+	}
+
 }
 
 module.exports = Crawler;

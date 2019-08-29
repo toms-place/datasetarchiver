@@ -11,5 +11,6 @@ module.exports = {
   CRAWL_HostInterval: process.env.CRAWL_HostInterval,
   CRAWL_minRange: process.env.CRAWL_minRange,
   CRAWL_maxRange: process.env.CRAWL_maxRange,
-  ErrorCountTreshold: process.env.ErrorCountTreshold
+  ErrorCountTreshold: process.env.ErrorCountTreshold,
+  MaxFileSizeInBytes: process.env.MaxFileSizeInBytes
 };
