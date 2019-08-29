@@ -13,7 +13,7 @@ dbEmitter.on('connected', () => {
 
 	let results = [];
 
-	for (let i = 3; i <= 24; i++) {
+	for (let i = 0; i <= 24; i++) {
 
 		fs.createReadStream(`./europeandataportal/${i}.csv`)
 			.pipe(csv())
