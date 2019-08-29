@@ -2,7 +2,7 @@ let mongoose = require('mongoose');
 var uniqueValidator = require('mongoose-unique-validator');
 
 const {
-	CRAWL_EndRange
+	CRAWL_minRange
 } = require('../config');
 
 let metaSchema = new mongoose.Schema({
@@ -25,7 +25,7 @@ let crawlingInfoSchema = new mongoose.Schema({
 	},
 	crawlInterval: {
 		type: Number,
-		default: CRAWL_EndRange
+		default: CRAWL_minRange
 	},
 	nextCrawl: {
 		type: Date,

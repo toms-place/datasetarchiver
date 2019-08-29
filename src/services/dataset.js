@@ -2,15 +2,14 @@
 const db = require('../database').getInstance();
 let Crawler = require('../utils/crawler');
 const {
-	CRAWL_InitRange,
-	CRAWL_EndRange
+	CRAWL_InitRange
 } = require('../config');
 const getRandomInt = require('../utils/randomInt');
 
 async function addHrefToDB(href, source_href = '', filename = '', filetype = '') {
 	let url = new URL(href);
 	let resp = {};
-	let dataset;
+	let dataset = null;
 
 	try {
 
@@ -18,7 +17,7 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 			url: url,
 			'meta.filename': filename,
 			'meta.filetype': filetype,
-			'crawlingInfo.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_EndRange),
+			'crawlingInfo.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange*4),
 			'crawlingInfo.host': url.hostname
 		})
 
@@ -30,7 +29,8 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 
 		resp = {
 			datasetstatus: 200,
-			datasetmessage: 'dataset added'
+			datasetmessage: 'dataset added',
+			dataseturl: url.href
 		};
 
 	} catch (error) {
@@ -45,18 +45,21 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 					await dataset.save();
 					resp = {
 						datasetstatus: 200,
-						datasetmessage: 'src added'
+						datasetmessage: 'src added to dataset',
+						dataseturl: url.href
 					};
 				} else {
 					resp = {
-						datasetstatus: 401,
-						datasetmessage: 'src and url already added'
+						datasetstatus: 400,
+						datasetmessage: 'src and url already added',
+						dataseturl: url.href
 					};
 				}
 			} else {
 				resp = {
-					datasetstatus: 401,
-					datasetmessage: 'url already added'
+					datasetstatus: 400,
+					datasetmessage: 'url already added',
+					dataseturl: url.href
 				};
 			}
 		} else {
@@ -65,23 +68,32 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 	}
 
 	try {
-		await db.host.updateOne({
-			name: url.hostname
-		}, {
-			$push: {
-				datasets: dataset._id
-			}
-		}, {
-			upsert: true,
-			setDefaultsOnInsert: true
-		}).exec();
+		if (dataset != null) {
+			await db.host.updateOne({
+				name: url.hostname
+			}, {
+				$push: {
+					datasets: dataset._id
+				}
+			}, {
+				upsert: true,
+				setDefaultsOnInsert: true
+			}).exec();
+	
+			resp.hoststatus = 200;
+			resp.hostmessage = 'host added';
+			resp.hosturl = url.hostname;
+		} else {
+			resp.hoststatus = 404;
+			resp.hostmessage = 'host not added, no dataset created';
+			resp.hosturl = url.hostname;
 
-		resp.hoststatus = 200;
-		resp.hostmessage = 'host added';
+		}
 
 	} catch (error) {
 		resp.hoststatus = 404;
 		resp.hostmessage = 'host not added';
+		resp.hosturl = url.hostname;
 	}
 
 	return resp

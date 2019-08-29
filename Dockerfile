@@ -24,9 +24,10 @@ COPY package*.json ./
 COPY .env ./
 
 # install
+RUN npm install pm2 -g
 RUN npm install --only=prod
 
 # expose port 3000
 EXPOSE 3000
 
-CMD [ "npm", "run", "server:prod" ]
+CMD [ "pm2-runtime", "start", "--name", "crawler", "npm", "--", "run", "server:prod" ]

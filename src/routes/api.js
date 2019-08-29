@@ -21,17 +21,9 @@ router.get('/add', async function (req, res, next) {
       if (req.query.filename) filename = req.query.filename;
       if (req.query.filetype) filetype = req.query.filetype;
       let response = await addHrefToDB(req.query.url, source, filename, filetype);
-      if (response.datasetstatus == 200 && response.hoststatus == 200) {
+      if (response.datasetstatus == 200 || response.hoststatus == 200) {
         res.json({
-          success: `Worker ${process.pid} added: ${req.query.url}`
-        });
-      } else if (response.datasetstatus == 200) {
-        res.json({
-          success: `Worker ${process.pid} added: ${req.query.url}.`
-        });
-      } else if (response.hoststatus == 200) {
-        res.json({
-          success: `Worker ${process.pid} added host for: ${req.query.url}.`
+          success: `Worker ${process.pid}: ${response}`
         });
       } else {
         res.status(423).json({
