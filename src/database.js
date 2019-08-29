@@ -3,6 +3,9 @@ mongoose.set('useNewUrlParser', true);
 mongoose.set('useFindAndModify', false);
 mongoose.set('useCreateIndex', true);
 
+const sleep = require('util').promisify(setTimeout);
+const dbEmitter = require('./events/dbEvents');
+
 const {
   DB_Server,
   DB_Name
@@ -29,8 +32,13 @@ class Database {
       })
       console.log(`Process ${process.pid}: Bucket connection successful`)
 
+      dbEmitter.emit('connected');
+
     } catch (error) {
-      throw(error)
+      console.log(error.message)
+      await sleep(10000)
+      console.log('reconnecting')
+      this.connect()
     }
   }
 
@@ -51,6 +59,7 @@ class Database {
   static getInstance() {
     if (!instance) {
       instance = new Database()
+      instance.connect()
     }
     return instance;
   }

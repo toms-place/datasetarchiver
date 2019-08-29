@@ -1,34 +1,17 @@
 #!/usr/bin/env node
 
-/**
- * Module dependencies.
- */
-
 const http = require('http');
+let app = require('./app_setup');
+let server = null;
 
 //db setup
-const db = require('./database').getInstance()
-db.connect().then(() => {
+const db = require('./database').getInstance();
+const dbEmitter = require('./events/dbEvents');
 
-  let app = require('./app_setup');
+dbEmitter.on('connected', () => {
 
-  /**
-   * Get port from environment and store in Express.
-   */
-
-  let port = normalizePort(process.env.PORT || '3000');
-  app.set('port', port);
-
-  /**
-   * Create HTTP server.
-   */
-
-  let server = http.createServer(app);
-
-  /**
-   * Listen on provided port, on all network interfaces.
-   */
-  server.listen(port);
+  server = http.createServer(app);
+  server.listen(app.settings.port);
 
   server.on('error', (error) => {
     if (error.syscall !== 'listen') {
@@ -61,27 +44,4 @@ db.connect().then(() => {
       'port ' + addr.port;
     console.log(`Process ${process.pid}: listening on ${bind}`)
   });
-
-});
-
-
-
-/**
- * Normalize a port into a number, string, or false.
- */
-
-function normalizePort(val) {
-  var port = parseInt(val, 10);
-
-  if (isNaN(port)) {
-    // named pipe
-    return val;
-  }
-
-  if (port >= 0) {
-    // port number
-    return port;
-  }
-
-  return false;
-}
+})

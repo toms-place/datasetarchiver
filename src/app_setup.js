@@ -6,6 +6,10 @@ import createError from 'http-errors'
 import express from 'express'
 import cookieParser from 'cookie-parser'
 
+const {
+	port
+} = require('./config');
+
 const localPath = process.env.DATASETPATH || './data';
 // create a write stream (in append mode)
 const accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), {
@@ -54,5 +58,33 @@ app.use(function (error, req, res, next) {
 	res.status(error.status || 500);
 	res.render('error');
 });
+
+/**
+ * Get port from environment and store in Express.
+ */
+let port2use = normalizePort(port || '3000');
+app.set('port', port2use);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+	var port = parseInt(val, 10);
+  
+	if (isNaN(port)) {
+	  // named pipe
+	  return val;
+	}
+  
+	if (port >= 0) {
+	  // port number
+	  return port;
+	}
+  
+	return false;
+  }
+
+
 
 module.exports = app;

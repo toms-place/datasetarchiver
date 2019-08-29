@@ -8,10 +8,11 @@ const {
 
 //db setup
 const db = require('./database.js').getInstance();
+const dbEmitter = require('./events/dbEvents');
 
-db.connect().then(() => {
+dbEmitter.on('connected', () => {
   tick();
-});
+})
 
 async function tick() {
 

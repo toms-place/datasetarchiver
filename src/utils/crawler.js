@@ -86,7 +86,7 @@ class Crawler {
 				}
 
 				try {
-					if (head['content-length'] > MaxFileSizeInBytes) {
+					if (parseInt(head['content-length']) > parseInt(MaxFileSizeInBytes)) {
 						this.dataset.crawlingInfo.stopped = true;
 						this.addError('max file size exceeded', true);
 					} else {
@@ -156,7 +156,7 @@ class Crawler {
 				let oldFile = files[files.length - 2]
 				let newFile = files[files.length - 1]
 
-				if (newFile.length < MaxFileSizeInBytes) {
+				if (parseInt(newFile.length) < parseInt(MaxFileSizeInBytes)) {
 
 					if (oldFile.md5 != newFile.md5) {
 						//new file saved
