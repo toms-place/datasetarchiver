@@ -8,15 +8,22 @@ const {
 
 //db setup
 const db = require('./database.js').getInstance();
-const dbEmitter = require('./events/dbEvents');
 
-dbEmitter.on('connected', () => {
+let flag = true;
+
+db.conn.on('connected', () => {
+  flag = true;
   tick();
+})
+
+db.conn.on('disconnected', () => {
+  flag = false;
 })
 
 async function tick() {
 
-  let datasets = await db.host.find().getDatasetsToCrawl();
+  let datasets;
+  if (flag) datasets = await db.host.find().getDatasetsToCrawl();
 
   if (datasets) {
     for (let dataset of datasets) {

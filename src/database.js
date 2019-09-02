@@ -2,9 +2,9 @@ let mongoose = require('mongoose');
 mongoose.set('useNewUrlParser', true);
 mongoose.set('useFindAndModify', false);
 mongoose.set('useCreateIndex', true);
+//mongoose.set('debug', true);
 
 const sleep = require('util').promisify(setTimeout);
-const dbEmitter = require('./events/dbEvents');
 
 const {
   DB_Server,
@@ -15,24 +15,27 @@ let instance = null;
 
 class Database {
   constructor() {
-    this._conn = null
+    this._conn = mongoose.connection
     this._bucket = null
     this._models()
   }
 
   async connect() {
     try {
-      this._conn = await mongoose.connect(`mongodb://${DB_Server}/${DB_Name}`, {
-        autoIndex: false
+      await mongoose.connect(`mongodb://${DB_Server}/${DB_Name}`, {
+        autoIndex: true,
+        reconnectTries: Number.MAX_VALUE
       })
       console.log(`Process ${process.pid}: Database connection successful`)
 
-      this._bucket = new mongoose.mongo.GridFSBucket(this._conn.connections[0].db, {
+      this._bucket = await new mongoose.mongo.GridFSBucket(this.conn.db, {
         bucketName: 'datasets'
       })
       console.log(`Process ${process.pid}: Bucket connection successful`)
 
-      dbEmitter.emit('connected');
+      this.conn.on('disconnected', () => {
+        console.log('db disconnected')
+      })
 
     } catch (error) {
       console.log(error.message)

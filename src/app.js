@@ -4,11 +4,6 @@ const http = require('http');
 let app = require('./app_setup');
 let server = null;
 
-//db setup
-const db = require('./database').getInstance();
-const dbEmitter = require('./events/dbEvents');
-
-dbEmitter.on('connected', () => {
 
   server = http.createServer(app);
   server.listen(app.settings.port);
@@ -18,9 +13,9 @@ dbEmitter.on('connected', () => {
       throw error;
     }
 
-    var bind = typeof port === 'string' ?
-      'Pipe ' + port :
-      'Port ' + port;
+    var bind = typeof app.settings.port === 'string' ?
+      'Pipe ' + app.settings.port :
+      'Port ' + app.settings.port;
 
     // handle specific listen errors with friendly messages
     switch (error.code) {
@@ -44,4 +39,3 @@ dbEmitter.on('connected', () => {
       'port ' + addr.port;
     console.log(`Process ${process.pid}: listening on ${bind}`)
   });
-})

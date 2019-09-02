@@ -26,7 +26,6 @@ class Crawler {
 	constructor(dataset) {
 		this.dataset = dataset;
 		this.agent;
-		this.host;
 		this.init();
 	}
 
@@ -182,7 +181,6 @@ class Crawler {
 				let file = await db.file.findOne().getFileByVersion(this.dataset._id, this.dataset.meta.versionCount);
 				this.dataset.versions.push(file._id);
 				this.dataset.meta.versionCount++;
-				this.dataset.crawlingInfo.stopped = false;
 				this.calcNextCrawl(true);
 			}
 
@@ -190,6 +188,7 @@ class Crawler {
 			this.addError(error.message, true);
 		}
 	}
+
 	async calcNextCrawl(hasChanged = false) {
 
 		let now = new Date()

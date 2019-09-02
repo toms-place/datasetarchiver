@@ -21,7 +21,7 @@
   "scripts": {
     "start": "npm run prod",
     "build": "babel src -d dist/crawler --copy-files",
-    "build:master": "babel src/crawl_master.js src/database.js src/config.js -d dist/master & babel src/models/* -d dist/master/models & babel src/services/* -d dist/master/services & babel src/events/* -d dist/master/events & babel src/utils/* -d dist/master/utils",
+    "build:master": "babel src/crawl_master.js src/database.js src/config.js -d dist/master & babel src/models/* -d dist/master/models & babel src/services/* -d dist/master/services & babel src/utils/* -d dist/master/utils",
     "server": "babel-node ./src/app.js",
     "server:prod": "node ./dist/crawler/app.js",
     "server:master": "node --max-old-space-size=8192 ./dist/master/crawl_master.js",

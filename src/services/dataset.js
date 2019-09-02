@@ -15,6 +15,7 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 
 		dataset = await new db.dataset({
 			url: url,
+			id: url.href,
 			'meta.filename': filename,
 			'meta.filetype': filetype,
 			'crawlingInfo.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4),
@@ -37,7 +38,7 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 		if (error.name == 'ValidationError' || error.code == 11000) {
 			if (source_href.length > 0) {
 				let dataset = await db.dataset.findOne({
-					url: url
+					id: url.href
 				})
 				let src = new URL(source_href)
 				if (!dataset.meta.source.some(e => e.host === src.host)) {
@@ -106,7 +107,7 @@ async function deleteFromDB(href) {
 		let url = new URL(href);
 
 		let status = await db.dataset.deleteOne({
-			url: url
+			id: url.href
 		});
 
 		if (status.deletedCount == 1) {
@@ -190,6 +191,7 @@ async function addManyHrefsToDB(hrefs) {
 
 			let dataset = await new db.dataset({
 				url: url,
+				id: url.href,
 				'meta.filetype': '',
 				'meta.filename': '',
 				'meta.source': [],
@@ -207,29 +209,66 @@ async function addManyHrefsToDB(hrefs) {
 
 			datasets.push(dataset)
 
-			await db.host.updateOne({
-				name: url.hostname
-			}, {
-				$push: {
-					datasets: dataset._id
-				}
-			}, {
-				upsert: true,
-				setDefaultsOnInsert: true
-			}).exec();
-
 		} catch (error) {
-			console.log(error.message)
+			console.error('mongoose db class', error.message)
 		}
 
 	}
 
 	console.log('inserting:', datasets.length)
 
-	return db.dataset.insertMany(datasets, {
-		ordered: false,
-		rawResult: true
-	});
+	try {
+		let res = await db.dataset.insertMany(datasets, {
+			ordered: false,
+			rawResult: true
+		});
+
+		if (res.insertedCount != undefined) {
+			console.log('Inserted', res.insertedCount)
+		} else {
+			console.log('Inserted', res)
+		}
+
+	} catch (error) {
+		if (error.code == 11000) {
+			console.log('Inserted', error.result.result.nInserted)
+		} else {
+			console.error('await error', error.code)
+		}
+	}
+
+	try {
+
+		let idArray = [];
+
+		for (let dataset of datasets) {
+			idArray.push(dataset.id)
+		}
+
+		let insertedDatasets = await db.dataset.find({
+			'id': {
+				'$in': idArray
+			}
+		})
+
+		for (let insertedDataset of insertedDatasets) {
+			await db.host.updateOne({
+				name: insertedDataset.url.hostname
+			}, {
+				$push: {
+					datasets: insertedDataset._id
+				}
+			}, {
+				upsert: true,
+				setDefaultsOnInsert: true
+			}).exec();
+		}
+
+
+	} catch (error) {
+		console.error('res error', error)
+	}
+
 
 }
 

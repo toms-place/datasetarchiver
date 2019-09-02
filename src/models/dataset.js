@@ -60,8 +60,12 @@ let crawlingInfoSchema = new mongoose.Schema({
 let datasetSchema = new mongoose.Schema({
 	url: {
 		type: mongoose.Schema.Types.Mixed,
-		required: true,
-		unique: true
+		required: true
+	},
+	id: {
+		type: String,
+		unique: true,
+		required: true
 	},
 	crawlingInfo: crawlingInfoSchema,
 	versions: [{

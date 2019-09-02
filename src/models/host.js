@@ -41,7 +41,6 @@ hostSchema.query.getDatasetsToCrawl = async function () {
 				$lt: new Date()
 			},
 			'crawlingInfo.stopped': false
-
 		}
 	}).exec()
 
@@ -75,7 +74,7 @@ hostSchema.query.getDatasetToCrawl = async function (url) {
 	}).populate({
 		path: 'datasets',
 		match: {
-			url: url,
+			id: url.href,
 			'crawlingInfo.stopped': false
 		}
 	}).exec()

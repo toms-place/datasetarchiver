@@ -1,7 +1,6 @@
 const fs = require('fs');
 const csv = require('csv-parser')
 const db = require('./src/database').getInstance();
-const dbEmitter = require('./src/events/dbEvents');
 const sleep = require('util').promisify(setTimeout);
 
 const {
@@ -9,7 +8,7 @@ const {
 } = require('./src/services/dataset')
 
 
-dbEmitter.on('connected', () => {
+db.conn.on('connected', () => {
 
 	let results = [];
 
@@ -20,30 +19,29 @@ dbEmitter.on('connected', () => {
 			.on('data', (data) => results.push(data))
 			.on('end', async () => {
 				if (i == 24) {
-					bulk(results)
+					let batches = await batch(results)
+					for (let batch of batches) {
+						await addManyHrefsToDB(batch)
+					}
 				}
 			})
 	}
 });
 
-async function bulk(results) {
-	let bulk = [];
+function batch(results) {
+	let batches = [];
+	count = 0;
+	batches[count] = [];
 	for (let i = 0; i < results.length; i++) {
 		try {
-			bulk.push(results[i])
-			if (i%5000 == 0) {
-				let added = await addManyHrefsToDB(bulk)
-				console.log(i, added.length)
-				bulk = []
-				await sleep(10000);
-			} else if (i == results.length - 1) {
-				let added = await addManyHrefsToDB(bulk)
-				console.log(i, added.length)
-				process.exit()
+			batches[count].push(results[i])
+			if (i % 10000 == 0) {
+				count++;
+				batches[count] = [];
 			}
-			
 		} catch (error) {
 			console.log(error)
 		}
 	}
+	return batches
 }
