@@ -11,6 +11,8 @@ const {
 //db setup
 const db = require('./database.js').getInstance();
 
+testConnection()
+
 let flag = true;
 
 db.conn.on('connected', () => {
@@ -50,11 +52,21 @@ async function crawl(dataset) {
     let resp = await rp.get(url)
     console.log(resp)
   } catch (error) {
-    if (error.name == 'RequestError') {
-      console.log('waiting for connection')
-      await sleep(10000)
-    } else {
       console.error(error.message)
+  }
+}
+
+async function testConnection() {
+  try {
+    let url;
+    if (env == 'production') {
+      url = `${protocol}//${host}:${port}/${endpoint}/api`
+    } else {
+      url = `${protocol}//${host}:${port}/api`
     }
+    let resp = await rp.get(url)
+    console.log(resp)
+  } catch (error) {
+      console.error(error.message)
   }
 }
