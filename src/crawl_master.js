@@ -49,10 +49,13 @@ async function crawl(dataset) {
     } else {
       url = `${protocol}//${host}:${port}/api/crawl?url=${dataset.url.href}`
     }
-    let resp = await rp.get(url)
+    let resp = await rp.get({
+      uri: url,
+      insecure: true
+    })
     console.log(resp)
   } catch (error) {
-      console.error(error.message)
+    console.error(error.message)
   }
 }
 
@@ -64,9 +67,12 @@ async function testConnection() {
     } else {
       url = `${protocol}//${host}:${port}/api`
     }
-    let resp = await rp.get(url)
+    let resp = await rp.get({
+      uri: url,
+      insecure: true
+    })
     console.log(resp)
   } catch (error) {
-      console.error(error.message)
+    console.error(error.message)
   }
 }

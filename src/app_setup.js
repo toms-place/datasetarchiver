@@ -5,9 +5,12 @@ import morgan from 'morgan'
 import createError from 'http-errors'
 import express from 'express'
 import cookieParser from 'cookie-parser'
+import { resolveNaptr } from 'dns';
 
 const {
-	port
+	port,
+	endpoint,
+	env
 } = require('./config');
 
 const localPath = process.env.DATASETPATH || './data';
@@ -43,8 +46,13 @@ app.use(express.static(localPath));
 //routes setup
 const indexRouter = require('./routes/index.js');
 const apiRouter = require('./routes/api.js');
-app.use('/crawler', indexRouter);
-app.use('/crawler/api', apiRouter);
+if (env == 'production') {
+	app.use(`/${endpoint}`, indexRouter);
+	app.use(`/${endpoint}/api`, apiRouter);
+} else {
+	app.use('/', indexRouter);
+	app.use('/api', apiRouter);
+}
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
