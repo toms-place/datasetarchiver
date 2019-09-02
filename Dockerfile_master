@@ -16,6 +16,7 @@ RUN npm run build:master
 # use latest version of node
 FROM node:12.4.0-alpine
 RUN apk add --no-cache bash
+RUN apk add --no-cache curl
 
 # set working directory
 WORKDIR /master
