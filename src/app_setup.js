@@ -43,8 +43,8 @@ app.use(express.static(localPath));
 //routes setup
 const indexRouter = require('./routes/index.js');
 const apiRouter = require('./routes/api.js');
-app.use('/', indexRouter);
-app.use('/api', apiRouter);
+app.use('/crawler', indexRouter);
+app.use('/crawler/api', apiRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
