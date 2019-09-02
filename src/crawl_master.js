@@ -3,7 +3,9 @@ const rp = require('request-promise-native');
 const {
   host,
   port,
-  protocol
+  protocol,
+  env,
+  endpoint
 } = require('./config');
 
 //db setup
@@ -39,7 +41,13 @@ async function tick() {
 
 async function crawl(dataset) {
   try {
-    let resp = await rp.get(`${protocol}//${host}:${port}/api/crawl?url=${dataset.url.href}`)
+    let url;
+    if (env == 'production') {
+      url = `${protocol}//${host}:${port}/${endpoint}/api/crawl?url=${dataset.url.href}`
+    } else {
+      url = `${protocol}//${host}:${port}/api/crawl?url=${dataset.url.href}`
+    }
+    let resp = await rp.get(url)
     console.log(resp)
   } catch (error) {
     if (error.name == 'RequestError') {

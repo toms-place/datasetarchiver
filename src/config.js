@@ -5,6 +5,7 @@ module.exports = {
   protocol: process.env.PROTOCOL,
   host: process.env.HOST,
   port: process.env.PORT,
+  endpoint: process.env.ENDPOINT,
   DB_Server: process.env.DB_Server,
   DB_Name: process.env.DB_Name,
   CRAWL_InitRange: process.env.CRAWL_InitRange,
