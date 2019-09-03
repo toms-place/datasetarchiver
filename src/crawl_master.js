@@ -29,6 +29,8 @@ async function tick() {
   let datasets;
   if (flag) datasets = await db.dataset.find().getDatasetsToCrawl();
 
+  console.log('crawling', datasets.length)
+
   if (datasets) {
     for (let dataset of datasets) {
       await crawl(dataset);

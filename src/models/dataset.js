@@ -114,7 +114,7 @@ datasetSchema.query.getDatasetToCrawl = async function (url) {
 
 datasetSchema.query.getDatasetsToCrawl = async function () {
 
-	this.find({
+	return this.find({
 		$and: [{
 			'crawl_info.nextCrawl': {
 				$lt: new Date()
@@ -130,37 +130,6 @@ datasetSchema.query.getDatasetsToCrawl = async function () {
 		}]
 	})
 
-	//TODO optimize lookup
-	let datasets = await this.find({
-		$and: [{
-			currentlyCrawled: false
-		}, {
-			nextCrawl: {
-				$lt: new Date()
-			}
-		}]
-	}).populate({
-		path: 'datasets',
-		match: {
-			'crawl_info.nextCrawl': {
-				$lt: new Date()
-			},
-			'crawl_info.stopped': false
-		}
-	}).exec()
-
-	if (hosts) {
-		let datasets = []
-		for (let host of hosts) {
-			for (let dataset of host.datasets) {
-				datasets.push(dataset)
-				break;
-			}
-		}
-		return datasets
-	} else {
-		return null
-	}
 }
 
 
