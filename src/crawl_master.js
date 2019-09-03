@@ -40,7 +40,7 @@ async function tick() {
     }
   }
 
-  await sleep(3600000)
+  await sleep(500)
 
   tick();
 

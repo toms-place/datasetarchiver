@@ -89,7 +89,6 @@ let datasetSchema = new mongoose.Schema({
 	meta: metaSchema
 })
 
-datasetSchema.index()
 datasetSchema.plugin(uniqueValidator);
 
 

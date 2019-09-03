@@ -32,8 +32,17 @@ class Crawler {
 
 		try {
 
+			try {
+				console.log('locked', await this.lockHost())
+
+			} catch (error) {
+				console.log(error)
+			}
+
 			this.dataset = await db.dataset.find().getDatasetToCrawl(this.url)
+
 			if (!this.dataset) {
+				console.log('released', await this.releaseHost())
 				return false
 			}
 
@@ -51,7 +60,6 @@ class Crawler {
 					break;
 			}
 
-			await this.lockHost()
 
 			if (this.dataset.crawl_info.firstCrawl == true) {
 
@@ -62,7 +70,7 @@ class Crawler {
 				await this.download();
 			}
 
-			await this.releaseHost();
+			console.log('released', await this.releaseHost())
 			return true
 
 		} catch (error) {
@@ -213,10 +221,8 @@ class Crawler {
 		} catch (error) {
 			if (error.statusCode) {
 				this.addError(error.statusCode, false)
-				console.error(error.statusCode);
 			} else {
 				this.addError(error.message, false)
-				console.error(error.message);
 			}
 		}
 
@@ -246,27 +252,34 @@ class Crawler {
 
 	async lockHost() {
 
-		await db.dataset.updateMany({
-			'crawl_info.host.name': this.dataset.crawl_info.host.name
+		return db.dataset.updateMany({
+			$and: [{
+				'crawl_info.host.name': this.url.hostname
+			}, {
+				id: {
+					$ne: this.url.href
+				}
+			}]
 		}, {
 			$set: {
 				'crawl_info.host.nextCrawl': new Date(new Date().getTime() + CRAWL_HostInterval * 1000),
 				'crawl_info.host.currentlyCrawled': true
 			}
-		}).exec();
+		});
+
 
 	}
 
 	async releaseHost() {
 
-		await db.dataset.updateMany({
-			'crawl_info.host.name': this.dataset.crawl_info.host.name
+		return db.dataset.updateMany({
+			'crawl_info.host.name': this.url.hostname
 		}, {
 			$set: {
 				'crawl_info.host.nextCrawl': new Date(new Date().getTime() + CRAWL_HostInterval * 1000),
 				'crawl_info.host.currentlyCrawled': false
 			}
-		}).exec();
+		});
 
 	}
 
