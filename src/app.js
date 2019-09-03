@@ -37,3 +37,5 @@ server.on('listening', () => {
     'port ' + addr.port;
   console.log(`Process ${process.pid}: listening on ${bind}`)
 });
+
+module.exports = server;

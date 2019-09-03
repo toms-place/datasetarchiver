@@ -27,7 +27,7 @@ db.conn.on('disconnected', () => {
 async function tick() {
 
   let datasets;
-  if (flag) datasets = await db.host.find().getDatasetsToCrawl();
+  if (flag) datasets = await db.dataset.find().getDatasetsToCrawl();
 
   if (datasets) {
     for (let dataset of datasets) {

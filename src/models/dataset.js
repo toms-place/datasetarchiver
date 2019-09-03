@@ -18,7 +18,22 @@ let metaSchema = new mongoose.Schema({
 	filename: String
 })
 
-let crawlingInfoSchema = new mongoose.Schema({
+let hostSchema = new mongoose.Schema({
+	name: {
+		type: String,
+		required: true
+	},
+	currentlyCrawled: {
+		type: Boolean,
+		default: false
+	},
+	nextCrawl: {
+		type: Date,
+		default: new Date()
+	}
+})
+
+let crawl_infoSchema = new mongoose.Schema({
 	firstCrawl: {
 		type: Boolean,
 		default: true
@@ -52,28 +67,101 @@ let crawlingInfoSchema = new mongoose.Schema({
 		default: false
 	},
 	host: {
-		type: mongoose.Schema.Types.String,
-		ref: 'hosts'
-	},
+		type: hostSchema,
+		index: true
+	}
 })
 
 let datasetSchema = new mongoose.Schema({
-	url: {
-		type: mongoose.Schema.Types.Mixed,
-		required: true
-	},
 	id: {
 		type: String,
 		unique: true,
 		required: true
 	},
-	crawlingInfo: crawlingInfoSchema,
+	url: {
+		type: mongoose.Schema.Types.Mixed,
+		required: true
+	},
+	crawl_info: crawl_infoSchema,
 	versions: [{
 		type: mongoose.Schema.Types.ObjectId
 	}],
 	meta: metaSchema
 })
 
+datasetSchema.index()
 datasetSchema.plugin(uniqueValidator);
+
+
+datasetSchema.query.getDatasetToCrawl = async function (url) {
+	return this.findOne({
+		$and: [{
+			id: url.href
+		}, {
+			'crawl_info.nextCrawl': {
+				$lt: new Date()
+			}
+		}, {
+			'crawl_info.host.currentlyCrawled': false
+		}, {
+			'crawl_info.host.nextCrawl': {
+				$lt: new Date()
+			}
+		}]
+	})
+}
+
+
+datasetSchema.query.getDatasetsToCrawl = async function () {
+
+	this.find({
+		$and: [{
+			'crawl_info.nextCrawl': {
+				$lt: new Date()
+			}
+		}, {
+			'crawl_info.stopped': false
+		}, {
+			'crawl_info.host.currentlyCrawled': false
+		}, {
+			'crawl_info.host.nextCrawl': {
+				$lt: new Date()
+			}
+		}]
+	})
+
+	//TODO optimize lookup
+	let datasets = await this.find({
+		$and: [{
+			currentlyCrawled: false
+		}, {
+			nextCrawl: {
+				$lt: new Date()
+			}
+		}]
+	}).populate({
+		path: 'datasets',
+		match: {
+			'crawl_info.nextCrawl': {
+				$lt: new Date()
+			},
+			'crawl_info.stopped': false
+		}
+	}).exec()
+
+	if (hosts) {
+		let datasets = []
+		for (let host of hosts) {
+			for (let dataset of host.datasets) {
+				datasets.push(dataset)
+				break;
+			}
+		}
+		return datasets
+	} else {
+		return null
+	}
+}
+
 
 module.exports = mongoose.model('datasets', datasetSchema)

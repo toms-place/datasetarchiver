@@ -18,8 +18,8 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 			id: url.href,
 			'meta.filename': filename,
 			'meta.filetype': filetype,
-			'crawlingInfo.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4),
-			'crawlingInfo.host': url.hostname
+			'crawl_info.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4),
+			'crawl_info.host.name': url.hostname
 		})
 
 		if (source_href.length > 0) {
@@ -68,37 +68,24 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 		}
 	}
 
-	try {
-		if (dataset != null) {
-			await db.host.updateOne({
-				name: url.hostname
-			}, {
-				$push: {
-					datasets: dataset._id
-				}
-			}, {
-				upsert: true,
-				setDefaultsOnInsert: true
-			}).exec();
-
-			resp.hoststatus = 200;
-			resp.hostmessage = 'host added';
-			resp.hosturl = url.hostname;
-		} else {
-			resp.hoststatus = 404;
-			resp.hostmessage = 'host not added, no dataset created';
-			resp.hosturl = url.hostname;
-
-		}
-
-	} catch (error) {
-		resp.hoststatus = 404;
-		resp.hostmessage = 'host not added';
-		resp.hosturl = url.hostname;
-	}
-
 	return resp
 
+}
+
+async function crawlHref(href) {
+	try {
+
+		let url = new URL(href);
+
+		if (url) {
+			let crawler = new Crawler(url);
+			return await crawler.crawl();
+		} else {
+			return false;
+		}
+	} catch (error) {
+		throw error
+	}
 }
 
 async function deleteFromDB(href) {
@@ -114,23 +101,6 @@ async function deleteFromDB(href) {
 			return `Worker ${process.pid} deleted: ${url.href}`;
 		} else {
 			return new Error(`A Problem occured, maybe ${url.href} is not in our DB. If you want to add it, try /api/add?url=`);
-		}
-	} catch (error) {
-		throw error
-	}
-}
-
-async function crawlHref(href) {
-	try {
-
-		let url = new URL(href);
-		let dataset = await db.host.find().getDatasetToCrawl(url)
-
-		if (dataset) {
-			new Crawler(dataset);
-			return true;
-		} else {
-			return false;
 		}
 	} catch (error) {
 		throw error
@@ -183,20 +153,23 @@ async function getAllVersionsOfDatasetAsStream(href) {
 async function addManyHrefsToDB(hrefs) {
 
 	let datasets = [];
+	let url;
+	let dataset;
 
 	for (let i = 0; i < hrefs.length; i++) {
 
 		try {
-			let url = new URL(hrefs[i].url)
 
-			let dataset = await new db.dataset({
+			url = new URL(hrefs[i].url)
+
+			dataset = await new db.dataset({
 				url: url,
 				id: url.href,
 				'meta.filetype': '',
 				'meta.filename': '',
 				'meta.source': [],
-				'crawlingInfo.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4),
-				'crawlingInfo.host': url.hostname
+				'crawl_info.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4),
+				'crawl_info.host.name': url.hostname
 			});
 
 			if (hrefs[i].format) {
@@ -236,39 +209,6 @@ async function addManyHrefsToDB(hrefs) {
 			console.error('await error', error.code)
 		}
 	}
-
-	try {
-
-		let idArray = [];
-
-		for (let dataset of datasets) {
-			idArray.push(dataset.id)
-		}
-
-		let insertedDatasets = await db.dataset.find({
-			'id': {
-				'$in': idArray
-			}
-		})
-
-		for (let insertedDataset of insertedDatasets) {
-			await db.host.updateOne({
-				name: insertedDataset.url.hostname
-			}, {
-				$push: {
-					datasets: insertedDataset._id
-				}
-			}, {
-				upsert: true,
-				setDefaultsOnInsert: true
-			}).exec();
-		}
-
-
-	} catch (error) {
-		console.error('res error', error)
-	}
-
 
 }
 
