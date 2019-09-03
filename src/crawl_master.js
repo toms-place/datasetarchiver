@@ -33,11 +33,14 @@ async function tick() {
 
   if (datasets) {
     for (let dataset of datasets) {
-      await crawl(dataset);
+      let crawlableDataset = await db.dataset.find().getDatasetToCrawl(dataset.url);
+      if (crawlableDataset) {
+        crawl(dataset);
+      }
     }
   }
 
-  await sleep(500)
+  await sleep(3600000)
 
   tick();
 

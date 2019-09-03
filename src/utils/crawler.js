@@ -207,8 +207,8 @@ class Crawler {
 		try {
 			head = await rp.head(this.dataset.url.href);
 		} catch (error) {
-			this.addError(error.message, false)
-			console.error(error.message);
+			this.addError(error.code, false)
+			console.error(error.code);
 		}
 
 		if (!(this.dataset.meta.filename.length > 0)) {
@@ -229,11 +229,13 @@ class Crawler {
 		}
 
 		try {
-			if (parseInt(head['content-length']) > parseInt(MaxFileSizeInBytes)) {
-				this.dataset.crawl_info.stopped = true;
-				this.addError('max file size exceeded', true);
-			} else {
-				this.calcNextCrawl(true);
+			if (head) {
+				if (parseInt(head['content-length']) > parseInt(MaxFileSizeInBytes)) {
+					this.dataset.crawl_info.stopped = true;
+					this.addError('max file size exceeded', true);
+				} else {
+					this.calcNextCrawl(true);
+				}
 			}
 		} catch (error) {
 			this.addError(error.message, true);
