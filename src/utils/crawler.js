@@ -206,40 +206,41 @@ class Crawler {
 
 		try {
 			head = await rp.head(this.dataset.url.href);
+			if (parseInt(head['content-length']) > parseInt(MaxFileSizeInBytes)) {
+				this.dataset.crawl_info.stopped = true;
+				this.addError('max file size exceeded', true);
+			}
 		} catch (error) {
-			this.addError(error.code, false)
-			console.error(error.code);
+			if (error.statusCode) {
+				this.addError(error.statusCode, false)
+				console.error(error.statusCode);
+			} else {
+				this.addError(error.message, false)
+				console.error(error.message);
+			}
 		}
 
-		if (!(this.dataset.meta.filename.length > 0)) {
+		if (this.dataset.crawl_info.stopped = false) {
+
+			if (!(this.dataset.meta.filename.length > 0)) {
+
+				try {
+					this.dataset.meta.filename = contentDisposition.parse(head['content-disposition']).parameters.filename
+				} catch (error) {
+					this.dataset.meta.filename = this.dataset.url.pathname.split('/')[this.dataset.url.pathname.split('/').length - 1]
+				}
+
+			}
 
 			try {
-				this.dataset.meta.filename = contentDisposition.parse(head['content-disposition']).parameters.filename
+				this.dataset.meta.filetype = mime.getExtension(head['content-type'].split(';')[0])
 			} catch (error) {
-				this.dataset.meta.filename = this.dataset.url.pathname.split('/')[this.dataset.url.pathname.split('/').length - 1]
+				let fileSplit = this.dataset.meta.filename.split('.')
+				this.dataset.meta.filetype = (fileSplit.length > 1) ? fileSplit[fileSplit.length - 1] : 'unknown'
 			}
 
-		}
+			this.calcNextCrawl();
 
-		try {
-			this.dataset.meta.filetype = mime.getExtension(head['content-type'].split(';')[0])
-		} catch (error) {
-			let fileSplit = this.dataset.meta.filename.split('.')
-			this.dataset.meta.filetype = (fileSplit.length > 1) ? fileSplit[fileSplit.length - 1] : 'unknown'
-		}
-
-		try {
-			if (head) {
-				if (parseInt(head['content-length']) > parseInt(MaxFileSizeInBytes)) {
-					this.dataset.crawl_info.stopped = true;
-					this.addError('max file size exceeded', true);
-				} else {
-					this.calcNextCrawl(true);
-				}
-			}
-		} catch (error) {
-			this.addError(error.message, true);
-			console.error(error.message);
 		}
 	}
 

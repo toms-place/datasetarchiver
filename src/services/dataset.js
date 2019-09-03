@@ -79,7 +79,8 @@ async function crawlHref(href) {
 
 		if (url) {
 			let crawler = new Crawler(url);
-			return await crawler.crawl();
+			crawler.crawl();
+			return true;
 		} else {
 			return false;
 		}
