@@ -55,6 +55,7 @@ class Database {
 
   _models() {
     this.dataset = require('./models/dataset');
+    this.host = require('./models/host');
     this.file = require('./models/file');
   }
 

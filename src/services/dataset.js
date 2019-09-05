@@ -13,13 +13,12 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 
 	try {
 
-		dataset = await new db.dataset({
+		dataset = new db.dataset({
 			url: url,
 			id: url.href,
 			'meta.filename': filename,
 			'meta.filetype': filetype,
-			'crawl_info.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4),
-			'crawl_info.host.name': url.hostname
+			'crawl_info.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4)
 		})
 
 		if (source_href.length > 0) {
@@ -68,6 +67,35 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 		}
 	}
 
+	try {
+		if (dataset != null) {
+			await db.host.updateOne({
+				name: url.hostname
+			}, {
+				$push: {
+					datasets: dataset._id
+				}
+			}, {
+				upsert: true,
+				setDefaultsOnInsert: true
+			})
+
+			resp.hoststatus = 200;
+			resp.hostmessage = 'host added';
+			resp.hosturl = url.hostname;
+		} else {
+			resp.hoststatus = 404;
+			resp.hostmessage = 'host not added, no dataset created';
+			resp.hosturl = url.hostname;
+
+		}
+
+	} catch (error) {
+		resp.hoststatus = 404;
+		resp.hostmessage = 'host not added';
+		resp.hosturl = url.hostname;
+	}
+
 	return resp
 
 }
@@ -79,7 +107,7 @@ async function crawlHref(href) {
 
 		if (url) {
 			let crawler = new Crawler(url);
-			crawler.crawl();
+			crawler.crawl()
 			return true;
 		} else {
 			return false;
@@ -169,8 +197,7 @@ async function addManyHrefsToDB(hrefs) {
 				'meta.filetype': '',
 				'meta.filename': '',
 				'meta.source': [],
-				'crawl_info.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4),
-				'crawl_info.host.name': url.hostname
+				'crawl_info.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4)
 			});
 
 			if (hrefs[i].format) {
@@ -210,8 +237,42 @@ async function addManyHrefsToDB(hrefs) {
 			console.error('await error', error.code)
 		}
 	}
+	/*
+		try {
+
+			let ids;
+
+			for (let dataset of datasets) {
+				ids.push(dataset.id)
+			}
+
+			let insertedDatasets = await db.dataset.find({
+				id: {
+					$in: ids
+				}
+			})
+
+			for (let insertedDataset of insertedDatasets) {
+				await db.host.updateOne({
+					name: url.hostname
+				}, {
+					$push: {
+						datasets: insertedDataset._id
+					}
+				}, {
+					upsert: true,
+					setDefaultsOnInsert: true
+				})
+
+			}
+
+		} catch (error) {
+			console.log(error.message)
+		}
+	*/
 
 }
+
 
 module.exports = {
 	addHrefToDB,

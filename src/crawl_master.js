@@ -5,17 +5,21 @@ const {
   port,
   protocol,
   env,
-  endpoint
+  endpoint,
+  CRAWL_HostInterval
 } = require('./config');
+
+//TODO Singleton HOST for crawling management only in master
 
 //db setup
 const db = require('./database.js').getInstance();
 
-testConnection()
+//testConnection()
 
 let flag = true;
 
 db.conn.on('connected', () => {
+
   flag = true;
   tick();
 })
@@ -33,8 +37,8 @@ async function tick() {
 
   if (datasets) {
     for (let dataset of datasets) {
-      let crawlableDataset = await db.dataset.find().getDatasetToCrawl(dataset.url);
-      if (crawlableDataset) {
+      let hostLocked = lockHost(dataset.url)
+      if (hostLocked) {
         crawl(dataset);
       }
     }
@@ -80,4 +84,29 @@ async function testConnection() {
   } catch (error) {
     console.error(error.message)
   }
+}
+
+let lockHost = async (url) => {
+
+  let res = await db.host.updateOne({
+    $and: [{
+      name: url.hostname
+    }, {
+      nextCrawl: {
+        $lt: new Date()
+      }
+    }]
+  }, {
+    $set: {
+      nextCrawl: new Date(new Date().getTime() + CRAWL_HostInterval * 1000),
+      currentlyCrawled: true
+    }
+  });
+
+  if (res.nModified > 0 & res.n > 0) {
+    return true
+  } else {
+    return false
+  }
+
 }

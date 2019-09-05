@@ -4,6 +4,8 @@ const {
 const http = require('http');
 const https = require('https');
 const db = require('../database').getInstance();
+//const hostsInstance = require('./hosts').getInstance();
+
 const {
 	CRAWL_HostInterval,
 	CRAWL_minRange,
@@ -32,17 +34,18 @@ class Crawler {
 
 		try {
 
-			try {
-				console.log('locked', await this.lockHost())
+			//todo get id on update just if update true crawl
+			//await hostsInstance.getHosts()
 
-			} catch (error) {
-				console.log(error)
+			let lockHost = await this.lockHost()
+
+			if (!lockHost) {
+				return false
 			}
 
 			this.dataset = await db.dataset.find().getDatasetToCrawl(this.url)
 
 			if (!this.dataset) {
-				console.log('released', await this.releaseHost())
 				return false
 			}
 
@@ -210,6 +213,7 @@ class Crawler {
 
 	async metaInit() {
 
+
 		let head;
 
 		try {
@@ -226,7 +230,7 @@ class Crawler {
 			}
 		}
 
-		if (this.dataset.crawl_info.stopped = false) {
+		if (this.dataset.crawl_info.stopped == false) {
 
 			if (!(this.dataset.meta.filename.length > 0)) {
 
@@ -245,42 +249,45 @@ class Crawler {
 				this.dataset.meta.filetype = (fileSplit.length > 1) ? fileSplit[fileSplit.length - 1] : 'unknown'
 			}
 
-			this.calcNextCrawl();
+			this.calcNextCrawl(true);
 
 		}
 	}
 
 	async lockHost() {
 
-		return db.dataset.updateMany({
+		let res = await db.host.updateOne({
 			$and: [{
-				'crawl_info.host.name': this.url.hostname
+				name: this.url.hostname
 			}, {
-				id: {
-					$ne: this.url.href
+				nextCrawl: {
+					$lt: new Date()
 				}
 			}]
 		}, {
 			$set: {
-				'crawl_info.host.nextCrawl': new Date(new Date().getTime() + CRAWL_HostInterval * 1000),
-				'crawl_info.host.currentlyCrawled': true
+				nextCrawl: new Date(new Date().getTime() + CRAWL_HostInterval * 1000),
+				currentlyCrawled: true
 			}
 		});
 
+		if (res.nModified > 0 & res.n > 0) {
+			return true
+		} else {
+			return false
+		}
 
 	}
 
 	async releaseHost() {
-
-		return db.dataset.updateMany({
-			'crawl_info.host.name': this.url.hostname
+		return db.host.updateOne({
+			name: this.url.hostname
 		}, {
 			$set: {
-				'crawl_info.host.nextCrawl': new Date(new Date().getTime() + CRAWL_HostInterval * 1000),
-				'crawl_info.host.currentlyCrawled': false
+				nextCrawl: new Date(new Date().getTime() + CRAWL_HostInterval * 1000),
+				currentlyCrawled: false
 			}
 		});
-
 	}
 
 	async addError(error, calcNextCrawl) {

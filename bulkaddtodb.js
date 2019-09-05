@@ -35,7 +35,7 @@ function batch(results) {
 	for (let i = 0; i < results.length; i++) {
 		try {
 			batches[count].push(results[i])
-			if (i % 10000 == 0) {
+			if (i % 1000 == 0) {
 				count++;
 				batches[count] = [];
 			}
