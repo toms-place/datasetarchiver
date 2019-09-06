@@ -31,12 +31,14 @@ async function tick() {
 
   let datasets;
 
-  if (dbFlag) {
-    datasets = await db.dataset.find().getDatasetsToCrawl()
-    await hostsHandler.initHosts()
+  try {
+    if (dbFlag) {
+      datasets = await db.dataset.find().getDatasetsToCrawl()
+      await hostsHandler.initHosts()
+    }
+  } catch (error) {
+    console.log(error)
   }
-
-  console.log('try to crawl:', datasets.length, 'datasets')
 
   if (datasets) {
 
@@ -47,7 +49,6 @@ async function tick() {
         if (dataset.url.hostname == host.name) {
           crawl(dataset);
           hostsHandler.releaseHost(dataset.url.hostname)
-          console.log(dataset.url.hostname)
           continue hosts;
         }
 
