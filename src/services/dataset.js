@@ -30,8 +30,8 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 		dataset = await new db.dataset({
 			url: url,
 			id: url.href,
-			'meta.filetype': '',
-			'meta.filename': '',
+			'meta.filetype': filetype,
+			'meta.filename': filename,
 			'meta.source': [],
 			'crawl_info.crawlInterval': randomCrawlStart,
 			'crawl_info.nextCrawl': new Date(new Date().getTime() + randomCrawlStart * 1000)
