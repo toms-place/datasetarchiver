@@ -1,5 +1,4 @@
 let mongoose = require('mongoose')
-var uniqueValidator = require('mongoose-unique-validator');
 
 let hostSchema = new mongoose.Schema({
 	name: {
@@ -20,17 +19,11 @@ let hostSchema = new mongoose.Schema({
 	}]
 })
 
-hostSchema.plugin(uniqueValidator);
-
 hostSchema.query.getHostsToCrawl = function () {
 	return this.find({
-		$and: [{
-			currentlyCrawled: false
-		}, {
-			nextCrawl: {
-				$lt: new Date()
-			}
-		}]
+		nextCrawl: {
+			$lt: new Date()
+		}
 	})
 }
 
@@ -38,8 +31,6 @@ hostSchema.query.getHostToCrawl = function (hostname) {
 	return this.findOne({
 		$and: [{
 			name: hostname
-		}, {
-			currentlyCrawled: false
 		}, {
 			nextCrawl: {
 				$lt: new Date()

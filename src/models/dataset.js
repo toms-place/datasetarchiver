@@ -1,5 +1,4 @@
 let mongoose = require('mongoose');
-var uniqueValidator = require('mongoose-unique-validator');
 
 const {
 	CRAWL_minRange
@@ -70,10 +69,8 @@ let datasetSchema = new mongoose.Schema({
 	meta: metaSchema
 })
 
-datasetSchema.plugin(uniqueValidator);
 
-
-datasetSchema.query.getDatasetToCrawl = async function (url) {
+datasetSchema.query.getDatasetToCrawl = function (url) {
 	return this.findOne({
 		$and: [{
 			id: url.href
@@ -86,7 +83,7 @@ datasetSchema.query.getDatasetToCrawl = async function (url) {
 }
 
 
-datasetSchema.query.getDatasetsToCrawl = async function () {
+datasetSchema.query.getDatasetsToCrawl = function () {
 
 	return this.find({
 		$and: [{

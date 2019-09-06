@@ -1,12 +1,12 @@
 const sleep = require('util').promisify(setTimeout);
 const rp = require('request-promise-native');
+const hostsHandler = require('./utils/hostsHandler').getInstance();
 const {
   host,
   port,
   protocol,
   env,
-  endpoint,
-  CRAWL_HostInterval
+  endpoint
 } = require('./config');
 
 //TODO Singleton HOST for crawling management only in master
@@ -16,30 +16,41 @@ const db = require('./database.js').getInstance();
 
 //testConnection()
 
-let flag = true;
+let dbFlag = true;
 
 db.conn.on('connected', () => {
-
-  flag = true;
+  dbFlag = true;
   tick();
 })
 
 db.conn.on('disconnected', () => {
-  flag = false;
+  dbFlag = false;
 })
 
 async function tick() {
 
   let datasets;
-  if (flag) datasets = await db.dataset.find().getDatasetsToCrawl();
 
-  console.log('crawling', datasets.length)
+  if (dbFlag) {
+    datasets = await db.dataset.find().getDatasetsToCrawl()
+    await hostsHandler.initHosts()
+  }
+
+  console.log('try to crawl:', datasets.length, 'datasets')
 
   if (datasets) {
-    for (let dataset of datasets) {
-      let hostLocked = lockHost(dataset.url)
-      if (hostLocked) {
-        crawl(dataset);
+
+    hosts: for (let host of hostsHandler.hosts) {
+
+      for (let dataset of datasets) {
+
+        if (dataset.url.hostname == host.name) {
+          crawl(dataset);
+          hostsHandler.releaseHost(dataset.url.hostname)
+          console.log(dataset.url.hostname)
+          continue hosts;
+        }
+
       }
     }
   }
@@ -66,47 +77,4 @@ async function crawl(dataset) {
   } catch (error) {
     console.error(error.message)
   }
-}
-
-async function testConnection() {
-  try {
-    let url;
-    if (env == 'production') {
-      url = `${protocol}//${host}:${port}/${endpoint}/api`
-    } else {
-      url = `${protocol}//${host}:${port}/api`
-    }
-    let resp = await rp.get({
-      uri: url,
-      insecure: true
-    })
-    console.log(resp)
-  } catch (error) {
-    console.error(error.message)
-  }
-}
-
-let lockHost = async (url) => {
-
-  let res = await db.host.updateOne({
-    $and: [{
-      name: url.hostname
-    }, {
-      nextCrawl: {
-        $lt: new Date()
-      }
-    }]
-  }, {
-    $set: {
-      nextCrawl: new Date(new Date().getTime() + CRAWL_HostInterval * 1000),
-      currentlyCrawled: true
-    }
-  });
-
-  if (res.nModified > 0 & res.n > 0) {
-    return true
-  } else {
-    return false
-  }
-
 }

@@ -7,7 +7,14 @@ const {
 const getRandomInt = require('../utils/randomInt');
 
 async function addHrefToDB(href, source_href = '', filename = '', filetype = '') {
-	let url = new URL(href);
+	let url;
+
+	try {
+		url = new URL(href);
+	} catch (error) {
+		return error
+	}
+
 	let resp = {};
 	let dataset = null;
 
@@ -104,16 +111,14 @@ async function crawlHref(href) {
 	try {
 
 		let url = new URL(href);
+		let crawler = new Crawler(url);
 
-		if (url) {
-			let crawler = new Crawler(url);
-			crawler.crawl()
-			return true;
-		} else {
-			return false;
-		}
+		crawler.crawl()
+
+		return true;
+
 	} catch (error) {
-		throw error
+		return error;
 	}
 }
 
@@ -131,16 +136,6 @@ async function deleteFromDB(href) {
 		} else {
 			return new Error(`A Problem occured, maybe ${url.href} is not in our DB. If you want to add it, try /api/add?url=`);
 		}
-	} catch (error) {
-		throw error
-	}
-}
-
-async function crawlDataset(dataset) {
-	try {
-		new Crawler(dataset);
-		let resp = `Worker ${process.pid} started to crawl: ${url.href}`;
-		return resp;
 	} catch (error) {
 		throw error
 	}
@@ -181,9 +176,10 @@ async function getAllVersionsOfDatasetAsStream(href) {
 
 async function addManyHrefsToDB(hrefs) {
 
-	let datasets = [];
 	let url;
+	let randomCrawlStart
 	let dataset;
+	let datasets = [];
 
 	for (let i = 0; i < hrefs.length; i++) {
 
@@ -191,13 +187,21 @@ async function addManyHrefsToDB(hrefs) {
 
 			url = new URL(hrefs[i].url)
 
+			randomCrawlStart = getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4)
+
+			//index key length max = 1024 bytes
+			if (Buffer.byteLength(url.href, 'utf8') > 1024) {
+				continue;
+			}
+
 			dataset = await new db.dataset({
 				url: url,
 				id: url.href,
 				'meta.filetype': '',
 				'meta.filename': '',
 				'meta.source': [],
-				'crawl_info.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4)
+				'crawl_info.crawlInterval': randomCrawlStart,
+				'crawl_info.nextCrawl': new Date(new Date().getTime() + randomCrawlStart * 1000)
 			});
 
 			if (hrefs[i].format) {
@@ -232,44 +236,45 @@ async function addManyHrefsToDB(hrefs) {
 
 	} catch (error) {
 		if (error.code == 11000) {
+			console.log('duplicate')
 			console.log('Inserted', error.result.result.nInserted)
 		} else {
 			console.error('await error', error.code)
 		}
 	}
-	/*
-		try {
 
-			let ids;
+	try {
 
-			for (let dataset of datasets) {
-				ids.push(dataset.id)
+		let ids = [];
+
+		for (let dataset of datasets) {
+			ids.push(dataset.id)
+		}
+
+		let insertedDatasets = await db.dataset.find({
+			id: {
+				$in: ids
 			}
+		})
 
-			let insertedDatasets = await db.dataset.find({
-				id: {
-					$in: ids
+		for (let insertedDataset of insertedDatasets) {
+			await db.host.updateOne({
+				name: url.hostname
+			}, {
+				$push: {
+					datasets: insertedDataset._id
 				}
+			}, {
+				upsert: true,
+				setDefaultsOnInsert: true
 			})
 
-			for (let insertedDataset of insertedDatasets) {
-				await db.host.updateOne({
-					name: url.hostname
-				}, {
-					$push: {
-						datasets: insertedDataset._id
-					}
-				}, {
-					upsert: true,
-					setDefaultsOnInsert: true
-				})
-
-			}
-
-		} catch (error) {
-			console.log(error.message)
 		}
-	*/
+
+	} catch (error) {
+		console.log(error.message)
+	}
+
 
 }
 
@@ -279,7 +284,6 @@ module.exports = {
 	deleteFromDB,
 	crawlHref,
 	getDatasets,
-	crawlDataset,
 	getAllVersionsOfDatasetAsStream,
 	addManyHrefsToDB
 }

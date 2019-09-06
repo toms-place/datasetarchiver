@@ -7,7 +7,6 @@ const db = require('../database').getInstance();
 //const hostsInstance = require('./hosts').getInstance();
 
 const {
-	CRAWL_HostInterval,
 	CRAWL_minRange,
 	CRAWL_maxRange,
 	ErrorCountTreshold,
@@ -28,20 +27,12 @@ class Crawler {
 	constructor(url) {
 		this.url = url;
 		this.agent;
+		this.dataset;
 	}
 
 	async crawl() {
 
 		try {
-
-			//todo get id on update just if update true crawl
-			//await hostsInstance.getHosts()
-
-			let lockHost = await this.lockHost()
-
-			if (!lockHost) {
-				return false
-			}
 
 			this.dataset = await db.dataset.find().getDatasetToCrawl(this.url)
 
@@ -63,7 +54,6 @@ class Crawler {
 					break;
 			}
 
-
 			if (this.dataset.crawl_info.firstCrawl == true) {
 
 				this.dataset.crawl_info.firstCrawl = false
@@ -73,7 +63,6 @@ class Crawler {
 				await this.download();
 			}
 
-			console.log('released', await this.releaseHost())
 			return true
 
 		} catch (error) {
@@ -252,42 +241,6 @@ class Crawler {
 			this.calcNextCrawl(true);
 
 		}
-	}
-
-	async lockHost() {
-
-		let res = await db.host.updateOne({
-			$and: [{
-				name: this.url.hostname
-			}, {
-				nextCrawl: {
-					$lt: new Date()
-				}
-			}]
-		}, {
-			$set: {
-				nextCrawl: new Date(new Date().getTime() + CRAWL_HostInterval * 1000),
-				currentlyCrawled: true
-			}
-		});
-
-		if (res.nModified > 0 & res.n > 0) {
-			return true
-		} else {
-			return false
-		}
-
-	}
-
-	async releaseHost() {
-		return db.host.updateOne({
-			name: this.url.hostname
-		}, {
-			$set: {
-				nextCrawl: new Date(new Date().getTime() + CRAWL_HostInterval * 1000),
-				currentlyCrawled: false
-			}
-		});
 	}
 
 	async addError(error, calcNextCrawl) {
