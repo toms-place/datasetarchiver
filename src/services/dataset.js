@@ -20,13 +20,22 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 
 	try {
 
-		dataset = new db.dataset({
+		randomCrawlStart = getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4)
+
+		//index key length max = 1024 bytes
+		if (Buffer.byteLength(url.href, 'utf8') > 1024) {
+			continue;
+		}
+
+		dataset = await new db.dataset({
 			url: url,
 			id: url.href,
-			'meta.filename': filename,
-			'meta.filetype': filetype,
-			'crawl_info.crawlInterval': getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4)
-		})
+			'meta.filetype': '',
+			'meta.filename': '',
+			'meta.source': [],
+			'crawl_info.crawlInterval': randomCrawlStart,
+			'crawl_info.nextCrawl': new Date(new Date().getTime() + randomCrawlStart * 1000)
+		});
 
 		if (source_href.length > 0) {
 			dataset.meta.source.push(new URL(source_href))

@@ -76,6 +76,6 @@ async function crawl(dataset) {
     })
     console.log(resp)
   } catch (error) {
-    console.error(error.message)
+    console.error(error)
   }
 }
