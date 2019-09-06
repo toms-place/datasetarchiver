@@ -82,7 +82,6 @@ datasetSchema.query.getDatasetToCrawl = function (url) {
 	})
 }
 
-
 datasetSchema.query.getDatasetsToCrawl = function () {
 
 	return this.find({

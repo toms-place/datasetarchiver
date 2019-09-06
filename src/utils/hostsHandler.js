@@ -6,28 +6,8 @@ const {
 let instance = null;
 
 class HostsHandler {
-	constructor(hosts) {
-		this._hosts = hosts;
-	}
-	async checkDataset(dataset) {
-		let flag = false;
-		if (this.hosts) {
-			for (let host of this.hosts) {
-				for (let hostDataset of host.datasets) {
-					if (String(dataset._id) == String(hostDataset)) {
-						flag = true;
-						this.hosts = null;
-						return true;
-					}
-				}
-			}
-		} else {
-			return false
-		}
-		if (flag == false) {
-			this.hosts = null;
-			return false
-		}
+	constructor() {
+		this._hosts;
 	}
 
 	async initHosts() {

@@ -24,7 +24,7 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 
 		//index key length max = 1024 bytes
 		if (Buffer.byteLength(url.href, 'utf8') > 1024) {
-			continue;
+			throw new Error('href too long');
 		}
 
 		dataset = await new db.dataset({
