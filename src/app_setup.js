@@ -5,7 +5,6 @@ import morgan from 'morgan'
 import createError from 'http-errors'
 import express from 'express'
 import cookieParser from 'cookie-parser'
-import { resolveNaptr } from 'dns';
 
 const {
 	port,
@@ -13,7 +12,6 @@ const {
 	env
 } = require('./config');
 
-const localPath = process.env.DATASETPATH || './data';
 // create a write stream (in append mode)
 const accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), {
 	flags: 'a'
@@ -39,9 +37,6 @@ app.use(express.urlencoded({
 }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-
-//make localPath public
-app.use(express.static(localPath));
 
 //routes setup
 const indexRouter = require('./routes/index.js');

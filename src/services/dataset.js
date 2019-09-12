@@ -20,7 +20,7 @@ async function addHrefToDB(href, source_href = '', filename = '', filetype = '')
 
 	try {
 
-		randomCrawlStart = getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4)
+		let randomCrawlStart = getRandomInt(CRAWL_InitRange, CRAWL_InitRange * 4)
 
 		//index key length max = 1024 bytes
 		if (Buffer.byteLength(url.href, 'utf8') > 1024) {

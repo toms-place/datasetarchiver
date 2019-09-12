@@ -30,7 +30,7 @@ db.conn.on('connected', () => {
 
 function batch(results) {
 	let batches = [];
-	count = 0;
+	let count = 0;
 	batches[count] = [];
 	for (let i = 0; i < results.length; i++) {
 		try {

@@ -66,9 +66,9 @@ async function crawl(dataset) {
   try {
     let url;
     if (env == 'production') {
-      url = `${protocol}//${host}:${port}/${endpoint}/api/crawl?url=${dataset.url.href}`
+      url = `${protocol}//${host}:${port}/${endpoint}/api/v1/crawlHref?href=${dataset.url.href}`
     } else {
-      url = `${protocol}//${host}:${port}/api/crawl?url=${dataset.url.href}`
+      url = `${protocol}//${host}:${port}/api/v1/crawlHref?href=${dataset.url.href}`
     }
     let resp = await rp.get({
       uri: url,
