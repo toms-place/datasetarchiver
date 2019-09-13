@@ -5,6 +5,7 @@ FROM node:12.4.0-alpine AS builder
 # set working directory
 WORKDIR /
 COPY ./server ./server
+COPY ./master ./master
 COPY ./build.ts ./
 COPY ./tsconfig.json ./
 COPY ./package*.json ./

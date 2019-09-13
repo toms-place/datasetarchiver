@@ -5,7 +5,8 @@ import config from '../config';
 import errorHandler from './middlewares/error.handler';
 
 export default function openapi(app:express.Application, routes: (app: express.Application) => void) {
-    const apiSpecPath = path.join(__dirname, 'api.yml');
+    const root = path.normalize(__dirname + '/../..');
+    const apiSpecPath = path.join(root, 'server/api/api.yml');
     const specRoute = process.env.OPENAPI_SPEC || '/spec'
     app.use(`${config.endpoint + specRoute}`, express.static(apiSpecPath));
 
