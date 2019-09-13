@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-let env = process.env.NODE_ENV || 'developement';
+let env = process.env.NODE_ENV || 'development';
 let protocol = process.env.PROTOCOL || 'http:';
 let host = process.env.HOST || 'localhost';
 let port = process.env.PORT || '3000';
