@@ -1,0 +1,106 @@
+openapi: 3.0.1
+info:
+  title: datasetarchiver
+  description: datasetarchiver
+  version: 1.0.0
+servers:
+  - url: /api/v1
+tags:
+  - name: Datasetarchiver
+    description: here you find all options available in v1
+paths:
+  /addHref:
+    get:
+      parameters:
+        - in: query
+          name: href
+          description: The href which links to the data
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: source
+          description: The source of the href provided
+          schema:
+            type: string
+        - in: query
+          name: filename
+          description: The name of the file provided
+          schema:
+            type: string
+        - in: query
+          name: filytype
+          description: The type of the file provided
+          schema:
+            type: string
+      tags:
+      - Datasetarchiver
+      description: add href to crawler
+      responses:
+        200:
+          description: Returns an object of what has been added
+          content: {}
+
+  /addManyHrefs:
+    get:
+      parameters:
+        - in: query
+          name: hrefs
+          description: The href which links to the data
+          schema:
+            oneOf:
+              - type: array
+              - type: object
+              - type: string
+          required: true
+      tags:
+      - Datasetarchiver
+      description: add hrefs to crawler
+      responses:
+        200:
+          description: Returns an object of what has been added
+          content: {}
+
+  /crawlHref:
+    get:
+      parameters:
+        - in: query
+          name: href
+          description: Crawls the href which links to the data
+          schema:
+            type: string
+          required: true
+      tags:
+      - Datasetarchiver
+      description: crawl href
+      responses:
+        200:
+          description: Returns a boolean if crawl started
+
+  /crawlHrefSync:
+    get:
+      parameters:
+        - in: query
+          name: href
+          description: Crawls the href which links to the data in sync
+          schema:
+            type: string
+          required: true
+      tags:
+      - Datasetarchiver
+      description: crawl href
+      responses:
+        200:
+          description: Returns a boolean when crawl finished
+
+components:
+  schemas:
+    DatasetBody:
+      title: dataset
+      required:
+      - name
+      type: object
+      properties:
+        href:
+          type: string
+          example: http(s)://localhost:1234/filename.xyz

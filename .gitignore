@@ -10,3 +10,4 @@ dist
 testfiles
 test.js
 queries.js
+.vscode

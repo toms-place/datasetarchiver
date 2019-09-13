@@ -7,11 +7,34 @@
 * npm
 * a running mongodb
 
-## how to start production
+## Quick Start
+
+Get started developing...
+
+```shell
+# install deps
+npm install
+
+# run in development mode
+npm run dev
+
+# run tests
+npm run test
+```
+
+---
+
+### Run in *production* mode
 
 * provide .env file
-* npm install
-* npm start
+
+Compiles the application and starts it in production production mode.
+
+```shell
+npm run compile
+npm start
+```
+
 
 ## TODO
 
