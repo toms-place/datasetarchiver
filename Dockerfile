@@ -24,8 +24,8 @@ RUN apk add --no-cache curl
 # set working directory
 WORKDIR /
 COPY --from=builder ./dist ./dist
-COPY ./templates ./templates
-COPY ./public ./public
+COPY ./templates ./dist/templates
+COPY ./public ./dist/public
 COPY ./package*.json ./
 COPY ./.env ./
 
