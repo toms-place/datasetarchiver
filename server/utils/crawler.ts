@@ -56,15 +56,8 @@ export default class Crawler {
 
 			}
 
-			if (fileChanged) {
-				this.calcNextCrawl(true);
-			} else {
-				this.calcNextCrawl(false)
-			}
-
-			this.dataset.crawl_info.firstCrawl = false
 			await this.dataset.save()
-			return true
+			return fileChanged
 
 		} catch (error) {
 			console.error('unhandled', error.name, error.message, this.dataset.url.href);

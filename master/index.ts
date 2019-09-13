@@ -10,6 +10,10 @@ import L from '../server/common/logger'
 
 //TODO Singleton HOST for crawling management only in master
 import hostsHandler from './hostsHandler';
+import Crawler from '../server/utils/crawler';
+import {
+  promises
+} from 'dns';
 
 let dbFlag = true;
 
@@ -37,19 +41,45 @@ async function tick() {
 
   if (datasets) {
 
+    let promises: Promise < any > [] = []
     hosts: for (let host of hostsHandler.hosts) {
 
       for (let dataset of datasets) {
 
         if (dataset.url.hostname == host.name) {
-          crawl(dataset);
-          await hostsHandler.releaseHost(dataset.url.hostname)
+
+          promises.push(new Promise(async (resolve, reject) => {
+            let resp = await crawl(dataset);
+
+            let crawler = new Crawler(dataset)
+
+            if (resp) {
+              crawler.calcNextCrawl(true);
+            } else {
+              crawler.calcNextCrawl(false)
+            }
+
+            if (crawler.dataset.crawl_info.firstCrawl == true) {
+              crawler.dataset.crawl_info.firstCrawl = false
+            }
+
+            await dataset.save()
+
+            await hostsHandler.releaseHost(dataset.url.hostname)
+            resolve()
+          }))
+
           continue hosts;
+
         }
 
       }
     }
+
+    await Promise.all(promises)
+
   }
+
   await sleep(500)
   tick()
 }
@@ -57,12 +87,15 @@ async function tick() {
 async function crawl(dataset: IDataset) {
   try {
     let href: URL['href'];
-    href = `${config.protocol}//${config.host}:${config.port}${config.endpoint}/api/v1/crawlHref?href=${dataset.url.href}`
+    //TODO API JSON because of add. request params
+    href = `${config.protocol}//${config.host}:${config.port}${config.endpoint}/api/v1/crawlHrefSync?href=${dataset.url.href}`
     let resp = await rp.get(href, {
       rejectUnauthorized: false
     })
     L.info(resp)
+    return resp
   } catch (error) {
     L.error(error)
+    return false
   }
 }
