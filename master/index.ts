@@ -8,7 +8,6 @@ import {
 } from '../server/api/models/dataset';
 import L from '../server/common/logger'
 
-//TODO Singleton HOST for crawling management only in master
 import hostsHandler from './hostsHandler';
 import Crawler from '../server/utils/crawler';
 import {
@@ -26,6 +25,9 @@ db.conn.on('disconnected', () => {
   dbFlag = false;
 })
 
+/**
+ * make it use less cpu 
+ */
 async function tick() {
 
   let datasets: IDataset[];
@@ -87,7 +89,7 @@ async function tick() {
 async function crawl(dataset: IDataset) {
   try {
     let href: URL['href'];
-    //TODO API JSON because of add. request params
+    //TODO API JSON because of request params
     href = `${config.protocol}//${config.host}:${config.port}${config.endpoint}/api/v1/crawlHrefSync?href=${dataset.url.href}`
     let resp = await rp.get(href, {
       rejectUnauthorized: false
