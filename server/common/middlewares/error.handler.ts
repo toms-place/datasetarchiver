@@ -9,7 +9,6 @@ export default function errorHandler(err, req: Request, res: Response, next: Nex
 	res.locals.error = req.app.get('env') === 'development' ? err : {};
 
   // render the error page
-  console.log(err)
 	res.status(err.status || 500);
   res.render('error');
 

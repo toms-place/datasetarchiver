@@ -30,12 +30,39 @@ db.conn.on('disconnected', () => {
  */
 async function tick() {
 
-  let datasets: IDataset[];
+  let datasets;
 
   try {
     if (dbFlag) {
-      datasets = await db.dataset.find().allToBeCrawled()
-      await hostsHandler.initHosts()
+      datasets = await db.dataset.aggregate(
+        [{
+          $match: {
+            $and: [{
+              'crawl_info.nextCrawl': {
+                $lt: new Date()
+              }
+            }, {
+              'crawl_info.stopped': false
+            }]
+          }
+        }, {
+          $sort: {
+            "crawl_info.nextCrawl": -1
+          }
+        }, {
+          $group: {
+            _id: '$url.hostname',
+            id: {
+              '$first': '$id'
+            }
+          }
+        }, {
+          $project: {
+            hostname: '$_id',
+            href: '$id'
+          }
+        }]).allowDiskUse(true);
+      await hostsHandler.initHosts(datasets)
     }
   } catch (error) {
     L.error(error)
@@ -48,26 +75,15 @@ async function tick() {
 
       for (let dataset of datasets) {
 
-        if (dataset.url.hostname == host.name) {
+        if (dataset.hostname == host.name) {
 
           promises.push(new Promise(async (resolve, reject) => {
-            let resp = await crawl(dataset);
-
-            let crawler = new Crawler(dataset)
-
-            if (resp) {
-              crawler.calcNextCrawl(true);
-            } else {
-              crawler.calcNextCrawl(false)
+            try {
+              await crawl(dataset.href);
+              await hostsHandler.releaseHost(dataset.hostname)
+            } catch (error) {
+              L.error(error)
             }
-
-            if (crawler.dataset.crawl_info.firstCrawl == true) {
-              crawler.dataset.crawl_info.firstCrawl = false
-            }
-
-            await dataset.save()
-
-            await hostsHandler.releaseHost(dataset.url.hostname)
             resolve()
           }))
 
@@ -86,11 +102,11 @@ async function tick() {
   tick()
 }
 
-async function crawl(dataset: IDataset) {
+async function crawl(datasethref: IDataset) {
   try {
     let href: URL['href'];
     //TODO API JSON because of request params
-    href = `${config.protocol}//${config.host}:${config.port}${config.endpoint}/api/v1/crawlHrefSync?href=${dataset.url.href}`
+    href = `${config.protocol}//${config.host}:${config.port}${config.endpoint}/api/v1/crawlHrefSync?href=${datasethref}`
     let resp = await rp.get(href, {
       rejectUnauthorized: false
     })

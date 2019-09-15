@@ -143,7 +143,7 @@ export class CrawlerService {
       let url = new URL(href);
       let dataset = await db.dataset.find().oneToBeCrawled(url)
       if (!dataset) {
-        console.log('NO DATASET!!')
+        console.log('NO DATASET!!', href)
         return false
       }
 

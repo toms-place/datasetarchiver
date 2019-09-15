@@ -56,6 +56,13 @@ export default class Crawler {
 
 			}
 
+			if (fileChanged) {
+				this.calcNextCrawl(true);
+			} else {
+				this.calcNextCrawl(false)
+			}
+
+			this.dataset.crawl_info.firstCrawl = false
 			await this.dataset.save()
 			return fileChanged
 
@@ -264,7 +271,7 @@ export default class Crawler {
 			}
 		}
 
-		let err = new MyError(error.message,error.statusCode)
+		let err = new MyError(error.message, error.statusCode)
 		this.dataset.crawl_info.errorStore.push(err);
 		this.dataset.crawl_info.errorCount++;
 		if (this.dataset.crawl_info.errorCount >= config.ErrorCountTreshold) {

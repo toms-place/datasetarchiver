@@ -13,8 +13,16 @@ class HostsHandler {
 		this._hosts;
 	}
 
-	async initHosts() {
-		this._hosts = await db.host.find().getHostsToCrawl()
+	async initHosts(datasets) {
+		let hostnames = [];
+		for (let dataset of datasets) {
+			hostnames.push(dataset.hostname)
+		}
+		this._hosts = await db.host.find({
+			'name': {
+				$in: hostnames
+			}
+		})
 	}
 
 	get hosts() {
