@@ -52,6 +52,21 @@ export class Controller {
       res.status(404).end()
     }
   }
+  async crawlID(req: Request, res: Response): Promise <void> {
+    //check query
+    if (req.query.id) {
+      try {
+        let r = await CrawlerService.crawlID(req.query.id)
+        L.info(String(r))
+        res.json(r);
+      } catch (error) {
+        L.error(error)
+        res.status(404).json(error)
+      }
+    } else {
+      res.status(404).end()
+    }
+  }
   async crawlHrefSync(req: Request, res: Response): Promise <void> {
     //check query
     if (req.query.href) {

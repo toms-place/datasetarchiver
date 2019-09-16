@@ -20,13 +20,8 @@ db.conn.on('connected', async () => {
 			$group: {
 				_id: '$url.hostname',
 				id: {
-					'$first': '$id'
+					'$first': '$_id'
 				}
-			}
-		}, {
-			$project: {
-				hostname: '$_id',
-				href: '$id'
 			}
 		}]).allowDiskUse(true);
 

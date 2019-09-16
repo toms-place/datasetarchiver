@@ -93,6 +93,22 @@ paths:
         200:
           description: Returns a boolean when crawl finished
 
+  /crawlID:
+    get:
+      parameters:
+        - in: query
+          name: id
+          description: Crawls the id which links to the data
+          schema:
+            type: string
+          required: true
+      tags:
+      - Datasetarchiver
+      description: crawl id
+      responses:
+        200:
+          description: Returns a boolean when crawl finished
+
 components:
   schemas:
     DatasetBody:

@@ -11,6 +11,7 @@ import config from '../config';
 import rp from 'request-promise-native';
 import contentDisposition from 'content-disposition';
 import FileTypeDetector from './fileTypeDetector';
+import hostsHandler from './hostsHandler';
 
 /** TODO
  * - is dataset compressed?
@@ -64,6 +65,7 @@ export default class Crawler {
 
 			this.dataset.crawl_info.firstCrawl = false
 			await this.dataset.save()
+			await hostsHandler.releaseHost(this.dataset.url.hostname)
 			return fileChanged
 
 		} catch (error) {
@@ -71,6 +73,7 @@ export default class Crawler {
 			this.addError(error);
 			this.calcNextCrawl(false)
 			await this.dataset.save()
+			await hostsHandler.releaseHost(this.dataset.url.hostname)
 			return false
 		}
 

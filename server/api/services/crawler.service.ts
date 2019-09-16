@@ -137,6 +137,19 @@ export class CrawlerService {
     return true;
   }
 
+  static async crawlID(id: string): Promise < boolean > {
+
+    let dataset = await db.dataset.findOne({_id:id})
+    if (!dataset) {
+      throw new Error(`Dataset not found: ${id}`);
+    }
+
+    let crawler = new Crawler(dataset);
+    crawler.crawl()
+
+    return true;
+  }
+
   static async crawlHrefSync(href: string): Promise < boolean > {
     try {
 

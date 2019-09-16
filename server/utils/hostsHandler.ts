@@ -1,22 +1,24 @@
-import db from '../server/database';
-import config from '../server/config';
+import db from '../database';
+import config from '../config';
 import {
 	IHost
-} from '../server/api/models/host';
+} from '../api/models/host';
 
 let instance = null;
 
 class HostsHandler {
 	_hosts: IHost[]
+	_host: IHost
 
 	constructor() {
 		this._hosts;
+		this._host;
 	}
 
 	async initHosts(datasets) {
 		let hostnames = [];
 		for (let dataset of datasets) {
-			hostnames.push(dataset.hostname)
+			hostnames.push(dataset._id)
 		}
 		this._hosts = await db.host.find({
 			'name': {
@@ -25,8 +27,18 @@ class HostsHandler {
 		})
 	}
 
+	async initHost(hostname) {
+		this._hosts = await db.host.find({
+			'name': hostname
+		})
+	}
+
 	get hosts() {
 		return this._hosts
+	}
+
+	get host() {
+		return this._host
 	}
 
 	static getInstance(): HostsHandler {

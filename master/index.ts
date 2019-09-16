@@ -3,16 +3,8 @@ import rp from 'request-promise-native';
 import config from '../server/config';
 //db setup
 import db from '../server/database';
-import {
-  IDataset
-} from '../server/api/models/dataset';
 import L from '../server/common/logger'
-
-import hostsHandler from './hostsHandler';
-import Crawler from '../server/utils/crawler';
-import {
-  promises
-} from 'dns';
+import hostsHandler from '../server/utils/hostsHandler';
 
 let dbFlag = true;
 
@@ -53,13 +45,8 @@ async function tick() {
           $group: {
             _id: '$url.hostname',
             id: {
-              '$first': '$id'
+              '$first': '$_id'
             }
-          }
-        }, {
-          $project: {
-            hostname: '$_id',
-            href: '$id'
           }
         }]).allowDiskUse(true);
       await hostsHandler.initHosts(datasets)
@@ -75,12 +62,11 @@ async function tick() {
 
       for (let dataset of datasets) {
 
-        if (dataset.hostname == host.name) {
+        if (dataset._id == host.name) {
 
           promises.push(new Promise(async (resolve, reject) => {
             try {
-              await crawl(dataset.href);
-              await hostsHandler.releaseHost(dataset.hostname)
+              await crawl(dataset.id);
             } catch (error) {
               L.error(error)
             }
@@ -102,11 +88,11 @@ async function tick() {
   tick()
 }
 
-async function crawl(datasethref: IDataset) {
+async function crawl(id) {
   try {
     let href: URL['href'];
     //TODO API JSON because of request params
-    href = `${config.protocol}//${config.host}:${config.port}${config.endpoint}/api/v1/crawlHrefSync?href=${datasethref}`
+    href = `${config.protocol}//${config.host}:${config.port}${config.endpoint}/api/v1/crawlID?id=${id}`
     let resp = await rp.get(href, {
       rejectUnauthorized: false
     })
