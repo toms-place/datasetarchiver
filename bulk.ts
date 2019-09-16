@@ -6,7 +6,7 @@ import {
 	IDataset
 } from './server/api/models/dataset';
 
-const fileCount = 1;
+const fileCount = 24;
 const batchAmount = 10;
 
 db.conn.on('connected', async () => {
