@@ -1,5 +1,5 @@
 import L from '../../common/logger'
-import db from '../../database';
+import db from '../../common/database';
 import config from '../../config';
 import Crawler from '../../utils/crawler';
 import FileTypeDetector from '../../utils/fileTypeDetector';

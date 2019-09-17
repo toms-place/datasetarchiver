@@ -1,12 +1,12 @@
 import {
   CrawlerService,
   addHrefResponse
-} from '../../services/crawler.service';
+} from '../services/crawler.service';
 import {
   Request,
   Response
 } from 'express';
-import L from '../../../common/logger'
+import L from '../../common/logger'
 import { isArray } from 'util';
 
 export class Controller {
@@ -17,7 +17,7 @@ export class Controller {
       res.json(r);
     } catch (error) {
       L.error(error)
-      res.status(404).json(error)
+      res.status(404).json(error.message)
     }
   }
   async addManyHrefs(req: Request, res: Response): Promise <void> {

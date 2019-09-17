@@ -1,4 +1,4 @@
-import db from '../database';
+import db from '../common/database';
 import config from '../config';
 import {
 	IHost

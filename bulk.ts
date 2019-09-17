@@ -1,6 +1,6 @@
 import fs from 'fs';
 import csv from 'csv-parser';
-import db from './server/database';
+import db from './server/common/database';
 import FileTypeDetector from './server/utils/fileTypeDetector'
 import {
 	IDataset

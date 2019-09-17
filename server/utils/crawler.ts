@@ -1,17 +1,32 @@
 import {
 	pipeline
 } from 'stream';
-import http from 'http';
-import https from 'https';
-import db from '../database';
+import rp from 'request-promise-native';
+import contentDisposition from 'content-disposition';
+const {
+	http,
+	https
+} = require('follow-redirects');
+const url = require('url');
+
+import db from '../common/database';
 import {
 	IDataset
 } from '../api/models/dataset';
 import config from '../config';
-import rp from 'request-promise-native';
-import contentDisposition from 'content-disposition';
 import FileTypeDetector from './fileTypeDetector';
 import hostsHandler from './hostsHandler';
+
+
+class DatasetError extends Error {
+	message: string;
+	statuscode: number;
+	constructor(message: string, statuscode: number) {
+		super()
+		this.message = message
+		this.statuscode = statuscode
+	}
+}
 
 /** TODO
  * - is dataset compressed?
@@ -72,6 +87,7 @@ export default class Crawler {
 			console.error('unhandled', error.name, error.message, this.dataset.url.href);
 			this.addError(error);
 			this.calcNextCrawl(false)
+			this.dataset.crawl_info.firstCrawl = false
 			await this.dataset.save()
 			await hostsHandler.releaseHost(this.dataset.url.hostname)
 			return false
@@ -88,7 +104,13 @@ export default class Crawler {
 
 		return new Promise < boolean > ((resolve, reject) => {
 
+			const options = url.parse(this.dataset.url.href);
+			options.trackRedirects = true;
+			options.maxRedirects = 10;
+
 			this.agent.get(this.dataset.url.href, (res) => {
+
+				console.log(res)
 
 				pipeline(
 					res,
@@ -134,7 +156,8 @@ export default class Crawler {
 			} else {
 				await db.bucket.delete(newFile._id)
 				this.dataset.crawl_info.stopped = true;
-				throw new Error('max file size exceeded')
+
+				throw new DatasetError('max file size exceeded', 194)
 			}
 
 		} else {
@@ -143,7 +166,7 @@ export default class Crawler {
 			if (file.length > config.MaxFileSizeInBytes) {
 				await db.bucket.delete(file._id)
 				this.dataset.crawl_info.stopped = true;
-				throw new Error('max file size exceeded')
+				throw new DatasetError('max file size exceeded', 194)
 			}
 			this.dataset.versions.push(file._id);
 			this.dataset.meta.versionCount++;
@@ -228,7 +251,7 @@ export default class Crawler {
 			});
 			if (parseInt(head['content-length']) > config.MaxFileSizeInBytes) {
 				this.dataset.crawl_info.stopped = true;
-				throw new Error('max file size exceeded');
+				throw new DatasetError('max file size exceeded', 194)
 			}
 		} catch (error) {
 			throw error;
@@ -265,16 +288,8 @@ export default class Crawler {
 	 * - look in request object
 	 */
 	addError(error) {
-		class MyError extends Error {
-			statuscode: number;
-			constructor(message, statuscode) {
-				super()
-				this.message = message
-				this.statuscode = statuscode
-			}
-		}
 
-		let err = new MyError(error.message, error.statusCode)
+		let err = new DatasetError(error.message, error.statusCode)
 		this.dataset.crawl_info.errorStore.push(err);
 		this.dataset.crawl_info.errorCount++;
 		if (this.dataset.crawl_info.errorCount >= config.ErrorCountTreshold) {

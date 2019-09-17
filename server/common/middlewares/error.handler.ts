@@ -6,7 +6,9 @@ export default function errorHandler(err, req: Request, res: Response, next: Nex
 
 	// set locals, only providing error in development
 	res.locals.message = err.message;
-	res.locals.error = req.app.get('env') === 'development' ? err : {};
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  
+  console.log('HASDFKASLDKFW')
 
   // render the error page
 	res.status(err.status || 500);

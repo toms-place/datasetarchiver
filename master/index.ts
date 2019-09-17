@@ -2,7 +2,7 @@ const sleep = require('util').promisify(setTimeout);
 import rp from 'request-promise-native';
 import config from '../server/config';
 //db setup
-import db from '../server/database';
+import db from '../server/common/database';
 import L from '../server/common/logger'
 import hostsHandler from '../server/utils/hostsHandler';
 

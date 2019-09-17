@@ -4,7 +4,7 @@ import mongoose, {
 	Model
 } from 'mongoose';
 import config from '../../config';
-import db from '../../database';
+import db from '../../common/database';
 import uniqueValidator from 'mongoose-unique-validator'
 
 export interface IDataset extends Document {
