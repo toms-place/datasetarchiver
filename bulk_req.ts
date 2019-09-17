@@ -8,6 +8,7 @@ import rp from 'request-promise-native'
 var OFFSET = 0;
 const batchAmount = 100;
 var flag = true;
+var TotalCount = 0;
 
 db.conn.on('connected', async () => {
 
@@ -65,6 +66,7 @@ db.conn.on('connected', async () => {
 
 			let insertCount = await db.dataset.addMany(datasets)
 			insertedTotal += insertCount
+			TotalCount += insertCount
 			console.log('inserted', insertCount)
 		}
 
@@ -72,6 +74,8 @@ db.conn.on('connected', async () => {
 		OFFSET += 10000;
 
 	}
+
+	console.log('Total inserted', TotalCount)
 
 })
 
