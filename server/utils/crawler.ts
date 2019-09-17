@@ -110,8 +110,6 @@ export default class Crawler {
 
 			this.agent.get(this.dataset.url.href, (res) => {
 
-				console.log(res)
-
 				pipeline(
 					res,
 					db.bucket.openUploadStream(this.dataset.meta.filename, {

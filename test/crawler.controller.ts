@@ -4,7 +4,7 @@ import {
 } from 'chai';
 import request from 'supertest';
 import Server from '../server';
-import db from '../server/database';
+import db from '../server/common/database';
 import {
   CrawlerService
 } from '../server/api/services/crawler.service';
