@@ -69,7 +69,7 @@ db.conn.on('connected', async () => {
 		}
 
 		console.log('Total inserted', insertedTotal)
-		OFFSET += OFFSET;
+		OFFSET += 10000;
 
 	}
 

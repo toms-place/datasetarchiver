@@ -77,7 +77,11 @@ let datasetSchema = new mongoose.Schema({
 		},
 		filename: String,
 		filetype: String,
-		extension: String
+		extension: String,
+		insertDate: {
+			type: Date,
+			default: new Date()
+		}
 	}
 })
 
