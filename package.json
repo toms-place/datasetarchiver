@@ -25,8 +25,8 @@
     "dev": "node_tls_reject_unauthorized=0 nodemon --watch server server/index.ts | pino-pretty",
     "master": "node_tls_reject_unauthorized=0 nodemon --watch master --watch server master/index.ts | pino-pretty",
     "dev:debug": "nodemon --watch server --exec 'node -r ts-node/register --inspect-brk' server/index.ts | pino-pretty",
-    "test": "CRAWL_minRange=0 CRAWL_maxRange=0 mocha test/**/*.ts --exit",
-    "test:debug": "CRAWL_minRange=0 CRAWL_maxRange=0 mocha --inspect-brk test/**/*.ts --exit"
+    "test": "CRAWL_minRange=0 CRAWL_maxRange=0 MaxFileSizeInBytes=500000 mocha test/**/*.ts --exit",
+    "test:debug": "CRAWL_minRange=0 CRAWL_maxRange=0 MaxFileSizeInBytes=500000 mocha --inspect-brk test/**/*.ts --exit"
   },
   "dependencies": {
     "body-parser": "^1.19.0",
@@ -34,18 +34,19 @@
     "csv-parser": "^2.3.0",
     "dotenv": "^8.1.0",
     "express": "^4.17.1",
-    "express-openapi-validator": "^1.8.0",
+    "express-openapi-validator": "^2.1.5",
     "file-stream-rotator": "^0.5.5",
     "follow-redirects": "^1.9.0",
     "mime": "^2.4.4",
-    "mongoose": "^5.7.0",
+    "mongoose": "^5.7.1",
     "mongoose-unique-validator": "^2.0.3",
     "morgan": "^1.9.1",
-    "pino": "^5.13.2",
+    "pino": "^5.13.3",
     "pug": "^2.0.4",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.7",
-    "sanitize-filename": "^1.6.3"
+    "sanitize-filename": "^1.6.3",
+    "serve-favicon": "^2.5.0"
   },
   "devDependencies": {
     "@types/chai": "^4.2.2",

@@ -26,11 +26,7 @@ export function errorEmitter(req: Request, res: Response, next: NextFunction) {
 
 // eslint-disable-next-line no-unused-vars, no-shadow
 export default function errorHandler(err, req: Request, res: Response, next: NextFunction) {
-  if (req.originalUrl == '/') {
-    res.redirect('/browser')
-    return
-  }
-  l.error('SERVER:', err.message)
+  l.error(err.message)
   if (!err.statuscode) err.statuscode = 500; // Sets a generic server error status code if none is part of the err
 
   if (err.shouldRedirect) {

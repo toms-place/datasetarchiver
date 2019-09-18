@@ -63,7 +63,7 @@ export default class Crawler {
 
 			if (this.dataset.crawl_info.firstCrawl == true) {
 
-				await this.metaInit()
+				fileChanged = await this.metaInit()
 
 			} else {
 
@@ -237,7 +237,7 @@ export default class Crawler {
 	/** TODO
 	 * - metadata generation
 	 */
-	async metaInit(): Promise < void > {
+	async metaInit(): Promise < boolean > {
 
 		let head;
 
@@ -276,7 +276,7 @@ export default class Crawler {
 		this.dataset.meta.filetype = detector.mimeType
 		this.dataset.meta.extension = detector.extension
 
-		return
+		return true
 
 	}
 
@@ -287,7 +287,18 @@ export default class Crawler {
 	 */
 	addError(error) {
 
-		let err = new DatasetError(error.message, error.statusCode)
+		let code:number;
+
+		if (error.code == 'ENOTFOUND' || error.error.code == 'ENOTFOUND') {
+			code = 404
+		} else if (error.statuscode){
+			code = error.statuscode
+		} else {
+			console.log(error)
+		}
+
+
+		let err = new DatasetError(error.message, code)
 		this.dataset.crawl_info.errorStore.push(err);
 		this.dataset.crawl_info.errorCount++;
 		if (this.dataset.crawl_info.errorCount >= config.ErrorCountTreshold) {

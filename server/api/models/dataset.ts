@@ -143,19 +143,20 @@ let datasetQueryHelpers = {
 					'crawl_info.stopped': false
 				}]
 			})
+		} else {
+			return this.findOne({
+				$and: [{
+					id: url.href
+				}, {
+					'crawl_info.nextCrawl': {
+						$lt: new Date()
+					}
+				}, {
+					'crawl_info.stopped': false
+				}]
+			})
 		}
 
-		return this.findOne({
-			$and: [{
-				id: url.href
-			}, {
-				'crawl_info.nextCrawl': {
-					$lt: new Date()
-				}
-			}, {
-				'crawl_info.stopped': false
-			}]
-		})
 	},
 	allToBeCrawled(this: DocumentQuery < any, IDataset > ) {
 		return this.find({

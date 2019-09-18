@@ -16,7 +16,6 @@ export interface addHrefResponse {
 
 export class CrawlerService {
   static async addHref(href: string, source ? : string, filename ? : string, filetype ? : string, extension ? : string): Promise < any > {
-    L.info('add Href:', href);
     let url: URL;
     let resp: addHrefResponse = {
       datasetstatus: 200,
@@ -139,7 +138,9 @@ export class CrawlerService {
 
   static async crawlID(id: string): Promise < boolean > {
 
-    let dataset = await db.dataset.findOne({_id:id})
+    let dataset = await db.dataset.findOne({
+      _id: id
+    })
     if (!dataset) {
       throw new Error(`Dataset not found: ${id}`);
     }
@@ -161,8 +162,7 @@ export class CrawlerService {
       }
 
       let crawler = new Crawler(dataset);
-      let res = await crawler.crawl()
-      return res
+      return await crawler.crawl()
 
     } catch (error) {
       throw error;

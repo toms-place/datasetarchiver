@@ -1,12 +1,16 @@
-import express from 'express';
+import express, {
+  Application
+} from 'express';
 import controller from './controller'
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
-import installValidator from './openapi';
-import errorHandler from '../../common/middlewares/error.handler';
+import path from 'path';
+import config from '../../config';
+import errorHandler, {
+  errorEmitter
+} from '../middlewares/error.handler';
 
 const api = express()
-
 //proxy setup
 api.set('trust proxy', 'loopback')
 
@@ -22,22 +26,18 @@ api.use(bodyParser.urlencoded({
 //cookie parser
 api.use(cookieParser(process.env.SESSION_SECRET));
 
-installValidator(api)
+//openapi
+const apiSpecPath = path.join(__dirname, '../api.yml');
+api.use(`${config.endpoint + config.OPENAPI_SPEC}`, express.static(apiSpecPath));
 
+//routes
 api.get('/addHref', controller.addHref)
 api.get('/addManyHrefs', controller.addManyHrefs)
 api.get('/crawlHref', controller.crawlHref)
 api.get('/crawlHrefSync', controller.crawlHrefSync)
 api.get('/crawlID', controller.crawlID)
 
-
-api.use('/', function (req, res, next) {
-  throw new Error('test')
-});
-
-api.use(function (err, req, res, next) {
-  console.log('Error handler');
-  next(err);
-});
+api.use('/\*', errorEmitter);
+api.use(errorHandler);
 
 export default api
