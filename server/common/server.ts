@@ -7,20 +7,8 @@ import config from '../config';
 import morgan from 'morgan'
 import crawlerAPI from '../apps/api/api'
 import viewsAPP from '../apps/browser/app'
-import errorHandler, {errorEmitter} from './middlewares/error.handler'
 var favicon = require('serve-favicon');
 
-
-class MyError extends Error {
-  message: string;
-  statuscode: number;
-  shouldRedirect: boolean;
-  constructor(message: string, statuscode: number) {
-    super()
-    this.message = message
-    this.statuscode = statuscode
-  }
-}
 
 const root = path.normalize(__dirname + '/../..');
 const app = express();
@@ -48,14 +36,11 @@ export default class ExpressServer {
 
     app.use(favicon(path.join(__dirname, '../../', 'public', 'api-explorer', 'favicon-32x32.png')));
 
-
     //route setup
-    app.use(config.endpoint + `/browser`, viewsAPP);
     app.use(config.endpoint + `/api/v1`, crawlerAPI);
     app.use(config.endpoint + `/public`, express.static(`${root}/public`));
-
-    app.use('/\*', errorEmitter);
-    app.use(errorHandler)
+    app.use(config.endpoint + '/', viewsAPP);
+    app.use('/', viewsAPP);
 
   }
 

@@ -1,6 +1,4 @@
-import express, {
-  Application
-} from 'express';
+import express from 'express';
 import controller from './controllers/controller'
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
@@ -28,7 +26,7 @@ api.use(cookieParser(process.env.SESSION_SECRET));
 
 //openapi
 const apiSpecPath = path.join(__dirname, './api.yml');
-api.use(`${config.endpoint + config.OPENAPI_SPEC}`, express.static(apiSpecPath));
+api.use(config.OPENAPI_SPEC, express.static(apiSpecPath));
 
 //routes
 api.get('/addHref', controller.addHref)
