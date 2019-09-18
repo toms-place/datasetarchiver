@@ -290,7 +290,11 @@ export default class Crawler {
 
 		let code:number;
 
-		if (error.code == 'ENOTFOUND' || error.error.code == 'ENOTFOUND') {
+		if (error.error) {
+			error.code = error.error.code
+		}
+
+		if (error.code == 'ENOTFOUND') {
 			code = 404
 		} else if (error.statusCode){
 			code = error.statusCode
