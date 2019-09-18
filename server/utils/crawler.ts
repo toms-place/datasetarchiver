@@ -16,15 +16,16 @@ import {
 import config from '../config';
 import FileTypeDetector from './fileTypeDetector';
 import hostsHandler from './hostsHandler';
+import l from '../common/logger';
 
 
 class DatasetError extends Error {
 	message: string;
-	statuscode: number;
-	constructor(message: string, statuscode: number) {
+	statusCode: number;
+	constructor(message: string, statusCode: number) {
 		super()
 		this.message = message
-		this.statuscode = statuscode
+		this.statusCode = statusCode
 	}
 }
 
@@ -291,10 +292,11 @@ export default class Crawler {
 
 		if (error.code == 'ENOTFOUND' || error.error.code == 'ENOTFOUND') {
 			code = 404
-		} else if (error.statuscode){
-			code = error.statuscode
+		} else if (error.statusCode){
+			code = error.statusCode
 		} else {
-			console.log(error)
+			code = 111;
+			l.error(error.message)
 		}
 
 
