@@ -61,7 +61,6 @@ export class Controller {
         L.info(String(r))
         res.json(r);
       } catch (error) {
-
         next(error)
       }
     } else {
