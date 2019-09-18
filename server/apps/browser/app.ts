@@ -6,6 +6,7 @@ import bodyParser from 'body-parser';
 import errorHandler, {
   errorEmitter
 } from './middlewares/error.handler';
+import config from '../../config';
 
 const app = express()
 const root = path.normalize(__dirname + '/../../..');
@@ -33,7 +34,11 @@ app.use(cookieParser(process.env.SESSION_SECRET));
 app.get('/', controller.index)
 app.get('/api-explorer', controller.explorer)
 
-app.use('/\*', errorEmitter);
+app.use('/\*', (req, res) => {
+  res.redirect(config.endpoint + '/')
+});
+
+//app.use('/\*', errorEmitter);
 app.use(errorHandler);
 
 export default app

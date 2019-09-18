@@ -27,6 +27,7 @@ api.use(cookieParser(process.env.SESSION_SECRET));
 //openapi
 const apiSpecPath = path.join(__dirname, './api.yml');
 api.use(config.OPENAPI_SPEC, express.static(apiSpecPath));
+console.log(apiSpecPath)
 
 //routes
 api.get('/addHref', controller.addHref)
