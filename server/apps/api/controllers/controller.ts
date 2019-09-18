@@ -11,6 +11,9 @@ import L from '../../../common/logger'
 import {
   isArray
 } from 'util';
+import Archiver from 'archiver';
+import fileTypeDetector from '../../../utils/fileTypeDetector'
+
 
 export class Controller {
   async addHref(req: Request, res: Response, next: NextFunction): Promise < void > {
@@ -29,8 +32,9 @@ export class Controller {
       if (isArray(array)) {
         r = await CrawlerService.addManyHrefs(array)
       } else {
-        let error = new Error('no array')
+        let error = new Error('no array');
         next(error)
+        return
       }
       res.json(r);
     } catch (error) {
@@ -46,8 +50,8 @@ export class Controller {
         L.info(String(r))
         res.json(r);
       } catch (error) {
-
         next(error)
+        return
       }
     } else {
       next(new Error('not found'))
@@ -62,6 +66,7 @@ export class Controller {
         res.json(r);
       } catch (error) {
         next(error)
+        return
       }
     } else {
       next(new Error('not found'))
@@ -74,8 +79,8 @@ export class Controller {
         let r = await CrawlerService.crawlHrefSync(req.query.href)
         res.json(r);
       } catch (error) {
-
         next(error)
+        return
       }
     } else {
       next(new Error('not found'))
@@ -85,11 +90,35 @@ export class Controller {
     //check query
     if (req.query.byFiletype) {
       try {
-        let r = await CrawlerService.getAllLastVersionsByFileType(req.query.byFiletype)
-        res.json(r);
-      } catch (error) {
+        let filetype = new fileTypeDetector(req.query.byFiletype)
+        if (!filetype.extension) {
+          next(new Error('wrong filetype'))
+          return
+        }
+        let versionStreams = await CrawlerService.getAllLastVersionsByFileType(filetype.extension)
+        if (versionStreams.length <= 0) {
+          next(new Error('no file found'))
+          return
+        }
+        let zip = Archiver('zip');
+        res.type('application/zip')
+        res.header('Content-disposition', `attachment; filename=${filetype.extension}.zip`);
 
+        // Send the file to the page output.
+        zip.pipe(res);
+
+        for (let i = 0; i < versionStreams.length; i++) {
+          // Create zip with all versions
+          zip.append(versionStreams[i].stream, {
+            name: versionStreams[i].name
+          })
+          if (i == versionStreams.length - 1) {
+            zip.finalize();
+          }
+        }
+      } catch (error) {
         next(error)
+        return
       }
     } else {
       next(new Error('not found'))

@@ -254,7 +254,10 @@ export class CrawlerService {
       let versionStreams = []
       for (let dataset of datasets) {
         let downloadStream = db.bucket.openDownloadStream(dataset.versions[dataset.versions.length - 1])
-        versionStreams.push(downloadStream)
+        versionStreams.push({
+          stream: downloadStream,
+          name: dataset.meta.filename
+        })
       }
       return versionStreams
     } catch (error) {
