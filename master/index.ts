@@ -84,14 +84,14 @@ async function tick() {
 
   }
 
-  await sleep(500)
+  await sleep(1000)
   tick()
 }
 
 async function crawl(id) {
   try {
     let href: URL['href'];
-    //TODO API JSON because of request params
+    //TODO API JSON because of request params ? ID
     href = `${config.protocol}//${config.host}:${config.port}${config.endpoint}/api/v1/crawlID?id=${id}`
     let resp = await rp.get(href, {
       rejectUnauthorized: false

@@ -35,7 +35,6 @@ npm run compile
 npm start
 ```
 
-
 ## TODO
 
 * kubernetes divide services:
@@ -59,3 +58,10 @@ npm start
   * dictionary
   * parsing
   * <https://www.npmjs.com/package/file-type>
+
+## Infos
+
+* first unique url count
+  * 265203
+* second unique url count (csvs from sparql)
+  * 318925
