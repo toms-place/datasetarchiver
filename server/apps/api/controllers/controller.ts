@@ -81,6 +81,20 @@ export class Controller {
       next(new Error('not found'))
     }
   }
+  async getAll(req: Request, res: Response, next: NextFunction): Promise < void > {
+    //check query
+    if (req.query.byFiletype) {
+      try {
+        let r = await CrawlerService.getAllLastVersionsByFileType(req.query.byFiletype)
+        res.json(r);
+      } catch (error) {
+
+        next(error)
+      }
+    } else {
+      next(new Error('not found'))
+    }
+  }
 }
 
 export default new Controller();

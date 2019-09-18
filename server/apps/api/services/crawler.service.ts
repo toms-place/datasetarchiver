@@ -214,6 +214,54 @@ export class CrawlerService {
     }
     return resp
   }
+
+  static async getAllVersionsOfDatasetAsStream(href) {
+    try {
+      let url = new URL(href);
+      let dataset = await db.dataset.findOne({
+        url: url
+      })
+      let versions = []
+      for (let version of dataset.versions) {
+        let downloadStream = db.bucket.openDownloadStream(version)
+        versions.push(downloadStream)
+      }
+      return versions
+    } catch (error) {
+      throw error
+    }
+
+  }
+
+  static async getAllLastVersionsByFileType(extension) {
+    try {
+      let datasets = await db.dataset.find({
+        $and: [{
+            $or: [{
+              'meta.filetype': extension
+            }, {
+              'meta.extension': extension
+            }]
+          },
+          {
+            'meta.versionCount': {
+              $gt: 0
+            }
+          }
+        ]
+      })
+
+      let versionStreams = []
+      for (let dataset of datasets) {
+        let downloadStream = db.bucket.openDownloadStream(dataset.versions[dataset.versions.length - 1])
+        versionStreams.push(downloadStream)
+      }
+      return versionStreams
+    } catch (error) {
+      throw error
+    }
+
+  }
 }
 
 export default new CrawlerService();
