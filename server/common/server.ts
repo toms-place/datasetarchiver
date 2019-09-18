@@ -20,17 +20,16 @@ export default class ExpressServer {
     app.set('view engine', 'pug');
     app.set('views', `${root}/templates`);
 
-    /*
-        //logger setup
-        app.use(morgan('combined', {
-          stream: require('file-stream-rotator').getStream({
-            filename: path.join(root, 'access_%DATE%.log'),
-            frequency: 'daily',
-            verbose: false,
-            date_format: 'YYYYMMDD'
-          })
-        }));
-        */
+    //logger setup
+    app.use(morgan('combined', {
+      stream: require('file-stream-rotator').getStream({
+        filename: path.join(root, 'access_%DATE%.log'),
+        frequency: 'daily',
+        verbose: false,
+        date_format: 'YYYYMMDD'
+      })
+    }));
+
 
     //installValidator(app)
 
