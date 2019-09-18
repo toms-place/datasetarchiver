@@ -5,8 +5,8 @@ import os from 'os';
 import l from './logger';
 import config from '../config';
 import morgan from 'morgan'
-import crawlerAPI from '../api/controllers/api'
-import viewsAPP from '../browser/app'
+import crawlerAPI from '../apps/api/api'
+import viewsAPP from '../apps/browser/app'
 import errorHandler, {errorEmitter} from './middlewares/error.handler'
 var favicon = require('serve-favicon');
 

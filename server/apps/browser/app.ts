@@ -8,7 +8,7 @@ import errorHandler, {
 } from './middlewares/error.handler';
 
 const app = express()
-const root = path.normalize(__dirname + '/../..');
+const root = path.normalize(__dirname + '/../../..');
 
 //proxy setup
 app.set('trust proxy', 'loopback')
@@ -29,6 +29,7 @@ app.set('views', `${root}/templates`);
 //cookie parser
 app.use(cookieParser(process.env.SESSION_SECRET));
 
+//routes
 app.get('/', controller.index)
 app.get('/api-explorer', controller.explorer)
 

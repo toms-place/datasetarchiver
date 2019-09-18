@@ -2,7 +2,7 @@ import {
   Request,
   Response
 } from 'express';
-import config from '../config';
+import config from '../../config';
 
 export class Controller {
   index(req: Request, res: Response): void {

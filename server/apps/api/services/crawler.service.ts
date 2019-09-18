@@ -1,8 +1,8 @@
-import L from '../../common/logger'
-import db from '../../common/database';
-import config from '../../config';
-import Crawler from '../../utils/crawler';
-import FileTypeDetector from '../../utils/fileTypeDetector';
+import L from '../../../common/logger'
+import db from '../../../common/database';
+import config from '../../../config';
+import Crawler from '../../../utils/crawler';
+import FileTypeDetector from '../../../utils/fileTypeDetector';
 import {
   IDataset
 } from '../models/dataset';

@@ -1,14 +1,14 @@
 import express, {
   Application
 } from 'express';
-import controller from './controller'
+import controller from './controllers/controller'
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import config from '../../config';
 import errorHandler, {
   errorEmitter
-} from '../middlewares/error.handler';
+} from './middlewares/error.handler';
 
 const api = express()
 //proxy setup
@@ -27,7 +27,7 @@ api.use(bodyParser.urlencoded({
 api.use(cookieParser(process.env.SESSION_SECRET));
 
 //openapi
-const apiSpecPath = path.join(__dirname, '../api.yml');
+const apiSpecPath = path.join(__dirname, './api.yml');
 api.use(`${config.endpoint + config.OPENAPI_SPEC}`, express.static(apiSpecPath));
 
 //routes

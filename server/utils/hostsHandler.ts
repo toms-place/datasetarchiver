@@ -2,7 +2,7 @@ import db from '../common/database';
 import config from '../config';
 import {
 	IHost
-} from '../api/models/host';
+} from '../apps/api/models/host';
 
 let instance = null;
 

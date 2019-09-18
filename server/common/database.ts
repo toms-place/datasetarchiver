@@ -2,9 +2,9 @@ import config from '../config';
 import mongoose, {
   Mongoose
 } from 'mongoose';
-import datasetModel, {IDatasetModel} from '../api/models/dataset';
-import fileModel, {IFileModel} from '../api/models/file';
-import hostModel, {IHostModel} from '../api/models/host';
+import datasetModel, {IDatasetModel} from '../apps/api/models/dataset';
+import fileModel, {IFileModel} from '../apps/api/models/file';
+import hostModel, {IHostModel} from '../apps/api/models/host';
 
 mongoose.set('useNewUrlParser', true);
 mongoose.set('useFindAndModify', false);

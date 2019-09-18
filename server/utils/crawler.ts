@@ -12,7 +12,7 @@ const url = require('url');
 import db from '../common/database';
 import {
 	IDataset
-} from '../api/models/dataset';
+} from '../apps/api/models/dataset';
 import config from '../config';
 import FileTypeDetector from './fileTypeDetector';
 import hostsHandler from './hostsHandler';

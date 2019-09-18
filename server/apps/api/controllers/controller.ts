@@ -7,7 +7,7 @@ import {
   Response,
   NextFunction
 } from 'express';
-import L from '../../common/logger'
+import L from '../../../common/logger'
 import {
   isArray
 } from 'util';

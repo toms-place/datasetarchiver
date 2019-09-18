@@ -4,6 +4,7 @@ import {
   NextFunction
 } from 'express';
 import l from '../../common/logger';
+import config from '../../config'
 
 class MyError extends Error {
   message: string;
@@ -27,7 +28,7 @@ export function errorEmitter(req: Request, res: Response, next: NextFunction) {
 // eslint-disable-next-line no-unused-vars, no-shadow
 export default function errorHandler(err, req: Request, res: Response, next: NextFunction) {
   if (req.originalUrl == '/') {
-    res.redirect('/browser')
+    res.redirect(config.endpoint + '/browser')
     return
   }
   l.error('SERVER:', err.message)

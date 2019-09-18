@@ -3,7 +3,7 @@ import {
   Response,
   NextFunction
 } from 'express';
-import l from '../../common/logger';
+import l from '../../../common/logger';
 
 class MyError extends Error {
   message: string;
