@@ -86,7 +86,7 @@ async function tick() {
 
   }
 
-  await sleep(4000)
+  await sleep(1000)
   tick()
 }
 
