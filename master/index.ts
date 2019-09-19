@@ -10,6 +10,7 @@ let dbFlag = true;
 
 db.conn.on('connected', () => {
   dbFlag = true;
+  hostsHandler.releaseHosts()
   tick()
 })
 
@@ -22,11 +23,11 @@ db.conn.on('disconnected', () => {
  */
 async function tick() {
 
-  let datasets;
+  let querys;
 
   try {
     if (dbFlag) {
-      datasets = await db.dataset.aggregate(
+      querys = await db.dataset.aggregate(
         [{
           $match: {
             $and: [{
@@ -49,24 +50,24 @@ async function tick() {
             }
           }
         }]).allowDiskUse(true);
-      await hostsHandler.initHosts(datasets)
+      await hostsHandler.initHosts(querys)
     }
   } catch (error) {
     L.error(error)
   }
 
-  if (datasets) {
+  if (querys) {
 
     let promises: Promise < any > [] = []
     hosts: for (let host of hostsHandler.hosts) {
 
-      for (let dataset of datasets) {
+      for (let query of querys) {
 
-        if (dataset._id == host.name) {
+        if (query._id == host.name) {
 
           promises.push(new Promise(async (resolve, reject) => {
             try {
-              await crawl(dataset.id);
+              await crawl(query.id, host.name);
             } catch (error) {
               L.error(error)
             }
@@ -80,23 +81,29 @@ async function tick() {
       }
     }
 
+    L.info(String(promises.length))
     await Promise.all(promises)
 
   }
 
-  await sleep(1000)
+  await sleep(4000)
   tick()
 }
 
-async function crawl(id) {
+async function crawl(id, hostname) {
   try {
+    await hostsHandler.lockHost(hostname)
     let href: URL['href'];
     //TODO API JSON because of request params ? ID
     href = `${config.protocol}//${config.host}:${config.port}${config.endpoint}/api/v1/crawlID?id=${id}`
     let resp = await rp.get(href, {
       rejectUnauthorized: false
     })
-    L.info(resp)
+
+    if (resp != 'true') {
+      L.info(resp)
+    }
+
     return resp
   } catch (error) {
     L.error(error)

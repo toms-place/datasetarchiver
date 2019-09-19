@@ -37,6 +37,7 @@ npm start
 
 ## TODO
 
+* Add Source from Data
 * kubernetes divide services:
   * Master service
     * initiating the crawls via requests to loadbalancer
@@ -62,6 +63,8 @@ npm start
 ## Infos
 
 * first unique url count
-  * 265203
+  * 265.203 of 1.241.161
 * second unique url count (csvs from sparql)
-  * 318925
+  * 318.925 of 358.300
+* Crawler total csvs
+  * 278.686

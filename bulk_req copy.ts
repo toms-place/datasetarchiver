@@ -23,54 +23,9 @@ db.conn.on('connected', async () => {
 			flag = false
 			process.exit()
 		}
-		let insertedTotal = 0;
-		let batches = batch(data.results.bindings)
+		TotalCount += data.results.bindings.length
 
-		for (let batch of batches) {
-			let datasets: IDataset[] = []
-
-			for (let i = 0; i < batch.length; i++) {
-
-				try {
-					let url = new URL(batch[i].url.value)
-
-					//index key length max = 1024 bytes
-					if (Buffer.byteLength(url.href, 'utf8') > 1024) {
-						continue;
-					}
-
-					let dataset = new db.dataset({
-						url: url,
-						id: url.href,
-						meta: undefined,
-						crawl_info: undefined
-					});
-
-					if (batch[i].format) {
-						let detector = new FileTypeDetector(batch[i].format.value, batch[i].format.value)
-						dataset.meta.filetype = detector.mimeType
-						dataset.meta.extension = detector.extension
-					}
-
-					if (batch[i].dataset) {
-						dataset.meta.source.push(new URL(batch[i].dataset.value))
-					}
-
-					datasets.push(dataset)
-
-				} catch (error) {
-					console.error('mongoose db class', error.message)
-				}
-
-			}
-
-			let insertCount = await db.dataset.addMany(datasets)
-			insertedTotal += insertCount
-			TotalCount += insertCount
-			console.log('inserted', insertCount)
-		}
-
-		console.log('Total inserted', insertedTotal)
+		console.log('Total inserted', TotalCount)
 		OFFSET += 10000;
 
 	}

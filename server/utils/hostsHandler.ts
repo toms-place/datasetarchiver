@@ -9,27 +9,59 @@ let instance = null;
 class HostsHandler {
 	_hosts: IHost[]
 	_host: IHost
+	hostnames: Array < IHost['name'] > ;
 
 	constructor() {
 		this._hosts;
 		this._host;
+		this.hostnames;
 	}
 
-	async initHosts(datasets) {
-		let hostnames = [];
-		for (let dataset of datasets) {
-			hostnames.push(dataset._id)
+	async initHosts(querys) {
+		this.hostnames = [];
+		for (let query of querys) {
+			this.hostnames.push(query._id)
 		}
 		this._hosts = await db.host.find({
-			'name': {
-				$in: hostnames
-			}
+			$and: [{
+				name: {
+					$in: this.hostnames
+				}
+			}, {
+				nextCrawl: {
+					$lt: new Date()
+				}
+			}, {
+				currentlyCrawled: false
+			}]
 		})
 	}
 
 	async initHost(hostname) {
-		this._hosts = await db.host.find({
+		this._host = await db.host.findOne({
 			'name': hostname
+		})
+	}
+
+	async lockHosts() {
+		await db.host.updateMany({
+			name: {
+				$in: this.hostnames
+			}
+		}, {
+			$set: {
+				currentlyCrawled: true
+			}
+		})
+	}
+
+	async lockHost(hostname) {
+		await db.host.updateOne({
+			name: hostname
+		}, {
+			$set: {
+				currentlyCrawled: true
+			}
 		})
 	}
 
@@ -50,18 +82,48 @@ class HostsHandler {
 
 	async releaseHost(hostname) {
 
-		let res = await db.host.updateOne({
-			name: hostname
-		}, {
-			$set: {
-				nextCrawl: new Date(new Date().getTime() + config.CRAWL_HostInterval * 1000)
-			}
-		});
+		try {
 
-		if (res.nModified > 0 && res.n > 0) {
-			return true
-		} else {
-			return false
+			let res = await db.host.updateOne({
+				name: hostname
+			}, {
+				$set: {
+					currentlyCrawled: false,
+					nextCrawl: new Date(new Date().getTime() + config.CRAWL_HostInterval * 1000)
+				}
+			});
+
+			if (res.nModified > 0 && res.n > 0) {
+				return true
+			} else {
+
+				return false
+			}
+
+		} catch (error) {
+			console.error(error)
+		}
+
+	}
+
+	async releaseHosts() {
+
+		try {
+			let res = await db.host.updateMany({}, {
+				$set: {
+					currentlyCrawled: false,
+					nextCrawl: new Date(new Date().getTime() + config.CRAWL_HostInterval * 1000)
+				}
+			});
+
+			if (res.nModified > 0 && res.n > 0) {
+				return true
+			} else {
+				return false
+			}
+
+		} catch (error) {
+			console.error(error)
 		}
 
 	}

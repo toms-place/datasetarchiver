@@ -62,7 +62,6 @@ export class Controller {
     if (req.query.id) {
       try {
         let r = await CrawlerService.crawlID(req.query.id)
-        L.info(String(r))
         res.json(r);
       } catch (error) {
         next(error)

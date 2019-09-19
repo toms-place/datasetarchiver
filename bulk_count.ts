@@ -12,7 +12,6 @@ const batchAmount = 10;
 db.conn.on('connected', async () => {
 
 	let results = [];
-	let insertedTotal = 0;
 
 	await new Promise < any > ((resolve, reject) => {
 		for (let i = 0; i <= fileCount; i++) {
@@ -27,52 +26,7 @@ db.conn.on('connected', async () => {
 		}
 	})
 
-	let batches = batch(results)
-
-	for (let batch of batches) {
-		let datasets: IDataset[] = []
-
-		for (let i = 0; i < batch.length; i++) {
-
-			try {
-				let url = new URL(batch[i].url)
-
-				//index key length max = 1024 bytes
-				if (Buffer.byteLength(url.href, 'utf8') > 1024) {
-					continue;
-				}
-
-				let dataset = new db.dataset({
-					url: url,
-					id: url.href,
-					meta: undefined,
-					crawl_info: undefined
-				});
-
-				if (batch[i].format) {
-					let detector = new FileTypeDetector(batch[i].format, batch[i].format)
-					dataset.meta.filetype = detector.mimeType
-					dataset.meta.extension = detector.extension
-				}
-
-				if (batch[i].dataset) {
-					dataset.meta.source.push(new URL(batch[i].dataset))
-				}
-
-				datasets.push(dataset)
-
-			} catch (error) {
-				console.error('mongoose db class', error.message)
-			}
-
-		}
-
-		let insertCount = await db.dataset.addMany(datasets)
-		insertedTotal += insertCount
-		console.log('inserted', insertCount)
-	}
-
-	console.log('Total inserted', insertedTotal)
+	console.log('Total inserted', results.length)
 
 	process.exit()
 

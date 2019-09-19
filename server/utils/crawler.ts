@@ -80,17 +80,16 @@ export default class Crawler {
 			}
 
 			this.dataset.crawl_info.firstCrawl = false
-			await this.dataset.save()
 			await hostsHandler.releaseHost(this.dataset.url.hostname)
+			await this.dataset.save()
 			return fileChanged
 
 		} catch (error) {
-			console.error('unhandled', error.name, error.message, this.dataset.url.href);
 			this.addError(error);
 			this.calcNextCrawl(false)
 			this.dataset.crawl_info.firstCrawl = false
-			await this.dataset.save()
 			await hostsHandler.releaseHost(this.dataset.url.hostname)
+			await this.dataset.save()
 			return false
 		}
 
@@ -298,9 +297,11 @@ export default class Crawler {
 			code = 404
 		} else if (error.statusCode){
 			code = error.statusCode
+		} else if (error.code = 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
+			code = 112;
 		} else {
 			code = 111;
-			l.error(error.message)
+			l.error('unhandled', error.name, error.message, error.code, this.dataset.url.href);
 		}
 
 
