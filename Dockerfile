@@ -6,6 +6,8 @@ FROM node:12.4.0-alpine AS builder
 WORKDIR /
 COPY ./server ./server
 COPY ./master ./master
+COPY ./public ./public
+COPY ./templates ./templates
 COPY ./build.ts ./
 COPY ./tsconfig.json ./
 COPY ./package*.json ./
@@ -24,8 +26,6 @@ RUN apk add --no-cache curl
 # set working directory
 WORKDIR /
 COPY --from=builder ./dist ./dist
-COPY ./templates ./dist/templates
-COPY ./public ./dist/public
 COPY ./package*.json ./
 COPY ./.env ./
 
