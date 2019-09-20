@@ -8,7 +8,7 @@ import morgan from 'morgan'
 import crawlerAPI from '../apps/api/api'
 import viewsAPP from '../apps/browser/app'
 var favicon = require('serve-favicon');
-var cors = require('cors')
+import cors from 'cors' 
 
 
 const root = path.normalize(__dirname + '/../..');
