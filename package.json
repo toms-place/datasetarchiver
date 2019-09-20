@@ -41,6 +41,7 @@
     "mongoose": "^5.7.1",
     "mongoose-unique-validator": "^2.0.3",
     "morgan": "^1.9.1",
+    "multistream": "^4.0.0",
     "pino": "^5.13.3",
     "pug": "^2.0.4",
     "request": "^2.88.0",
@@ -49,6 +50,7 @@
     "serve-favicon": "^2.5.0"
   },
   "devDependencies": {
+    "@types/mongodb": "^3.3.2",
     "@types/archiver": "^3.0.0",
     "@types/chai": "^4.2.3",
     "@types/content-disposition": "^0.5.2",

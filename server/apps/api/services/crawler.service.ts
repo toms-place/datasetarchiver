@@ -7,6 +7,7 @@ import {
   IDataset
 } from '../models/dataset';
 import sanitize from "sanitize-filename";
+import {ObjectId} from "bson";
 
 export interface addHrefResponse {
   datasetstatus: Number;
@@ -254,6 +255,9 @@ export class CrawlerService {
       let versionStreams = []
       for (let dataset of datasets) {
         let downloadStream = db.bucket.openDownloadStream(dataset.versions[dataset.versions.length - 1])
+        if (!dataset.meta.filename) {
+          dataset.meta.filename = 'unknown'
+        }
         versionStreams.push({
           stream: downloadStream,
           name: dataset.meta.filename
@@ -265,6 +269,129 @@ export class CrawlerService {
     }
 
   }
+
+  static async getAllVersionIDsByFileType(extension) {
+    try {
+      let array = await db.dataset.aggregate([{
+        $match: {
+          $and: [{
+              $or: [{
+                'meta.filetype': extension
+              }, {
+                'meta.extension': extension
+              }]
+            },
+            {
+              'meta.versionCount': {
+                $gt: 0
+              }
+            }
+          ]
+        }
+      }, {
+        $project: {
+          file_ids: '$versions',
+          dataset_id: '$_id',
+          meta: '$meta',
+          _id: 0
+        }
+      }])
+      return array
+    } catch (error) {
+      throw error
+    }
+
+  }
+
+
+  static async getAllVersionIDs() {
+    try {
+      let array = await db.dataset.aggregate([{
+        $match: {
+          'meta.versionCount': {
+            $gt: 0
+          }
+        }
+      }, {
+        $project: {
+          file_ids: '$versions',
+          dataset_id: '$_id',
+          meta: '$meta',
+          _id: 0
+        }
+      }])
+      return array
+    } catch (error) {
+      throw error
+    }
+
+  }
+
+
+  static async getDataset(id) {
+    try {
+      let file = await db.dataset.findOne({
+        _id: new ObjectId(id)
+      })
+      return file
+    } catch (error) {
+      throw error
+    }
+  }
+
+
+  static async getDatasetsByFileType(extension): Promise < IDataset[] > {
+    try {
+      let array = await db.dataset.find({
+        $or: [{
+          'meta.filetype': extension
+        }, {
+          'meta.extension': extension
+        }]
+      })
+      return array
+    } catch (error) {
+      throw error
+    }
+
+  }
+
+  static async getDatasets(): Promise < IDataset[] > {
+    try {
+      let array = await db.dataset.find({})
+      return array
+    } catch (error) {
+      throw error
+    }
+
+  }
+
+
+
+
+  static async getFile(id) {
+    try {
+      let file = await db.file.findOne({
+        _id: new ObjectId(id)
+      })
+      return file
+    } catch (error) {
+      throw error
+    }
+  }
+
+
+  static async getFileAsStream(id) {
+    try {
+      let downloadStream = db.bucket.openDownloadStream(id)
+      return downloadStream
+    } catch (error) {
+      throw error
+    }
+  }
+
+
+
 }
 
 export default new CrawlerService();

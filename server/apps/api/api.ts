@@ -34,7 +34,11 @@ api.get('/addManyHrefs', controller.addManyHrefs)
 api.get('/crawlHref', controller.crawlHref)
 api.get('/crawlHrefSync', controller.crawlHrefSync)
 api.get('/crawlID', controller.crawlID)
-api.get('/getAll', controller.getAll)
+api.get('/getFileIDs', controller.getFileIDs)
+api.get('/getFiles', controller.getFiles)
+api.get('/getFile', controller.getFile)
+api.get('/getDatasets', controller.getDatasets)
+api.get('/getDataset', controller.getDataset)
 
 api.use('/\*', errorEmitter);
 api.use(errorHandler);

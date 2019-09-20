@@ -290,13 +290,14 @@ export default class Crawler {
 		let code:number;
 
 		if (error.error) {
-			error.code = error.error.code
+			l.error('unhandled RP Error', error.name, error.message, error.code, this.dataset.url.href);
+			error = error.error
 		}
 
-		if (error.code == 'ENOTFOUND') {
-			code = 404
-		} else if (error.statusCode){
+		if (error.statusCode) {
 			code = error.statusCode
+		} else if (error.code == 'ENOTFOUND'){
+			code = 404
 		} else if (error.code = 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
 			code = 112;
 		} else {

@@ -6,17 +6,18 @@ import {
 	SchemaTypes,
 	model
 } from 'mongoose';
+import {  ObjectID } from 'bson';
 
 
 interface IFile extends Document {
-	_id: number,
+	_id: ObjectID,
 	length: number,
 	chunkSize: number,
 	uploadDate: Date,
 	filename: string,
 	md5: string,
 	metadata: {
-		dataset_ref_id: string,
+		dataset_ref_id: ObjectID,
 		version: number
 	}
 }

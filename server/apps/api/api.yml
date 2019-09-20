@@ -9,6 +9,119 @@ tags:
   - name: Datasetarchiver
     description: here you find all options available in v1
 paths:
+  /getFile:
+    get:
+      parameters:
+        - in: query
+          name: id
+          description: ObjectId of file
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: as
+          description: defines method to get files (stream, zip)
+          schema:
+            type: string
+      tags:
+      - Datasetarchiver
+      description:
+      responses:
+        200:
+          description: Returns file with specified method default is stream
+  /getFiles:
+    get:
+      parameters:
+        - in: query
+          name: byType
+          description: defines Type of files to get (csv, text/csv, zip, etc..)
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: as
+          description: defines method to get files (zip, stream)
+          schema:
+            type: string
+      tags:
+      - Datasetarchiver
+      description:
+        Gets newest Versions of Files (if stream, files seperated by [FILENAME_START\n[filename]\nFILENAME_END])
+      responses:
+        200:
+          description: Returns files with specified method default is stream (only newest versions)
+  /getFileIDs:
+    get:
+      parameters:
+        - in: query
+          name: byType
+          description: defines Type of files to get (csv, text/csv, zip, etc..)
+          schema:
+            type: string
+      tags:
+      - Datasetarchiver
+      description:
+      responses:
+        '200':
+          description: An allVersionIDs object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/allVersionIDs'
+  /getDatasets:
+    get:
+      parameters:
+        - in: query
+          name: byType
+          description: defines type of datasets to get  (csv, text/csv, zip, etc..)
+          schema:
+            type: string
+      tags:
+      - Datasetarchiver
+      description:
+      responses:
+        200:
+          description: Returns array of datasets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dataset'
+  /getDataset:
+    get:
+      parameters:
+        - in: query
+          name: id
+          description: ObjectId of dataset
+          schema:
+            type: string
+          required: true
+      tags:
+      - Datasetarchiver
+      description:
+      responses:
+        200:
+          description: Returns dataset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dataset'
+  /crawlID:
+    get:
+      parameters:
+        - in: query
+          name: id
+          description: Crawls the id which links to the data
+          schema:
+            type: string
+          required: true
+      tags:
+      - Datasetarchiver
+      description: crawl id
+      responses:
+        200:
+          description: Returns a boolean if crawl started
   /addHref:
     get:
       parameters:
@@ -35,12 +148,11 @@ paths:
             type: string
       tags:
       - Datasetarchiver
-      description: add href to crawler
+      description: TODO make it a json request
       responses:
         200:
           description: Returns an object of what has been added
           content: {}
-
   /addManyHrefs:
     get:
       parameters:
@@ -55,68 +167,47 @@ paths:
           required: true
       tags:
       - Datasetarchiver
-      description: add hrefs to crawler
+      description: TODO make it a json request
       responses:
         200:
           description: Returns an object of what has been added
           content: {}
 
-  /crawlHref:
-    get:
-      parameters:
-        - in: query
-          name: href
-          description: Crawls the href which links to the data
-          schema:
-            type: string
-          required: true
-      tags:
-      - Datasetarchiver
-      description: crawl href
-      responses:
-        200:
-          description: Returns a boolean if crawl started
-
-  /crawlHrefSync:
-    get:
-      parameters:
-        - in: query
-          name: href
-          description: Crawls the href which links to the data in sync
-          schema:
-            type: string
-          required: true
-      tags:
-      - Datasetarchiver
-      description: crawl href
-      responses:
-        200:
-          description: Returns a boolean when crawl finished
-
-  /crawlID:
-    get:
-      parameters:
-        - in: query
-          name: id
-          description: Crawls the id which links to the data
-          schema:
-            type: string
-          required: true
-      tags:
-      - Datasetarchiver
-      description: crawl id
-      responses:
-        200:
-          description: Returns a boolean when crawl finished
 
 components:
   schemas:
-    DatasetBody:
+    Dataset:
       title: dataset
       required:
       - name
       type: object
       properties:
-        href:
+        _id:
           type: string
-          example: http(s)://localhost:1234/filename.xyz
+        url:
+          type: object
+        id:
+          type: string
+        meta:
+          type: object
+        crawl_info:
+          type: object
+        versions:
+          type: array
+          items:
+            type: string
+    allVersionIDs:
+      type: array
+      items:
+        type: object
+        properties:
+          meta:
+            type: object
+          dataset_id:
+            type: string
+          file_ids:
+            type: array
+            items:
+              type: string
+            uniqueItems: true
+        description: The file_ids array holds all ids of versions of the dataset ([0] is oldest).

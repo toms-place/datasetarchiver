@@ -6,12 +6,13 @@ import mongoose, {
 import config from '../../../config';
 import db from '../../../common/database';
 import uniqueValidator from 'mongoose-unique-validator'
+import {  ObjectID } from 'bson';
 
 export interface IDataset extends Document {
 	id: string,
 	url: URL,
 	crawl_info: any,
-	versions: number[],
+	versions: ObjectID[],
 	meta: any
 }
 

@@ -25,7 +25,7 @@ export function errorEmitter(req: Request, res: Response, next: NextFunction) {
 
 // eslint-disable-next-line no-unused-vars, no-shadow
 export default function errorHandler(err, req: Request, res: Response, next: NextFunction) {
-  l.error(err.message)
+  l.error(err)
   res.status(500).send('Error in api: ' + err.message);
 
 }

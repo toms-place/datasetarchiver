@@ -37,6 +37,8 @@ npm start
 
 ## TODO
 
+* API: getDataset ID
+* MASTER connect fail, release hosts
 * Add Source from Data
 * kubernetes divide services:
   * Master service

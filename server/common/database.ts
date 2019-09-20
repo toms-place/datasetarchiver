@@ -2,6 +2,7 @@ import config from '../config';
 import mongoose, {
   Mongoose
 } from 'mongoose';
+import {GridFSBucket} from 'mongodb';
 import datasetModel, {IDatasetModel} from '../apps/api/models/dataset';
 import fileModel, {IFileModel} from '../apps/api/models/file';
 import hostModel, {IHostModel} from '../apps/api/models/host';
@@ -18,7 +19,7 @@ let instance = null;
 
 export class Database {
   _conn: Mongoose['connection'];
-  _bucket: any;
+  _bucket: GridFSBucket;
   dataset: IDatasetModel;
   host: IHostModel;
   file: IFileModel;
@@ -58,7 +59,7 @@ export class Database {
     return this._conn
   }
 
-  get bucket() {
+  get bucket(): GridFSBucket {
     return this._bucket
   }
 

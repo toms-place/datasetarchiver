@@ -8,6 +8,7 @@ import morgan from 'morgan'
 import crawlerAPI from '../apps/api/api'
 import viewsAPP from '../apps/browser/app'
 var favicon = require('serve-favicon');
+var cors = require('cors')
 
 
 const root = path.normalize(__dirname + '/../..');
@@ -19,6 +20,8 @@ export default class ExpressServer {
     //view engine setup
     app.set('view engine', 'pug');
     app.set('views', `${root}/templates`);
+
+    app.use(cors())
 
     //logger setup
     app.use(morgan('combined', {
