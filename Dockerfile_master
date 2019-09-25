@@ -2,7 +2,14 @@
 # use latest version of node
 FROM node:12.4.0-alpine AS builder
 
+# python for bcrypt
 RUN apk add --update python
+RUN apk --no-cache add --virtual builds-deps build-base python
+RUN npm config set python /usr/bin/python
+RUN npm i -g npm
+RUN npm install
+RUN npm rebuild bcrypt --build-from-source
+RUN apk del builds-deps
 
 # set working directory
 COPY ./server ./server
@@ -22,7 +29,16 @@ RUN npm run compile
 # SERVICE
 # use latest version of node
 FROM node:12.4.0-alpine
+
+# python for bcrypt
 RUN apk add --update python
+RUN apk --no-cache add --virtual builds-deps build-base python
+RUN npm config set python /usr/bin/python
+RUN npm i -g npm
+RUN npm install
+RUN npm rebuild bcrypt --build-from-source
+RUN apk del builds-deps
+
 RUN apk add --no-cache bash
 RUN apk add --no-cache curl
 
