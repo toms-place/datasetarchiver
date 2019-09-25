@@ -29,16 +29,16 @@ const apiSpecPath = path.join(__dirname, './api.yml');
 api.use(config.OPENAPI_SPEC, express.static(apiSpecPath));
 
 //routes
-api.get('/addHref', controller.addHref)
-api.get('/addManyHrefs', controller.addManyHrefs)
 api.get('/crawlHref', controller.crawlHref)
 api.get('/crawlHrefSync', controller.crawlHrefSync)
-api.get('/crawlID', controller.crawlID)
-api.get('/getFileIDs', controller.getFileIDs)
+api.get('/getVersions', controller.getVersions)
 api.get('/getFiles', controller.getFiles)
 api.get('/getFile', controller.getFile)
 api.get('/getDatasets', controller.getDatasets)
 api.get('/getDataset', controller.getDataset)
+api.post('/addHref', controller.addHref)
+api.post('/addManyHrefs', controller.addManyHrefs)
+api.post('/crawlID', controller.crawlID)
 
 api.use('/\*', errorEmitter);
 api.use(errorHandler);

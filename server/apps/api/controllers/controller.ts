@@ -195,7 +195,7 @@ export class Controller {
     }
   }
 
-  async getFileIDs(req: Request, res: Response, next: NextFunction): Promise < void > {
+  async getVersions(req: Request, res: Response, next: NextFunction): Promise < void > {
     //check query
     if (req.query.byType) {
       try {

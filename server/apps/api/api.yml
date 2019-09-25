@@ -4,7 +4,7 @@ info:
   description: datasetarchiver
   version: 1.0.0
 servers:
-  - url: /api/v1
+  - url: /crawler/api/v1
 tags:
   - name: Datasetarchiver
     description: here you find all options available in v1
@@ -50,7 +50,7 @@ paths:
       responses:
         200:
           description: Returns files with specified method default is stream (only newest versions)
-  /getFileIDs:
+  /getVersions:
     get:
       parameters:
         - in: query
@@ -63,11 +63,11 @@ paths:
       description:
       responses:
         '200':
-          description: An allVersionIDs object
+          description: An versions object
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/allVersionIDs'
+                $ref: '#/components/schemas/files'
   /getDatasets:
     get:
       parameters:
@@ -108,7 +108,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Dataset'
   /crawlID:
-    get:
+    post:
       parameters:
         - in: query
           name: id
@@ -123,7 +123,7 @@ paths:
         200:
           description: Returns a boolean if crawl started
   /addHref:
-    get:
+    post:
       parameters:
         - in: query
           name: href
@@ -154,7 +154,7 @@ paths:
           description: Returns an object of what has been added
           content: {}
   /addManyHrefs:
-    get:
+    post:
       parameters:
         - in: query
           name: hrefs
@@ -184,30 +184,83 @@ components:
       properties:
         _id:
           type: string
-        url:
-          type: object
         id:
           type: string
         meta:
           type: object
+          $ref: '#/components/examples/meta'
         crawl_info:
           type: object
+          $ref: '#/components/examples/crawl_info'
         versions:
           type: array
-          items:
-            type: string
-    allVersionIDs:
+          $ref: '#/components/examples/versions'
+        url:
+          type: object
+    file:
+      title: file
+      type: object
+      properties:
+        file_ids:
+          type: array
+          $ref: '#/components/examples/versions'
+        meta:
+          type: object
+          $ref: '#/components/examples/meta'
+        dataset_id:
+          type: string
+      description: The file_ids array holds all ids of versions of the dataset ([0] is oldest).
+    files:
       type: array
       items:
         type: object
-        properties:
-          meta:
+        $ref: '#/components/schemas/file'
+      title: files
+  examples:
+    crawl_info:
+      title: crawl_info
+      type: object
+      properties:
+        firstCrawl:
+          type: boolean
+        crawlInterval:
+          type: number
+        nextCrawl:
+          type: string
+        lastCrawlAttempt:
+          type: string
+        stopped:
+          type: boolean
+        errorCount:
+          type: number
+        errorStore:
+          type: array
+          items:
             type: object
-          dataset_id:
-            type: string
-          file_ids:
-            type: array
-            items:
-              type: string
-            uniqueItems: true
-        description: The file_ids array holds all ids of versions of the dataset ([0] is oldest).
+        changeDistribution:
+          type: array
+          items:
+            type: object
+    meta:
+      title: meta
+      type: object
+      properties:
+        versionCount:
+          type: number
+        filetype:
+          type: string
+        filename:
+          type: string
+        insertDate:
+          type: string
+        source:
+          type: array
+          items:
+            type: object
+    versions:
+      title: versions
+      type: array
+      items:
+        type: string
+      uniqueItems: true
+
