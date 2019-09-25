@@ -63,7 +63,7 @@ paths:
       description:
       responses:
         '200':
-          description: Returns an array of file objects
+          description: Returns an array of file objects containing the _ids of the versions
           content:
             application/json:
               schema:
