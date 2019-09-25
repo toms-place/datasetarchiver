@@ -14,10 +14,9 @@ COPY ./package*.json ./
 COPY ./.env ./
 
 # python for bcrypt
-RUN apk add --no-cache make gcc g++ python && \
-  npm install && \
-  apk del make gcc g++ python
-RUN npm rebuild bcrypt --build-from-source
+RUN apk --no-cache add --virtual native-deps \
+  g++ gcc libgcc libstdc++ linux-headers autoconf automake make nasm python git && \
+  npm install --quiet node-gyp -g
 
 # compile
 RUN npm run compile
@@ -37,10 +36,9 @@ COPY ./package*.json ./
 COPY ./.env ./
 
 # python for bcrypt
-RUN apk add --no-cache make gcc g++ python && \
-  npm install --only=prod && \
-  apk del make gcc g++ python
-RUN npm rebuild bcrypt --build-from-source
+RUN apk --no-cache add --virtual native-deps \
+  g++ gcc libgcc libstdc++ linux-headers autoconf automake make nasm python git && \
+  npm install --only=prod --quiet node-gyp -g
 
 # install
 RUN npm install pm2 -g
