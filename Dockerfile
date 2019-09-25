@@ -2,15 +2,6 @@
 # use latest version of node
 FROM node:12.4.0-alpine AS builder
 
-# python for bcrypt
-RUN apk add --update python
-RUN apk --no-cache add --virtual builds-deps build-base python
-RUN npm config set python /usr/bin/python
-RUN npm i -g npm
-RUN npm install
-RUN npm rebuild bcrypt --build-from-source
-RUN apk del builds-deps
-
 # set working directory
 WORKDIR /
 COPY ./server ./server
@@ -22,22 +13,19 @@ COPY ./tsconfig.json ./
 COPY ./package*.json ./
 COPY ./.env ./
 
-# install
-RUN npm install
+# python for bcrypt
+RUN apk add --no-cache make gcc g++ python && \
+  npm install && \
+  apk del make gcc g++ python
+RUN npm rebuild bcrypt --build-from-source
+
+# compile
 RUN npm run compile
 
 # SERVICE
 # use latest version of node
 FROM node:12.4.0-alpine
 
-# python for bcrypt
-RUN apk add --update python
-RUN apk --no-cache add --virtual builds-deps build-base python
-RUN npm config set python /usr/bin/python
-RUN npm i -g npm
-RUN npm install
-RUN npm rebuild bcrypt --build-from-source
-RUN apk del builds-deps
 
 RUN apk add --no-cache bash
 RUN apk add --no-cache curl
@@ -48,9 +36,14 @@ COPY --from=builder ./dist ./dist
 COPY ./package*.json ./
 COPY ./.env ./
 
+# python for bcrypt
+RUN apk add --no-cache make gcc g++ python && \
+  npm install --only=prod && \
+  apk del make gcc g++ python
+RUN npm rebuild bcrypt --build-from-source
+
 # install
 RUN npm install pm2 -g
-RUN npm install --only=prod
 
 # expose port 3000
 EXPOSE 3000
