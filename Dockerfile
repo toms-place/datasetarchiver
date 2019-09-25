@@ -2,6 +2,8 @@
 # use latest version of node
 FROM node:12.4.0-alpine AS builder
 
+RUN apk add --update python
+
 # set working directory
 WORKDIR /
 COPY ./server ./server
@@ -20,6 +22,7 @@ RUN npm run compile
 # SERVICE
 # use latest version of node
 FROM node:12.4.0-alpine
+RUN apk add --update python
 RUN apk add --no-cache bash
 RUN apk add --no-cache curl
 
