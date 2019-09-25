@@ -13,44 +13,72 @@ import {
 } from 'util';
 import Archiver from 'archiver';
 import fileTypeDetector from '../../../utils/fileTypeDetector'
-import archiver from 'archiver';
+import config from '../../../config';
 var MultiStream = require('multistream')
 const {
   Readable
 } = require('stream');
+import bcrypt from 'bcrypt';
+
 
 
 
 export class Controller {
   async addHref(req: Request, res: Response, next: NextFunction): Promise < void > {
-    let r: addHrefResponse;
+    let match;
     try {
-      r = await CrawlerService.addHref(req.query.href, req.query.source, req.query.filename, req.query.filetype, req.query.extension)
-      res.json(r);
+      match = await bcrypt.compare(req.query.secret, config.secret)
     } catch (error) {
-      next(error)
+      L.error(error)
+    }
+    if (req.query.href && match) {
+      let r: addHrefResponse;
+      try {
+        r = await CrawlerService.addHref(req.query.href, req.query.source, req.query.filename, req.query.filetype, req.query.extension)
+        res.json(r);
+      } catch (error) {
+        console.log(error)
+        next(error)
+      }
+    } else {
+      next(new Error('not found'))
     }
   }
   async addManyHrefs(req: Request, res: Response, next: NextFunction): Promise < void > {
-    let r: addHrefResponse;
+    let match;
     try {
-      let array = JSON.parse(req.query.hrefs)
-      if (isArray(array)) {
-        r = await CrawlerService.addManyHrefs(array)
-      } else {
-        let error = new Error('no array');
-        next(error)
-        return
-      }
-      res.json(r);
+      match = await bcrypt.compare(req.query.secret, config.secret)
     } catch (error) {
+      L.error(error)
+    }
+    if (req.query.hrefs && match) {
+      let r: addHrefResponse;
+      try {
+        let array = JSON.parse(req.query.hrefs)
+        if (isArray(array)) {
+          r = await CrawlerService.addManyHrefs(array)
+        } else {
+          let error = new Error('no array');
+          next(error)
+          return
+        }
+        res.json(r);
+      } catch (error) {
 
-      next(error)
+        next(error)
+      }
+    } else {
+      next(new Error('not found'))
     }
   }
   async crawlHref(req: Request, res: Response, next: NextFunction): Promise < void > {
-    //check query
-    if (req.query.href) {
+    let match;
+    try {
+      match = await bcrypt.compare(req.query.secret, config.secret)
+    } catch (error) {
+      L.error(error)
+    }
+    if (req.query.href && match) {
       try {
         let r = await CrawlerService.crawlHref(req.query.href)
         L.info(String(r))
@@ -64,8 +92,13 @@ export class Controller {
     }
   }
   async crawlID(req: Request, res: Response, next: NextFunction): Promise < void > {
-    //check query
-    if (req.query.id) {
+    let match;
+    try {
+      match = await bcrypt.compare(req.query.secret, config.secret)
+    } catch (error) {
+      L.error(error)
+    }
+    if (req.query.id && match) {
       try {
         let r = await CrawlerService.crawlID(req.query.id)
         res.json(r);
@@ -78,8 +111,13 @@ export class Controller {
     }
   }
   async crawlHrefSync(req: Request, res: Response, next: NextFunction): Promise < void > {
-    //check query
-    if (req.query.href) {
+    let match;
+    try {
+      match = await bcrypt.compare(req.query.secret, config.secret)
+    } catch (error) {
+      L.error(error)
+    }
+    if (req.query.href && match) {
       try {
         let r = await CrawlerService.crawlHrefSync(req.query.href)
         res.json(r);

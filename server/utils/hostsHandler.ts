@@ -3,6 +3,7 @@ import config from '../config';
 import {
 	IHost
 } from '../apps/api/models/host';
+import L from '../common/logger'
 
 let instance = null;
 
@@ -96,12 +97,12 @@ class HostsHandler {
 			if (res.nModified > 0 && res.n > 0) {
 				return true
 			} else {
-
+				L.info(res)
 				return false
 			}
 
 		} catch (error) {
-			console.error(error)
+			L.error(error)
 		}
 
 	}
@@ -119,11 +120,12 @@ class HostsHandler {
 			if (res.nModified > 0 && res.n > 0) {
 				return true
 			} else {
+				L.info(res)
 				return false
 			}
 
 		} catch (error) {
-			console.error(error)
+			L.error(error)
 		}
 
 	}

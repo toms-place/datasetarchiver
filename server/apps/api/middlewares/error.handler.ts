@@ -18,7 +18,7 @@ class MyError extends Error {
 
 
 export function errorEmitter(req: Request, res: Response, next: NextFunction) {
-  let err = new MyError(`${process.pid} Error: ${req.ip} tried to reach ${req.originalUrl}`, 404); // Tells us which IP tried to reach a particular URL
+  let err = new MyError(`PID ${process.pid} Error: ${req.ip} tried to reach ${req.originalUrl}`, 404); // Tells us which IP tried to reach a particular URL
   next(err);
 };
 

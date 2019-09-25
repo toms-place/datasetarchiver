@@ -95,7 +95,7 @@ async function crawl(id, hostname) {
     await hostsHandler.lockHost(hostname)
     let href: URL['href'];
     //TODO API JSON because of request params ? ID
-    href = `${config.protocol}//${config.host}:${config.port}${config.endpoint}/api/v1/crawlID?id=${id}`
+    href = `${config.protocol}//${config.host}:${config.port}${config.endpoint}/api/v1/crawlID?id=${id}&secret=${config.pass}`
     let resp = await rp.post(href, {
       rejectUnauthorized: false
     })
