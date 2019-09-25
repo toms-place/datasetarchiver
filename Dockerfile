@@ -18,6 +18,8 @@ RUN apk --no-cache add --virtual native-deps \
   g++ gcc libgcc libstdc++ linux-headers autoconf automake make nasm python git && \
   npm install --quiet node-gyp -g
 
+# install
+RUN npm install
 # compile
 RUN npm run compile
 
@@ -38,9 +40,10 @@ COPY ./.env ./
 # python for bcrypt
 RUN apk --no-cache add --virtual native-deps \
   g++ gcc libgcc libstdc++ linux-headers autoconf automake make nasm python git && \
-  npm install --only=prod --quiet node-gyp -g
+  npm install --quiet node-gyp -g
 
 # install
+RUN npm install --only=prod
 RUN npm install pm2 -g
 
 # expose port 3000
