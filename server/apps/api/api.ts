@@ -32,6 +32,7 @@ api.use(config.OPENAPI_SPEC, express.static(apiSpecPath));
 api.get('/crawlHref', controller.crawlHref)
 api.get('/crawlHrefSync', controller.crawlHrefSync)
 api.get('/getVersions', controller.getVersions)
+api.get('/dumpLastVersions', controller.dumpLastVersions)
 api.get('/getFiles', controller.getFiles)
 api.get('/getFile', controller.getFile)
 api.get('/getDatasets', controller.getDatasets)

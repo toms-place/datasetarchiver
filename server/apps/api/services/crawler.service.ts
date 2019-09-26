@@ -260,7 +260,9 @@ export class CrawlerService {
         }
         versionStreams.push({
           stream: downloadStream,
-          name: dataset.meta.filename
+          id: String(dataset._id),
+          url: String(dataset.id),
+          meta: dataset.meta
         })
       }
       return versionStreams

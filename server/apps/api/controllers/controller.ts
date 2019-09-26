@@ -233,6 +233,74 @@ export class Controller {
     }
   }
 
+  async dumpLastVersions(req: Request, res: Response, next: NextFunction): Promise < void > {
+    //check query
+    if (req.query.byType) {
+      try {
+        let filetype = new fileTypeDetector(req.query.byType)
+        if (!filetype.extension) {
+          return next(new Error('wrong filetype'))
+        }
+
+        let versionStreams = await CrawlerService.getAllLastVersionsByFileType(filetype.extension)
+        if (versionStreams.length <= 0) {
+          next(new Error('no file found'))
+          return
+        }
+
+        const metaStream = new Readable();
+        metaStream._read = () => {}; // redundant? see update below
+        let meta;
+
+        let zip = Archiver('zip');
+        res.type('application/zip');
+        res.header('Content-disposition', `attachment; filename=${filetype.extension}.zip`);
+
+        // Send the file to the page output.
+        zip.pipe(res);
+
+        for (let i = 0; i < versionStreams.length; i++) {
+          // Create zip with all versions
+          zip.append(versionStreams[i].stream, {
+            name: `${versionStreams[i].id}.${filetype.extension}`
+          })
+
+          meta = new Object()
+          meta.filename_ref = `${versionStreams[i].id}.${filetype.extension}`
+          meta.url = versionStreams[i].url
+          meta.dataset_id = versionStreams[i].id
+          meta.meta = versionStreams[i].meta
+
+          if (i == versionStreams.length - 1) {
+            metaStream.push(JSON.stringify(meta) + ']');
+          } else if (i == 0){
+            metaStream.push('[' + JSON.stringify(meta) + ',\n');
+          } else {
+            metaStream.push(JSON.stringify(meta) + ',\n');
+          }
+
+          if (i == versionStreams.length - 1) {
+            metaStream.push(null);
+            zip.append(metaStream, {
+              name: 'meta.json'
+            })
+            zip.finalize();
+          }
+        }
+
+
+      } catch (error) {
+        console.log(error)
+        next(error)
+        return
+      }
+    } else {
+      let array = await CrawlerService.getAllVersionIDs()
+      res.json(array);
+    }
+  }
+
+
   async getVersions(req: Request, res: Response, next: NextFunction): Promise < void > {
     //check query
     if (req.query.byType) {

@@ -104,21 +104,35 @@ export default class Crawler {
 
 		return new Promise < boolean > ((resolve, reject) => {
 
+			const detector = new FileTypeDetector()
+
+
 			const options = url.parse(this.dataset.url.href);
 			options.trackRedirects = true;
 			options.maxRedirects = 10;
 
 			this.agent.get(this.dataset.url.href, (res) => {
 
+				detector.on('file-type', (filetype) => {
+					if (filetype === null) {
+					} else {
+					  this.dataset.meta.filetype = filetype.mime
+					  this.dataset.meta.extension = filetype.ext
+					}
+				  })
+
 				pipeline(
 					res,
+					detector,
 					db.bucket.openUploadStream(this.dataset.meta.filename, {
 						metadata: {
 							dataset_ref_id: this.dataset._id,
 							version: this.dataset.meta.versionCount
 						}
 					}), (error) => {
-						if (!error) resolve(true)
+						if (!error) {
+							resolve(true)
+						}
 						else reject(error)
 					}
 				);
@@ -148,11 +162,11 @@ export default class Crawler {
 					return true
 				} else {
 					//not new file deleted
-					await db.bucket.delete(newFile._id)
+					db.bucket.delete(newFile._id)
 					return false
 				}
 			} else {
-				await db.bucket.delete(newFile._id)
+				db.bucket.delete(newFile._id)
 				this.dataset.crawl_info.stopped = true;
 
 				throw new DatasetError('max file size exceeded', 194)

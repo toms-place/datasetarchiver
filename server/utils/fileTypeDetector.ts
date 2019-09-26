@@ -1,14 +1,16 @@
 import mime from 'mime';
+import FileType from 'stream-file-type';
 
 /**
  * Parses mime-type and file extension name, giving mime type more weight
  */
-export default class fileTypeDetector {
+export default class fileTypeDetector extends FileType{
 	mimeType: string;
 	extension: string;
 	stackCount: number;
 
 	constructor(mimeType ? : string, extension ? : string) {
+		super()
 		this.mimeType = mimeType;
 		this.extension = extension;
 		this.stackCount = 0;
