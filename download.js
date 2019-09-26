@@ -1,11 +1,11 @@
 const https = require('https')
 const http = require('http')
 const fs = require('fs')
-const extension = String(process.env.ext) || 'csv'
+const extension = process.env.ext || 'csv'
 let agent = 'https'
 const server = 'https://k8s.ai.wu.ac.at/crawler/api/v1'
 //const server = 'http://localhost:3000/crawler/api/v1'
-const targetDir = String(process.env.dir) || __dirname
+const targetDir = process.env.dir || __dirname
 const targetFilesDir = '/files'
 
 let metaString = "";
@@ -14,7 +14,6 @@ let getVersions = () => {
 	return new Promise((resolve, reject) => {
 		let chunks = '';
 		agent.get(server + '/getVersions?byType=' + extension, (res) => {
-
 			res.on('data', (chunk) => {
 				chunks += chunk
 			});
