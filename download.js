@@ -1,7 +1,7 @@
 const https = require('https')
 const http = require('http')
 const fs = require('fs')
-const extension = String(process.env.dir) || 'csv'
+const extension = String(process.env.ext) || 'csv'
 let agent = 'https'
 const server = 'https://k8s.ai.wu.ac.at/crawler/api/v1'
 //const server = 'http://localhost:3000/crawler/api/v1'
