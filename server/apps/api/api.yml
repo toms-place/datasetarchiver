@@ -88,6 +88,20 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Dataset'
+  /dumpLastVersions:
+    get:
+      parameters:
+        - in: query
+          name: byType
+          description: defines type of datasets to get  (csv, text/csv, zip, etc..)
+          schema:
+            type: string
+      tags:
+      - Datasetarchiver
+      description:
+      responses:
+        200:
+          description: Downloads a zip file containing all files and a meta.json file
   /getDataset:
     get:
       parameters:

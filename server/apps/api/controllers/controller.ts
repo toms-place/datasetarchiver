@@ -254,7 +254,7 @@ export class Controller {
 
         let zip = Archiver('zip');
         res.type('application/zip');
-        res.header('Content-disposition', `attachment; filename=${filetype.extension}.zip`);
+        res.header('Content-disposition', `attachment; filename=${filetype.extension}_${new Date().getTime()}.zip`);
 
         // Send the file to the page output.
         zip.pipe(res);
