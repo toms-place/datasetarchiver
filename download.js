@@ -101,15 +101,20 @@ let setAgent = () => {
 }
 
 let main = async () => {
-	fs.mkdirSync(targetDir + targetFilesDir, {
-		recursive: true
-	});
-	setAgent()
-	let versions = JSON.parse(await getVersions())
-	for (let i = 0; i < versions.length; i++) {
-		await saveFile(versions[i], i, versions.length)
+	try {
+		fs.mkdirSync(targetDir + targetFilesDir, {
+			recursive: true
+		});
+		setAgent()
+		let versions = JSON.parse(await getVersions())
+		for (let i = 0; i < versions.length; i++) {
+			await saveFile(versions[i], i, versions.length)
+		}
+		saveMeta()
+		
+	} catch (error) {
+		console.log(error)
 	}
-	saveMeta()
 }
 
 main()
