@@ -19,7 +19,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "start": "node dist/server/index.js",
+    "start": "node --max-old-space-size=18432 dist/server/index.js",
     "start:master": "node --max-old-space-size=6144 dist/master/index.js",
     "compile": "ts-node build.ts && tsc",
     "dev": "node_tls_reject_unauthorized=0 nodemon --watch server server/index.ts | pino-pretty",
@@ -34,7 +34,7 @@
     "body-parser": "^1.19.0",
     "cookie-parser": "^1.4.4",
     "cors": "^2.8.5",
-    "csv-parser": "^2.3.0",
+    "csv-parser": "^2.3.1",
     "dotenv": "^8.1.0",
     "express": "^4.17.1",
     "file-stream-rotator": "^0.5.5",
