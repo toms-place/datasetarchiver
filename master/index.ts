@@ -40,7 +40,7 @@ async function tick() {
           }
         }, {
           $sort: {
-            "crawl_info.nextCrawl": -1
+            "crawl_info.nextCrawl": 1
           }
         }, {
           $group: {

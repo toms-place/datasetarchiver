@@ -80,16 +80,16 @@ export default class Crawler {
 			}
 
 			this.dataset.crawl_info.firstCrawl = false
-			await hostsHandler.releaseHost(this.dataset.url.hostname)
 			await this.dataset.save()
+			await hostsHandler.releaseHost(this.dataset.url.hostname)
 			return fileChanged
 
 		} catch (error) {
 			this.addError(error);
 			this.calcNextCrawl(false)
 			this.dataset.crawl_info.firstCrawl = false
-			await hostsHandler.releaseHost(this.dataset.url.hostname)
 			await this.dataset.save()
+			await hostsHandler.releaseHost(this.dataset.url.hostname)
 			return false
 		}
 
@@ -290,7 +290,7 @@ export default class Crawler {
 		let code:number;
 
 		if (error.error) {
-			l.error('unhandled RP Error', error.name, error.message, error.code, this.dataset.url.href);
+			l.error('unhandled RP Error', error, this.dataset.url.href);
 			error = error.error
 		}
 
@@ -302,7 +302,7 @@ export default class Crawler {
 			code = 112;
 		} else {
 			code = 111;
-			l.error('unhandled', error.name, error.message, error.code, this.dataset.url.href);
+			l.error('unhandled', error, this.dataset.url.href);
 		}
 
 

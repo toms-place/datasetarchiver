@@ -28,7 +28,7 @@ npm run test
 
 * provide .env file
 
-Compiles the application and starts it in production production mode.
+Compiles the application and starts it in production mode.
 
 ```shell
 npm run compile
@@ -37,25 +37,23 @@ npm start
 
 ## TODO
 
-* API: getDataset ID
-* MASTER connect fail, release hosts
-* Add Source from Data
-* kubernetes divide services:
-  * Master service
-    * initiating the crawls via requests to loadbalancer
-  * Multiply Server Pods
-    * load balanced by Ingress
-    * crawl on request from master
+* API:
+  * JSON addHrefs
+* MASTER:
+  * connect fail, release hosts
+* CRAWLER:
+  * sometimes get header is forbidden
+  * politeness:
+    * robots.txt of host
+    * db with host robots
+
 * mongodb
   * in kubernetes
   * files in sharded db?
 * dynamic crawlrate tresholds
   * comparising sampling for pull based changes
   * change crawlrate after specific amount of crawls
-* politeness!
-  * robots.txt of host
-  * db with host robots
-  * library to parse
+
 * file extension
   * header mime-type and filename=contentdispostions
   * dictionary
