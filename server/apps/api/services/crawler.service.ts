@@ -233,7 +233,31 @@ export class CrawlerService {
     }
 
   }
+/*
+  static async getAllLastVersionsFileSize(extension) {
+    try {
+      let datasets = await db.dataset.find({
+        $and: [{
+            $or: [{
+              'meta.filetype': extension
+            }, {
+              'meta.extension': extension
+            }]
+          },
+          {
+            'meta.versionCount': {
+              $gt: 0
+            }
+          }
+        ]
+      })
 
+    } catch (error) {
+      throw error
+    }
+
+  }
+*/
   static async getAllLastVersionsByFileType(extension) {
     try {
       let datasets = await db.dataset.find({
@@ -294,6 +318,7 @@ export class CrawlerService {
         $project: {
           file_ids: '$versions',
           dataset_id: '$_id',
+          dataset_url: '$id',
           meta: '$meta',
           _id: 0
         }
