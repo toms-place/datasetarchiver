@@ -2,9 +2,9 @@ const https = require('https')
 const http = require('http')
 const fs = require('fs')
 const extension = process.env.ext || 'csv'
-let agent = 'https'
-const server = 'https://k8s.ai.wu.ac.at/crawler/api/v1'
-//const server = 'http://localhost:3000/crawler/api/v1'
+let agent = 'http'
+//const server = 'https://k8s.ai.wu.ac.at/crawler/api/v1'
+const server = 'http://localhost:3000/crawler/api/v1'
 const targetDir = process.env.dir || __dirname
 const targetFilesDir = '/files'
 
@@ -119,11 +119,19 @@ let clearFS = async (versions) => {
 				reject('Unable to scan directory: ' + err);
 			}
 			//listing all files using forEach
-			files.forEach(function (file) {
+			files.forEach(async function (file) {
 				// Do whatever you want to do with the file
 				if (!newFiles.includes(file)) {
-					console.log('old file')
-					fs.unlinkSync(`${targetDir + targetFilesDir}/${file}`)
+					console.log('old file', file)
+					//fs.unlinkSync(`${targetDir + targetFilesDir}/${file}`)
+					let fn = await new Promise((resolve, reject) => {
+						fs.unlink(`${targetDir + targetFilesDir}/${file}`, function (err) {
+							if (err) throw err;
+							// if no error, file has been deleted successfully
+							resolve('File deleted!');
+						});
+					})
+					console.log(fn)
 				}
 			});
 			resolve()
