@@ -31,10 +31,8 @@ let checkForFile = async (id) => {
 	let promise = new Promise((resolve, reject) => {
 		fs.readFile(`${targetDir + targetFilesDir}/${id}.${extension}`, (err, data) => {
 			if (err) {
-				console.log(false)
 				resolve(false);
 			} else {
-				console.log(true)
 				resolve(true);
 			}
 		});
@@ -106,6 +104,34 @@ let saveMeta = () => {
 	});
 }
 
+let clearFS = async (versions) => {
+
+	let newFiles = [];
+
+	for (let i = 0; i < versions.length; i++) {
+		newFiles.push(`${versions[i].file_ids[versions[i].file_ids.length - 1]}.${extension}`)
+	}
+
+	await new Promise((resolve, reject) => {
+		fs.readdir(targetDir + targetFilesDir, function (err, files) {
+			//handling error
+			if (err) {
+				reject('Unable to scan directory: ' + err);
+			}
+			//listing all files using forEach
+			files.forEach(function (file) {
+				// Do whatever you want to do with the file
+				if (!newFiles.includes(file)) {
+					console.log('old file')
+					fs.unlinkSync(`${targetDir + targetFilesDir}/${file}`)
+				}
+			});
+			resolve()
+		});
+	})
+
+}
+
 let setAgent = () => {
 	switch (agent) {
 		case 'http':
@@ -127,6 +153,8 @@ let main = async () => {
 		});
 		setAgent()
 		let versions = JSON.parse(await getVersions())
+		clearFS(versions)
+
 		for (let i = 0; i < versions.length; i++) {
 			await saveFile(versions[i], i, versions.length)
 		}
