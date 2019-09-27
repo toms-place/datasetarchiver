@@ -2,9 +2,9 @@ const https = require('https')
 const http = require('http')
 const fs = require('fs')
 const extension = process.env.ext || 'csv'
-let agent = 'https'
-const server = 'https://k8s.ai.wu.ac.at/crawler/api/v1'
-//const server = 'http://localhost:3000/crawler/api/v1'
+let agent = 'http'
+//const server = 'https://k8s.ai.wu.ac.at/crawler/api/v1'
+const server = 'http://localhost:3000/crawler/api/v1'
 const targetDir = process.env.dir || __dirname
 const targetFilesDir = '/files'
 
@@ -27,36 +27,57 @@ let getVersions = () => {
 	})
 }
 
+let checkForFile = async (id) => {
+	let promise = new Promise((resolve, reject) => {
+		fs.readFile(`${targetDir + targetFilesDir}/${id}.${extension}`, (err, data) => {
+			if (err) {
+				console.log(false)
+				resolve(false);
+			} else {
+				console.log(true)
+				resolve(true);
+			}
+		});
+	})
+	return promise
+}
+
 let saveFile = async (versions, iterator, last) => {
 
 	let meta;
-	let file_id = versions.file_ids[versions.file_ids.length -1]
+	let file_id = versions.file_ids[versions.file_ids.length - 1]
 
-	let data = await new Promise((resolve, reject) => {
-		agent.get(`${server}/getFile?id=${file_id}`, (res) => {
-			let chunks = '';
+	let fileExists = await checkForFile(file_id)
 
-			res.on('data', (chunk) => {
-				chunks += chunk
-			});
+	if (!fileExists) {
 
-			res.on('end', () => {
-				if (res.complete) {
-					resolve(chunks)
+		let data = await new Promise((resolve, reject) => {
+			agent.get(`${server}/getFile?id=${file_id}`, (res) => {
+				let chunks = '';
+
+				res.on('data', (chunk) => {
+					chunks += chunk
+				});
+
+				res.on('end', () => {
+					if (res.complete) {
+						resolve(chunks)
+					}
+				});
+			})
+		})
+
+		//save file name=file.dataset_id
+		await new Promise((resolve, reject) => {
+			fs.writeFile(`${targetDir + targetFilesDir}/${file_id}.${extension}`, data, function (err) {
+				if (err) {
+					reject(console.log(err));
 				}
+				resolve(console.log("The file was saved!"));
 			});
 		})
-	})
 
-	//save file name=file.dataset_id
-	await new Promise((resolve, reject) => {
-		fs.writeFile(`${targetDir + targetFilesDir}/${file_id}.${extension}`, data, function (err) {
-			if (err) {
-				reject(console.log(err));
-			}
-			resolve(console.log("The file was saved!"));
-		});
-	})
+	}
 
 	//produce meta
 	meta = new Object()
@@ -110,7 +131,7 @@ let main = async () => {
 			await saveFile(versions[i], i, versions.length)
 		}
 		saveMeta()
-		
+
 	} catch (error) {
 		console.log(error)
 	}
