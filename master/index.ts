@@ -67,7 +67,10 @@ async function tick() {
 
           promises.push(new Promise(async (resolve, reject) => {
             try {
-              await crawl(query.id, host.name);
+
+              await crawl(query.id);
+              await hostsHandler.lockHost(host.name)
+
             } catch (error) {
               L.error(error)
             }
@@ -90,9 +93,8 @@ async function tick() {
   tick()
 }
 
-async function crawl(id, hostname) {
+async function crawl(id) {
   try {
-    await hostsHandler.lockHost(hostname)
     let href: URL['href'];
     //TODO API JSON because of request params ? ID
     href = `${config.protocol}//${config.host}:${config.port}${config.endpoint}/api/v1/crawlID?id=${id}&secret=${config.pass}`

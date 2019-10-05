@@ -218,6 +218,20 @@ export class Controller {
             zip.finalize()
             break;
 
+          case 'file':
+            if (!file.filename) {
+              file.filename = file.md5
+            }
+            res.type('text/csv')
+            res.header('Content-disposition', `attachment; filename=${file.filename}.csv`);
+            /* TODO
+            if (!file.filetype) {
+              res.type('text/csv')
+            }
+            */
+            stream.pipe(res)
+            break;
+
           default: //stream
             stream.pipe(res)
             break;
@@ -273,7 +287,7 @@ export class Controller {
 
           if (i == versionStreams.length - 1) {
             metaStream.push(JSON.stringify(meta) + ']');
-          } else if (i == 0){
+          } else if (i == 0) {
             metaStream.push('[' + JSON.stringify(meta) + ',\n');
           } else {
             metaStream.push(JSON.stringify(meta) + ',\n');

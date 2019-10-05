@@ -18,6 +18,25 @@ class HostsHandler {
 		this.hostnames;
 	}
 
+	async checkHost(hostname) {
+		let host = await db.host.find({
+			$and: [{
+				name: hostname
+			}, {
+				nextCrawl: {
+					$lt: new Date()
+				}
+			}, {
+				currentlyCrawled: false
+			}]
+		})
+		if (host) {
+			return true
+		} else {
+			return false
+		}
+	}
+
 	async initHosts(querys) {
 		this.hostnames = [];
 		for (let query of querys) {
