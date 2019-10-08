@@ -9,6 +9,22 @@ tags:
   - name: Datasetarchiver
     description: here you find all options available in v1
 paths:
+  /file/{url}:
+    get:
+      summary: Get file by URL
+      parameters:
+        - in: path
+          name: url
+          schema:
+            type: string
+          required: true
+          description: reference of the file
+      tags:
+      - Datasetarchiver
+      description:
+      responses:
+        200:
+          description: Returns last version of file by url
   /getFile:
     get:
       parameters:

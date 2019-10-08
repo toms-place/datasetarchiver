@@ -366,6 +366,16 @@ export class CrawlerService {
     }
   }
 
+  static async getDatasetByUrl(url: URL['href']): Promise < IDataset > {
+    try {
+      let ds = await db.dataset.findOne({
+        id: url
+      })
+      return ds
+    } catch (error) {
+      throw error
+    }
+  }
 
   static async getDatasetsByFileType(extension): Promise < IDataset[] > {
     try {
