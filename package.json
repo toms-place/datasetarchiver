@@ -19,7 +19,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "start": "node --max-old-space-size=18432 dist/server/index.js",
+    "start": "node --max-old-space-size=6144 dist/server/index.js",
     "start:master": "node --max-old-space-size=6144 dist/master/index.js",
     "compile": "ts-node build.ts && tsc",
     "dev": "node_tls_reject_unauthorized=0 nodemon --watch server server/index.ts | pino-pretty",

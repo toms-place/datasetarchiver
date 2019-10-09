@@ -131,7 +131,9 @@ export class CrawlerService {
       let locking = await db.host.lockHost(id)
 
       let dataset = await db.dataset.findByIdAndUpdate(id, {
-        'crawli_info.currentlyCrawled': true
+        $set: {
+          'crawl_info.currentlyCrawled': true
+        }
       }, {
         new: true
       })
