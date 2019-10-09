@@ -36,6 +36,8 @@ async function tick() {
                 $lt: new Date()
               }
             }, {
+              'crawl_info.currentlyCrawled': false
+            }, {
               'crawl_info.stopped': false
             }]
           }

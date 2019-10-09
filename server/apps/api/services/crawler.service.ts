@@ -7,7 +7,9 @@ import {
   IDataset
 } from '../models/dataset';
 import sanitize from "sanitize-filename";
-import {ObjectId} from "bson";
+import {
+  ObjectId
+} from "bson";
 
 export interface addHrefResponse {
   datasetstatus: Number;
@@ -128,10 +130,12 @@ export class CrawlerService {
 
       let locking = await db.host.lockHost(id)
 
-      let dataset = await db.dataset.findOne({
-        _id: id
+      let dataset = await db.dataset.findByIdAndUpdate(id, {
+        'crawli_info.currentlyCrawled': true
+      }, {
+        new: true
       })
-  
+
       if (!dataset) {
         throw new Error(`Dataset not found: ${id}`);
       }
@@ -143,7 +147,7 @@ export class CrawlerService {
       } else {
         return false
       }
-      
+
     } catch (error) {
       throw error
     }

@@ -6,7 +6,9 @@ import mongoose, {
 import config from '../../../config';
 import db from '../../../common/database';
 import uniqueValidator from 'mongoose-unique-validator'
-import {  ObjectID } from 'bson';
+import {
+	ObjectID
+} from 'bson';
 
 export interface IDataset extends Document {
 	id: string,
@@ -31,6 +33,10 @@ let datasetSchema = new mongoose.Schema({
 		required: true
 	},
 	crawl_info: {
+		currentlyCrawled: {
+			type: Boolean,
+			default: false
+		},
 		firstCrawl: {
 			type: Boolean,
 			default: true
