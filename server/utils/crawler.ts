@@ -73,17 +73,17 @@ export default class Crawler {
 
 			}
 
-			await db.host.releaseHost(this.dataset.url.hostname)
 			this.dataset.crawl_info.firstCrawl = false
 			await this.dataset.save()
+			await db.host.releaseHost(this.dataset.url.hostname)
 			return true
 
 		} catch (error) {
-			await db.host.releaseHost(this.dataset.url.hostname)
 			this.dataset.crawl_info.firstCrawl = false
 			this.addError(error);
 			this.calcNextCrawl(false)
 			await this.dataset.save()
+			await db.host.releaseHost(this.dataset.url.hostname)
 			return false
 		}
 
@@ -298,31 +298,38 @@ export default class Crawler {
 	 */
 	addError(error) {
 
-		let code;
+		try {
 
-		if (error.statusCode) {
-			code = error.statusCode
-		} else if (error.code == 'ENOTFOUND'){
-			code = 404
-		} else if (error.code = 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
-			code = 112;
-		} else {
-			code = 111;
-			l.error('unhandled', error, this.dataset.url.href);
+			let code;
+	
+			if (error.statusCode) {
+				code = error.statusCode
+			} else if (error.code == 'ENOTFOUND'){
+				code = 404
+			} else if (error.code = 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
+				code = 112;
+			} else {
+				code = 111;
+				l.error('unhandled', error, this.dataset.id);
+			}
+	
+	
+			if (error.error) {
+				l.error('unhandled RP Error', error, this.dataset.id);
+			}
+	
+	
+			let err = new DatasetError(error.message, code)
+			this.dataset.crawl_info.errorStore.push(err);
+			this.dataset.crawl_info.errorCount++;
+			if (this.dataset.crawl_info.errorCount >= config.ErrorCountTreshold) {
+				this.dataset.crawl_info.stopped = true;
+			}
+			
+		} catch (error) {
+			l.error('addError', error, this.dataset.id)
 		}
 
-
-		if (error.error) {
-			l.error('unhandled RP Error', error, this.dataset.url.href);
-		}
-
-
-		let err = new DatasetError(error.message, code)
-		this.dataset.crawl_info.errorStore.push(err);
-		this.dataset.crawl_info.errorCount++;
-		if (this.dataset.crawl_info.errorCount >= config.ErrorCountTreshold) {
-			this.dataset.crawl_info.stopped = true;
-		}
 	}
 
 }

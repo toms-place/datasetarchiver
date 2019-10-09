@@ -267,6 +267,36 @@ export class Controller {
   }
 
 
+  async getFileByDatasetID(req: Request, res: Response, next: NextFunction): Promise < void > {
+    try {
+
+      let ds = await CrawlerService.getDataset(req.params.id)
+      if (!ds) {
+        next(new Error('no dataset found'))
+      }
+      let stream = await CrawlerService.getFileAsStream(ds.versions[ds.versions.length - 1])
+
+
+      if (!ds.meta.filename) {
+        ds.meta.filename = ds.versions[ds.versions.length - 1]
+      }
+      if (!ds.meta.filetype) {
+        ds.meta.filetype = 'noType'
+      }
+      if (!ds.meta.extension) {
+        ds.meta.extension = 'noExtension'
+      }
+      res.type(ds.meta.filetype)
+      res.header('Content-disposition', `attachment; filename=${ds.meta.filename}.${ds.meta.extension}`);
+      stream.pipe(res)
+
+    } catch (error) {
+      next(error)
+      return
+    }
+  }
+
+
   async dumpLastVersions(req: Request, res: Response, next: NextFunction): Promise < void > {
     //check query
     if (req.query.byType) {
