@@ -80,13 +80,18 @@ export default class Crawler {
 			return true
 
 		} catch (error) {
-			this.dataset.crawl_info.firstCrawl = false
-			this.dataset.crawl_info.currentlyCrawled = false
-			this.addError(error);
-			this.calcNextCrawl(false)
-			await this.dataset.save()
-			await db.host.releaseHost(this.dataset.url.hostname)
-			return false
+			try {
+				this.dataset.crawl_info.firstCrawl = false
+				this.dataset.crawl_info.currentlyCrawled = false
+				this.addError(error);
+				this.calcNextCrawl(false)
+				await this.dataset.save()
+				await db.host.releaseHost(this.dataset.url.hostname)
+				return false
+			} catch (error) {
+				l.error(error)
+				return false
+			}
 		}
 
 
