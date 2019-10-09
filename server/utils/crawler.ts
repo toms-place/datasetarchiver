@@ -15,7 +15,6 @@ import {
 } from '../apps/api/models/dataset';
 import config from '../config';
 import FileTypeDetector from './fileTypeDetector';
-import hostsHandler from './hostsHandler';
 import l from '../common/logger';
 
 
@@ -59,37 +58,32 @@ export default class Crawler {
 					throw new Error(`Neither http nor https: ${this.agent}`)
 			}
 
-
-			let fileChanged: boolean = false;
-
 			if (this.dataset.crawl_info.firstCrawl == true) {
 
-				fileChanged = await this.metaInit()
+				await this.metaInit()
+				this.calcNextCrawl(true);
 
 			} else {
 
+				let fileChanged: boolean = false;
 				let downloaded = await this.download()
 				if (downloaded == true) fileChanged = await this.checkHash()
+				else throw downloaded
+				this.calcNextCrawl(fileChanged);
 
 			}
 
-			if (fileChanged) {
-				this.calcNextCrawl(true);
-			} else {
-				this.calcNextCrawl(false)
-			}
-
+			await db.host.releaseHost(this.dataset.url.hostname)
 			this.dataset.crawl_info.firstCrawl = false
 			await this.dataset.save()
-			await hostsHandler.releaseHost(this.dataset.url.hostname)
-			return fileChanged
+			return true
 
 		} catch (error) {
+			await db.host.releaseHost(this.dataset.url.hostname)
+			this.dataset.crawl_info.firstCrawl = false
 			this.addError(error);
 			this.calcNextCrawl(false)
-			this.dataset.crawl_info.firstCrawl = false
 			await this.dataset.save()
-			await hostsHandler.releaseHost(this.dataset.url.hostname)
 			return false
 		}
 
@@ -152,7 +146,7 @@ export default class Crawler {
 			let oldFile = files[files.length - 2]
 			let newFile = files[files.length - 1]
 
-			if (newFile.length < config.MaxFileSizeInBytes) {
+			if (newFile.length <= config.MaxFileSizeInBytes) {
 
 				if (oldFile.md5 != newFile.md5) {
 					//new file saved
@@ -166,22 +160,25 @@ export default class Crawler {
 					return false
 				}
 			} else {
+
 				db.bucket.delete(newFile._id)
 				this.dataset.crawl_info.stopped = true;
-
 				throw new DatasetError('max file size exceeded', 194)
+
 			}
 
 		} else {
 			//in case there is no existing file
 			let file = await db.file.findOne().getFileByVersion(this.dataset._id, this.dataset.meta.versionCount);
 			if (file.length > config.MaxFileSizeInBytes) {
-				await db.bucket.delete(file._id)
+				db.bucket.delete(file._id)
+				this.dataset.versions = [];
 				this.dataset.crawl_info.stopped = true;
 				throw new DatasetError('max file size exceeded', 194)
+			} else {
+				this.dataset.versions.push(file._id);
+				this.dataset.meta.versionCount++;
 			}
-			this.dataset.versions.push(file._id);
-			this.dataset.meta.versionCount++;
 			return true
 		}
 
@@ -251,7 +248,7 @@ export default class Crawler {
 	/** TODO
 	 * - metadata generation
 	 */
-	async metaInit(): Promise < boolean > {
+	async metaInit(): Promise < any > {
 
 		let head;
 
@@ -266,7 +263,8 @@ export default class Crawler {
 				throw new DatasetError('max file size exceeded', 194)
 			}
 		} catch (error) {
-			throw error;
+			//l.error(error)
+			throw error
 		}
 
 		if (!this.dataset.meta.filename) {
@@ -290,7 +288,7 @@ export default class Crawler {
 		this.dataset.meta.filetype = detector.mimeType
 		this.dataset.meta.extension = detector.extension
 
-		return true
+		return
 
 	}
 
@@ -301,12 +299,7 @@ export default class Crawler {
 	 */
 	addError(error) {
 
-		let code:number;
-
-		if (error.error) {
-			l.error('unhandled RP Error', error, this.dataset.url.href);
-			error = error.error
-		}
+		let code;
 
 		if (error.statusCode) {
 			code = error.statusCode
@@ -317,6 +310,11 @@ export default class Crawler {
 		} else {
 			code = 111;
 			l.error('unhandled', error, this.dataset.url.href);
+		}
+
+
+		if (error.error) {
+			l.error('unhandled RP Error', error, this.dataset.url.href);
 		}
 
 

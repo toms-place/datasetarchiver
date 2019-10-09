@@ -101,7 +101,9 @@ export class Controller {
     if (req.query.id && match) {
       try {
         let r = await CrawlerService.crawlID(req.query.id)
-        res.json(r);
+        res.json({
+          crawling: r
+        });
       } catch (error) {
         next(error)
         return
@@ -252,45 +254,45 @@ export class Controller {
     //check query
     let param = req.url.split('/file/')[1]
 
-      let url: URL;
+    let url: URL;
 
+    try {
+      url = new URL(param)
+    } catch (error) {
       try {
+        param = decodeURIComponent(param)
         url = new URL(param)
       } catch (error) {
-        try {
-          param = decodeURIComponent(param)
-          url = new URL(param)
-        } catch (error) {
-          next(new Error('url not correct'))
-        }
+        next(new Error('url not correct'))
       }
+    }
 
-      try {
+    try {
 
-        let ds = await CrawlerService.getDatasetByUrl(url.href)
-        if (!ds) {
-          next(new Error('no dataset found'))
-        }
-        let stream = await CrawlerService.getFileAsStream(ds.versions[ds.versions.length - 1])
-
-
-        if (!ds.meta.filename) {
-          ds.meta.filename = ds.versions[ds.versions.length - 1]
-        }
-        if (!ds.meta.filetype) {
-          ds.meta.filetype = 'noType'
-        }
-        if (!ds.meta.extension) {
-          ds.meta.extension = 'noExtension'
-        }
-        res.type(ds.meta.filetype)
-        res.header('Content-disposition', `attachment; filename=${ds.meta.filename}.${ds.meta.extension}`);
-        stream.pipe(res)
-
-      } catch (error) {
-        next(error)
-        return
+      let ds = await CrawlerService.getDatasetByUrl(url.href)
+      if (!ds) {
+        next(new Error('no dataset found'))
       }
+      let stream = await CrawlerService.getFileAsStream(ds.versions[ds.versions.length - 1])
+
+
+      if (!ds.meta.filename) {
+        ds.meta.filename = ds.versions[ds.versions.length - 1]
+      }
+      if (!ds.meta.filetype) {
+        ds.meta.filetype = 'noType'
+      }
+      if (!ds.meta.extension) {
+        ds.meta.extension = 'noExtension'
+      }
+      res.type(ds.meta.filetype)
+      res.header('Content-disposition', `attachment; filename=${ds.meta.filename}.${ds.meta.extension}`);
+      stream.pipe(res)
+
+    } catch (error) {
+      next(error)
+      return
+    }
   }
 
 

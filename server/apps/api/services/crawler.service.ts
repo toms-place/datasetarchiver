@@ -142,14 +142,20 @@ export class CrawlerService {
     let dataset = await db.dataset.findOne({
       _id: id
     })
+
     if (!dataset) {
       throw new Error(`Dataset not found: ${id}`);
     }
 
-    let crawler = new Crawler(dataset);
-    crawler.crawl()
-
+    let locking = await db.host.lockHost(dataset.url.hostname)
+    if (locking.nModified == 1) {
+      let crawler = new Crawler(dataset);
+      crawler.crawl()
+    } else {
+      return false
+    }
     return true;
+
   }
 
   static async crawlHrefSync(href: string): Promise < boolean > {

@@ -65,7 +65,7 @@
     "@types/follow-redirects": "^1.8.0",
     "@types/mime": "^2.0.1",
     "@types/mocha": "^5.2.7",
-    "@types/mongoose": "^5.5.17",
+    "@types/mongoose": "^5.5.19",
     "@types/mongoose-unique-validator": "^1.0.2",
     "@types/morgan": "^1.7.37",
     "@types/node": "^12.7.5",

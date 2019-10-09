@@ -4,13 +4,16 @@ import config from '../server/config';
 //db setup
 import db from '../server/common/database';
 import L from '../server/common/logger'
-import hostsHandler from '../server/utils/hostsHandler';
 
 let dbFlag = true;
+let querys;
+let count = 0;
+let href: URL['href'];
+let resp;
 
-db.conn.on('connected', () => {
+db.conn.on('connected', async () => {
   dbFlag = true;
-  hostsHandler.releaseHosts()
+  console.log(await db.host.releaseHosts())
   tick()
 })
 
@@ -22,8 +25,6 @@ db.conn.on('disconnected', () => {
  * make it use less cpu 
  */
 async function tick() {
-
-  let querys;
 
   try {
     if (dbFlag) {
@@ -50,7 +51,6 @@ async function tick() {
             }
           }
         }]).allowDiskUse(true);
-      await hostsHandler.initHosts(querys)
     }
   } catch (error) {
     L.error(error)
@@ -59,33 +59,28 @@ async function tick() {
   if (querys) {
 
     let promises: Promise < any > [] = []
-    hosts: for (let host of hostsHandler.hosts) {
 
       for (let query of querys) {
 
-        if (query._id == host.name) {
-
           promises.push(new Promise(async (resolve, reject) => {
             try {
-
-              await crawl(query.id);
-              await hostsHandler.lockHost(host.name)
-
+              let host = await db.host.find().getHostToCrawl(query._id)
+              if (host) {
+                count++;
+                await crawl(query.id);
+              }
             } catch (error) {
               L.error(error)
             }
             resolve()
           }))
 
-          continue hosts;
-
-        }
-
-      }
     }
 
-    L.info(String(promises.length))
+    L.info('Try: ' + String(promises.length))
     await Promise.all(promises)
+    L.info('Crawling: ' + String(count))
+    count = 0;
 
   }
 
@@ -95,14 +90,12 @@ async function tick() {
 
 async function crawl(id) {
   try {
-    let href: URL['href'];
-    //TODO API JSON because of request params ? ID
     href = `${config.protocol}//${config.host}:${config.port}${config.endpoint}/api/v1/crawlID?id=${id}&secret=${config.pass}`
-    let resp = await rp.post(href, {
+    resp = await rp.post(href, {
       rejectUnauthorized: false
     })
 
-    if (resp != 'true') {
+    if (JSON.parse(resp).crawling != true) {
       L.info(resp)
     }
 

@@ -3,6 +3,7 @@ import mongoose, {
 	DocumentQuery,
 	Model
 } from 'mongoose';
+import config from '../../../config';
 
 export interface IHost extends Document {
 	name: string,
@@ -11,7 +12,11 @@ export interface IHost extends Document {
 	datasets: number[]
 }
 
-export interface IHostModel extends Model<IHost, typeof hostQueryHelpers> {}
+export interface IHostModel extends Model < IHost, typeof hostQueryHelpers > {
+	lockHost: (hostname: String) => any,
+	releaseHost: (hostname: String) => any,
+	releaseHosts: () => any
+}
 
 let hostSchema = new mongoose.Schema({
 	name: {
@@ -33,7 +38,7 @@ let hostSchema = new mongoose.Schema({
 })
 
 let hostQueryHelpers = {
-	getHostToCrawl(this: DocumentQuery < any, IHost > , hostname) {
+	getHostToCrawl(this: DocumentQuery < any, IHost > , hostname: String) {
 		return this.findOne({
 			$and: [{
 				name: hostname
@@ -41,18 +46,51 @@ let hostQueryHelpers = {
 				nextCrawl: {
 					$lt: new Date()
 				}
+			}, {
+				currentlyCrawled: false
 			}]
-		})
-	},
-	getHostsToCrawl(this: DocumentQuery < any, IHost > ) {
-		return this.find({
-			nextCrawl: {
-				$lt: new Date()
-			}
 		})
 	}
 };
 
 hostSchema.query = hostQueryHelpers
 
-export default mongoose.model<IHost, IHostModel>('hosts', hostSchema)
+hostSchema.statics.lockHost = function (hostname: String) {
+	return this.updateOne({
+		$and: [{
+			name: hostname
+		}, {
+			nextCrawl: {
+				$lt: new Date()
+			}
+		}, {
+			currentlyCrawled: false
+		}]
+	}, {
+		$set: {
+			currentlyCrawled: true
+		}
+	})
+};
+
+hostSchema.statics.releaseHosts = function () {
+	return this.updateMany({}, {
+		$set: {
+			currentlyCrawled: false,
+			nextCrawl: new Date(new Date().getTime() + config.CRAWL_HostInterval * 1000)
+		}
+	});
+};
+
+hostSchema.statics.releaseHost = function (hostname) {
+	return this.updateOne({
+		name: hostname
+	}, {
+		$set: {
+			currentlyCrawled: false,
+			nextCrawl: new Date(new Date().getTime() + config.CRAWL_HostInterval * 1000)
+		}
+	});
+};
+
+export default mongoose.model < IHost, IHostModel > ('hosts', hostSchema)
