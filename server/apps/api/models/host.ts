@@ -4,6 +4,7 @@ import mongoose, {
 	Model
 } from 'mongoose';
 import config from '../../../config';
+import {ObjectId} from "bson";
 
 export interface IHost extends Document {
 	name: string,
@@ -13,7 +14,7 @@ export interface IHost extends Document {
 }
 
 export interface IHostModel extends Model < IHost, typeof hostQueryHelpers > {
-	lockHost: (hostname: String) => any,
+	lockHost: (id: ObjectId) => any,
 	releaseHost: (hostname: String) => any,
 	releaseHosts: () => any
 }
@@ -55,10 +56,10 @@ let hostQueryHelpers = {
 
 hostSchema.query = hostQueryHelpers
 
-hostSchema.statics.lockHost = function (hostname: String) {
+hostSchema.statics.lockHost = function (id: String) {
 	return this.updateOne({
 		$and: [{
-			name: hostname
+			datasets: id
 		}, {
 			nextCrawl: {
 				$lt: new Date()

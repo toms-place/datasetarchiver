@@ -19,6 +19,9 @@ const {
   Readable
 } = require('stream');
 import bcrypt from 'bcrypt';
+import {
+  ObjectId
+} from "bson";
 
 
 
@@ -71,26 +74,6 @@ export class Controller {
       next(new Error('not found'))
     }
   }
-  async crawlHref(req: Request, res: Response, next: NextFunction): Promise < void > {
-    let match;
-    try {
-      match = await bcrypt.compare(req.query.secret, config.secret)
-    } catch (error) {
-      L.error(error)
-    }
-    if (req.query.href && match) {
-      try {
-        let r = await CrawlerService.crawlHref(req.query.href)
-        L.info(String(r))
-        res.json(r);
-      } catch (error) {
-        next(error)
-        return
-      }
-    } else {
-      next(new Error('not found'))
-    }
-  }
   async crawlID(req: Request, res: Response, next: NextFunction): Promise < void > {
     let match;
     try {
@@ -99,30 +82,18 @@ export class Controller {
       L.error(error)
     }
     if (req.query.id && match) {
+      let id: ObjectId;
       try {
-        let r = await CrawlerService.crawlID(req.query.id)
-        res.json({
-          crawling: r
-        });
+        id = new ObjectId(req.query.id)
       } catch (error) {
         next(error)
         return
       }
-    } else {
-      next(new Error('not found'))
-    }
-  }
-  async crawlHrefSync(req: Request, res: Response, next: NextFunction): Promise < void > {
-    let match;
-    try {
-      match = await bcrypt.compare(req.query.secret, config.secret)
-    } catch (error) {
-      L.error(error)
-    }
-    if (req.query.href && match) {
       try {
-        let r = await CrawlerService.crawlHrefSync(req.query.href)
-        res.json(r);
+        let r = await CrawlerService.crawlID(id)
+        res.json({
+          crawling: r
+        });
       } catch (error) {
         next(error)
         return

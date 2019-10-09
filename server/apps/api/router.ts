@@ -14,8 +14,6 @@ router.use(function auth(req, res, next) {
 */
 
 //routes
-router.get('/crawlHref', controller.crawlHref)
-router.get('/crawlHrefSync', controller.crawlHrefSync)
 router.get('/getVersions', controller.getVersions)
 router.get('/dumpLastVersions', controller.dumpLastVersions)
 router.get('/getFiles', controller.getFiles)

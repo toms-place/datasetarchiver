@@ -123,57 +123,32 @@ export class CrawlerService {
     return resp
   }
 
-  static async crawlHref(href: string): Promise < boolean > {
-    let url = new URL(href);
-
-    let dataset = await db.dataset.find().oneToBeCrawled(url)
-    if (!dataset) {
-      throw new Error(`Dataset not found: ${url.href}`);
-    }
-
-    let crawler = new Crawler(dataset);
-    crawler.crawl()
-
-    return true;
-  }
-
-  static async crawlID(id: string): Promise < boolean > {
-
-    let dataset = await db.dataset.findOne({
-      _id: id
-    })
-
-    if (!dataset) {
-      throw new Error(`Dataset not found: ${id}`);
-    }
-
-    let locking = await db.host.lockHost(dataset.url.hostname)
-    if (locking.nModified == 1) {
-      let crawler = new Crawler(dataset);
-      crawler.crawl()
-    } else {
-      return false
-    }
-    return true;
-
-  }
-
-  static async crawlHrefSync(href: string): Promise < boolean > {
+  static async crawlID(id: ObjectId): Promise < boolean > {
     try {
 
-      let url = new URL(href);
-      let dataset = await db.dataset.find().oneToBeCrawled(url)
+      let locking = await db.host.lockHost(id)
+
+      let dataset = await db.dataset.findOne({
+        _id: id
+      })
+  
       if (!dataset) {
-        console.log('NO DATASET!!', href)
-        return false
+        throw new Error(`Dataset not found: ${id}`);
       }
 
-      let crawler = new Crawler(dataset);
-      return await crawler.crawl()
-
+      if (locking.nModified == 1) {
+        let crawler = new Crawler(dataset);
+        crawler.crawl()
+        return true;
+      } else {
+        return false
+      }
+      
     } catch (error) {
-      throw error;
+      throw error
     }
+
+
   }
 
   static async addManyHrefs(hrefs: Array < URL['href'] > ): Promise < any > {
@@ -239,31 +214,7 @@ export class CrawlerService {
     }
 
   }
-/*
-  static async getAllLastVersionsFileSize(extension) {
-    try {
-      let datasets = await db.dataset.find({
-        $and: [{
-            $or: [{
-              'meta.filetype': extension
-            }, {
-              'meta.extension': extension
-            }]
-          },
-          {
-            'meta.versionCount': {
-              $gt: 0
-            }
-          }
-        ]
-      })
 
-    } catch (error) {
-      throw error
-    }
-
-  }
-*/
   static async getAllLastVersionsByFileType(extension) {
     try {
       let datasets = await db.dataset.find({

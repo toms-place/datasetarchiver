@@ -263,7 +263,6 @@ export default class Crawler {
 				throw new DatasetError('max file size exceeded', 194)
 			}
 		} catch (error) {
-			//l.error(error)
 			throw error
 		}
 
