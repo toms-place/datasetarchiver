@@ -129,7 +129,7 @@ export class CrawlerService {
   static async crawlID(id: ObjectId): Promise < boolean > {
     try {
 
-      if (crawlEmitter.count < 10) {
+      if (crawlEmitter.count < config.CRAWL_asyncCount) {
         crawlEmitter.crawl(id);
         return true
       } else {
