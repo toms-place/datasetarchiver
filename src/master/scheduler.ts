@@ -87,7 +87,7 @@ export class Scheduler {
 
   async crawl(id: ObjectID) {
     try {
-      this.href = `${config.protocol}//${config.host}:${config.CRAWLER_PORT}${config.endpoint}/api/v1/crawlID?id=${id}&secret=${config.pass}`
+      this.href = `${config.CRAWL_API}/crawlID?id=${id}&secret=${config.pass}`
       this.resp = await rp.post(this.href, {
         rejectUnauthorized: false
       })
