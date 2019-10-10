@@ -16,8 +16,7 @@ export class CrawlEmitter extends EventEmitter {
 	}
 	async crawl(id: ObjectId) {
 		try {
-			console.log(this.count)
-				++this.count
+			++this.count
 			let locking = await db.host.lockHost(id)
 			let dataset = await db.dataset.findByIdAndUpdate(id, {
 				$set: {
