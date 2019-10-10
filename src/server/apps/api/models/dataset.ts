@@ -8,7 +8,7 @@ import db from '../../../common/database';
 import uniqueValidator from 'mongoose-unique-validator'
 import {
 	ObjectID
-} from 'bson';
+} from 'mongodb'
 
 export interface IDataset extends Document {
 	id: string,
@@ -19,7 +19,9 @@ export interface IDataset extends Document {
 }
 
 export interface IDatasetModel extends Model < IDataset, typeof datasetQueryHelpers > {
-	addMany(datasets: IDataset[]);
+	addMany: (datasets: IDataset[]) => Promise < any >
+		getDatasetIDsAndHostNamesToBeCrawledOneByHost: () => Promise < IDataset[] >
+		releaseDatasets: () => any
 }
 
 let datasetSchema = new mongoose.Schema({
@@ -92,52 +94,6 @@ let datasetSchema = new mongoose.Schema({
 	}
 })
 
-datasetSchema.static('addMany', async (datasets: IDataset[]): Promise < any > => {
-
-	return new Promise < any > ((resolve, reject) => {
-		db.dataset.insertMany(datasets, {
-			ordered: false
-		}, async (error, docs) => {
-			if (error) {
-				let datasets = await db.dataset.find({
-					_id: {
-						$in: error.result.result.insertedIds
-					}
-				}, '_id url.hostname')
-
-				for (let dataset of datasets) {
-					await db.host.updateOne({
-						name: dataset.url.hostname
-					}, {
-						$push: {
-							datasets: dataset._id
-						}
-					}, {
-						upsert: true,
-						setDefaultsOnInsert: true
-					})
-				}
-
-				resolve(datasets.length)
-
-			} else {
-				for (let doc of docs) {
-					await db.host.updateOne({
-						name: doc.url.hostname
-					}, {
-						$push: {
-							datasets: doc._id
-						}
-					}, {
-						upsert: true,
-						setDefaultsOnInsert: true
-					})
-				}
-				resolve(docs.length)
-			}
-		});
-	})
-});
 
 let datasetQueryHelpers = {
 	oneToBeCrawled(this: DocumentQuery < any, IDataset > , url: URL) {
@@ -180,5 +136,89 @@ let datasetQueryHelpers = {
 
 datasetSchema.query = datasetQueryHelpers
 datasetSchema.plugin(uniqueValidator);
+
+datasetSchema.statics.releaseDatasets = function () {
+	return this.updateMany({
+		'crawl_info.stopped': false
+	}, {
+		$set: {
+			'crawl_info.currentlyCrawled': false
+		}
+	});
+}
+
+datasetSchema.statics.addMany = function (datasets: IDataset[]): Promise < any > {
+	return new Promise < any > (async (resolve, reject) => {
+		db.dataset.insertMany(datasets, {
+			ordered: false
+		}, async (error, docs) => {
+			if (error) {
+				let datasets = await db.dataset.find({
+					_id: {
+						$in: error.result.result.insertedIds
+					}
+				}, '_id url.hostname')
+
+				for (let dataset of datasets) {
+					await db.host.updateOne({
+						name: dataset.url.hostname
+					}, {
+						$push: {
+							datasets: dataset._id
+						}
+					}, {
+						upsert: true,
+						setDefaultsOnInsert: true
+					})
+				}
+
+				resolve(datasets.length)
+
+			} else {
+				for (let doc of docs) {
+					await db.host.updateOne({
+						name: doc.url.hostname
+					}, {
+						$push: {
+							datasets: doc._id
+						}
+					}, {
+						upsert: true,
+						setDefaultsOnInsert: true
+					})
+				}
+				resolve(docs.length)
+			}
+		});
+	})
+};
+
+datasetSchema.statics.getDatasetIDsAndHostNamesToBeCrawledOneByHost = function (): Promise < IDataset[] > {
+	return this.aggregate(
+		[{
+			$match: {
+				$and: [{
+					'crawl_info.nextCrawl': {
+						$lt: new Date()
+					}
+				}, {
+					'crawl_info.currentlyCrawled': false
+				}, {
+					'crawl_info.stopped': false
+				}]
+			}
+		}, {
+			$sort: {
+				"crawl_info.nextCrawl": 1
+			}
+		}, {
+			$group: {
+				_id: '$url.hostname',
+				id: {
+					'$first': '$_id'
+				}
+			}
+		}]).allowDiskUse(true);
+};
 
 export default mongoose.model < IDataset, IDatasetModel > ('datasets', datasetSchema)

@@ -4,7 +4,9 @@ import mongoose, {
 	Model
 } from 'mongoose';
 import config from '../../../config';
-import {ObjectId} from "bson";
+import {
+	ObjectId
+} from "bson";
 
 export interface IHost extends Document {
 	name: string,
@@ -15,6 +17,7 @@ export interface IHost extends Document {
 
 export interface IHostModel extends Model < IHost, typeof hostQueryHelpers > {
 	lockHost: (id: ObjectId) => any,
+	releaseHostByDsID: (id: ObjectId) => any,
 	releaseHost: (hostname: String) => any,
 	releaseHosts: () => any
 }
@@ -51,12 +54,23 @@ let hostQueryHelpers = {
 				currentlyCrawled: false
 			}]
 		})
+	},
+	getHostsToCrawl(this: DocumentQuery < any, IHost >) {
+		return this.find({
+			$and: [{
+				nextCrawl: {
+					$lt: new Date()
+				}
+			}, {
+				currentlyCrawled: false
+			}]
+		})
 	}
 };
 
 hostSchema.query = hostQueryHelpers
 
-hostSchema.statics.lockHost = function (id: String) {
+hostSchema.statics.lockHost = function (id: ObjectId) {
 	return this.updateOne({
 		$and: [{
 			datasets: id
@@ -86,6 +100,17 @@ hostSchema.statics.releaseHosts = function () {
 hostSchema.statics.releaseHost = function (hostname) {
 	return this.updateOne({
 		name: hostname
+	}, {
+		$set: {
+			currentlyCrawled: false,
+			nextCrawl: new Date(new Date().getTime() + config.CRAWL_HostInterval * 1000)
+		}
+	});
+};
+
+hostSchema.statics.releaseHostByDsID = function (id: ObjectId) {
+	return this.updateOne({
+		datasets: id
 	}, {
 		$set: {
 			currentlyCrawled: false,

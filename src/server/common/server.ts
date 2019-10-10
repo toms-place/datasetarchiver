@@ -6,6 +6,7 @@ import l from './logger';
 import config from '../config';
 import morgan from 'morgan'
 import crawlerAPI from '../apps/api/api'
+import schedulerAPI from '../apps/scheduler/scheduler'
 import viewsAPP from '../apps/browser/app'
 var favicon = require('serve-favicon');
 import cors from 'cors' 
@@ -33,16 +34,20 @@ export default class ExpressServer {
       })
     }));
 
-
     //installValidator(app)
 
     app.use(favicon(path.join(root, 'public', 'api-explorer', 'favicon-32x32.png')));
 
     //route setup
-    app.use(config.endpoint + `/api/v1`, crawlerAPI);
-    app.use(config.endpoint + `/public`, express.static(`${root}/public`));
-    app.use(config.endpoint + '/', viewsAPP);
-    app.use('/', viewsAPP);
+    if (config.mode == 'scheduler') {
+      app.use(config.endpoint + `/`, schedulerAPI);
+      app.use('/', schedulerAPI);
+    } else {
+      app.use(config.endpoint + `/api/v1`, crawlerAPI);
+      app.use(config.endpoint + `/public`, express.static(`${root}/public`));
+      app.use(config.endpoint + '/', viewsAPP);
+      app.use('/', viewsAPP);
+    }
 
   }
 

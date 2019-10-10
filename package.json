@@ -19,12 +19,12 @@
   },
   "main": "index.js",
   "scripts": {
-    "start": "node --max-old-space-size=6144 dist/server/index.js",
-    "start:master": "node --max-old-space-size=6144 dist/master/index.js",
+    "start": "node dist/server/index.js",
+    "start:master": "MODE=scheduler node dist/server/index.js",
     "compile": "ts-node build.ts && tsc",
-    "dev": "node_tls_reject_unauthorized=0 nodemon --watch server server/index.ts | pino-pretty",
-    "master": "node_tls_reject_unauthorized=0 nodemon --watch master --watch server master/index.ts | pino-pretty",
-    "dev:debug": "nodemon --watch server --exec 'node -r ts-node/register --inspect-brk' server/index.ts | pino-pretty",
+    "dev": "PORT=3000 node_tls_reject_unauthorized=0 nodemon --watch src src/server/index.ts | pino-pretty",
+    "master": "MODE=scheduler PORT=3001 node_tls_reject_unauthorized=0 nodemon --watch src --watch server src/server/index.ts | pino-pretty",
+    "dev:debug": "nodemon --watch server --exec 'node -r ts-node/register --inspect-brk' src/server/index.ts | pino-pretty",
     "test": "CRAWL_minRange=0 CRAWL_maxRange=0 MaxFileSizeInBytes=500000 mocha test/**/*.ts --exit",
     "test:debug": "CRAWL_minRange=0 CRAWL_maxRange=0 MaxFileSizeInBytes=500000 mocha --inspect-brk test/**/*.ts --exit"
   },

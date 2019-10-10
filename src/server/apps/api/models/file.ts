@@ -6,7 +6,7 @@ import {
 	SchemaTypes,
 	model
 } from 'mongoose';
-import {  ObjectID } from 'bson';
+import {  ObjectID } from 'mongodb'
 
 
 interface IFile extends Document {

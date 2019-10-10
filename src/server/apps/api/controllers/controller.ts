@@ -92,7 +92,8 @@ export class Controller {
       try {
         let r = await CrawlerService.crawlID(id)
         res.json({
-          crawling: r
+          crawling: r,
+          id: id
         });
       } catch (error) {
         next(error)
@@ -141,6 +142,7 @@ export class Controller {
 
             default: //stream
               try {
+                res.type('application/octet-stream')
 
                 for (let i = 0; i < versionStreams.length; i++) {
                   const s = new Readable();
@@ -206,6 +208,7 @@ export class Controller {
             break;
 
           default: //stream
+            res.type('application/octet-stream')
             stream.pipe(res)
             break;
         }

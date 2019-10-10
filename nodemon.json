@@ -2,6 +2,6 @@
   "execMap": {
     "ts": "ts-node"
   },
-  "ignore": ["test/**/*.ts", "server/apps/api/api.yml", "test/**/*.spec.ts", ".git", "node_modules"],
+  "ignore": ["test/**/*.ts", "src/server/apps/api/api.yml", "test/**/*.spec.ts", ".git", "node_modules"],
   "ext": "ts,js,json,yaml,yml"
 }

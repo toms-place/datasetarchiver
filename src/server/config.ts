@@ -17,9 +17,10 @@ let CRAWL_maxRange = parseInt(process.env.CRAWL_maxRange) || 120;
 let ErrorCountTreshold = parseInt(process.env.ErrorCountTreshold) || 3;
 let MaxFileSizeInBytes = parseInt(process.env.MaxFileSizeInBytes) || 100000000;
 let CRAWL_DistributionArrayMax = parseInt(process.env.CRAWL_DistributionArrayMax) || 10;
+let mode = process.env.MODE || "server";
 let secret = process.env.SECRET || "THIS_IS_A_SECRET";
 let pass = process.env.PASS || "THIS_IS_A_PASS";
-
+let CRAWLER_PORT = parseInt(process.env.CRAWLER_PORT) || 3000
 
 export default {
   env: env,
@@ -39,5 +40,7 @@ export default {
   LOG_LEVEL: LOG_LEVEL,
   OPENAPI_SPEC: OPENAPI_SPEC,
   secret: secret,
-  pass: pass
+  pass: pass,
+  mode: mode,
+  CRAWLER_PORT: CRAWLER_PORT
 };

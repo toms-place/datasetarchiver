@@ -1,6 +1,6 @@
 #!/bin/bash
 
 sudo git pull
-docker rmi datasetarchiver/crawler datasetarchiver/master --force
+docker rmi datasetarchiver/crawler
 docker build --no-cache=true --force-rm -t datasetarchiver/crawler .
-docker build --no-cache=true --force-rm -t datasetarchiver/master -f Dockerfile_master .
+docker rmi $(docker images -f dangling=true -q) --force

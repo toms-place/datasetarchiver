@@ -1,7 +1,7 @@
 import L from '../../../common/logger'
 import db from '../../../common/database';
 import config from '../../../config';
-import Crawler from '../../../utils/crawler';
+import crawlEmitter, {CrawlEmitter} from '../events/crawler.event';
 import FileTypeDetector from '../../../utils/fileTypeDetector';
 import {
   IDataset
@@ -10,6 +10,7 @@ import sanitize from "sanitize-filename";
 import {
   ObjectId
 } from "bson";
+
 
 export interface addHrefResponse {
   datasetstatus: Number;
@@ -128,24 +129,9 @@ export class CrawlerService {
   static async crawlID(id: ObjectId): Promise < boolean > {
     try {
 
-      let locking = await db.host.lockHost(id)
-
-      let dataset = await db.dataset.findByIdAndUpdate(id, {
-        $set: {
-          'crawl_info.currentlyCrawled': true
-        }
-      }, {
-        new: true
-      })
-
-      if (!dataset) {
-        throw new Error(`Dataset not found: ${id}`);
-      }
-
-      if (locking.nModified == 1) {
-        let crawler = new Crawler(dataset);
-        crawler.crawl()
-        return true;
+      if (crawlEmitter.count < 10) {
+        crawlEmitter.crawl(id);
+        return true
       } else {
         return false
       }
