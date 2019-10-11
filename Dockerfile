@@ -5,30 +5,45 @@ FROM node:12.4.0-alpine AS builder
 # set working directory
 WORKDIR /
 COPY ./src ./src
-COPY .babelrc ./
-COPY package*.json ./
+COPY ./build.ts ./
+COPY ./tsconfig.json ./
+COPY ./package*.json ./
+COPY ./.env ./
+
+# python for bcrypt
+RUN apk --no-cache add --virtual native-deps \
+  g++ gcc libgcc libstdc++ linux-headers autoconf automake make nasm python git && \
+  npm install --quiet node-gyp -g
 
 # install
 RUN npm install
-RUN npm run build
+# compile
+RUN npm run compile
 
 # SERVICE
 # use latest version of node
 FROM node:12.4.0-alpine
+
+
 RUN apk add --no-cache bash
 RUN apk add --no-cache curl
 
 # set working directory
-WORKDIR /crawler
-COPY --from=builder ./dist/crawler ./dist/crawler
-COPY package*.json ./
-COPY .env ./
+WORKDIR /
+COPY --from=builder ./dist ./dist
+COPY ./package*.json ./
+COPY ./.env ./
+
+# python for bcrypt
+RUN apk --no-cache add --virtual native-deps \
+  g++ gcc libgcc libstdc++ linux-headers autoconf automake make nasm python git && \
+  npm install --quiet node-gyp -g
 
 # install
-RUN npm install pm2 -g
 RUN npm install --only=prod
+RUN npm install pm2 -g
 
 # expose port 3000
 EXPOSE 3000
 
-CMD [ "pm2-runtime", "start", "--name", "crawler", "npm", "--", "run", "server:prod" ]
+CMD [ "pm2-runtime", "start", "--name", "crawler", "npm", "--", "start" ]

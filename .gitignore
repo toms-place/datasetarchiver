@@ -8,5 +8,8 @@ rq.py
 dist
 .env
 testfiles
-test.js
+test*
 queries.js
+.vscode
+access_*
+stats
