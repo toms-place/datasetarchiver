@@ -90,6 +90,14 @@ let datasetSchema = new mongoose.Schema({
 		insertDate: {
 			type: Date,
 			default: new Date()
+		},
+		meanDownloadTime: {
+			type: Number,
+			default: 0
+		},
+		meanSavingTime: {
+			type: Number,
+			default: 0
 		}
 	}
 })

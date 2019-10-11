@@ -59,7 +59,7 @@ let fileQueryHelpers = {
 			}]
 		})
 	},
-	getFilesByNameAndVersions(this: DocumentQuery < any, IFile > , dataset_ref_id:number, version1:number, version2:number) {
+	getLastTwoFileVersionsBy_dataset_ref_id(this: DocumentQuery < any, IFile > , dataset_ref_id:number, version1:number, version2:number) {
 		return this.find({
 			'metadata.dataset_ref_id': dataset_ref_id
 		}).or([{

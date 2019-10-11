@@ -1,7 +1,6 @@
-import {
-	pipeline
-} from 'stream';
 import rp from 'request-promise-native';
+import request from 'request';
+
 import contentDisposition from 'content-disposition';
 const {
 	http,
@@ -16,6 +15,9 @@ import {
 import config from '../config';
 import FileTypeDetector from './fileTypeDetector';
 import l from '../common/logger';
+import {
+	resolve
+} from 'url';
 
 
 class DatasetError extends Error {
@@ -65,11 +67,9 @@ export default class Crawler {
 
 			} else {
 
-				let fileChanged: boolean = false;
-				let downloaded = await this.download()
-				if (downloaded == true) fileChanged = await this.checkHash()
-				else throw downloaded
-				this.calcNextCrawl(fileChanged);
+				await this.download()
+
+				this.calcNextCrawl(await this.checkHash());
 
 			}
 
@@ -103,44 +103,64 @@ export default class Crawler {
 	 */
 	async download(): Promise < boolean > {
 
-		return new Promise < boolean > ((resolve, reject) => {
+		let detector = new FileTypeDetector()
 
-			const detector = new FileTypeDetector()
+		detector.on('file-type', (filetype) => {
+			if (filetype === null) {} else {
+				this.dataset.meta.filetype = filetype.mime
+				this.dataset.meta.extension = filetype.ext
+			}
+		})
 
+		let uploadStream = db.bucket.openUploadStream(this.dataset.meta.filename, {
+			metadata: {
+				dataset_ref_id: this.dataset._id,
+				version: this.dataset.meta.versionCount
+			}
+		})
 
-			const options = url.parse(this.dataset.url.href);
-			options.trackRedirects = true;
-			options.maxRedirects = 10;
+		return new Promise((resolve, reject) => {
 
-			this.agent.get(this.dataset.url.href, (res) => {
+			let downloadStart = new Date()
 
-				detector.on('file-type', (filetype) => {
-					if (filetype === null) {
+			request(this.dataset.url.href, {
+					followAllRedirects: true,
+					maxRedirects: 10,
+					rejectUnauthorized: false
+				})
+				.on('error', (error) => {
+					reject(error)
+				})
+				.on('complete', () => {
+
+					let downloadTime = new Date().getTime() - downloadStart.getTime()
+					if (this.dataset.meta.meanDownloadTime != 0) {
+						this.dataset.meta.meanDownloadTime = (this.dataset.meta.meanDownloadTime + downloadTime) / 2
 					} else {
-					  this.dataset.meta.filetype = filetype.mime
-					  this.dataset.meta.extension = filetype.ext
+						this.dataset.meta.meanDownloadTime = downloadTime
 					}
-				  })
 
-				pipeline(
-					res,
-					detector,
-					db.bucket.openUploadStream(this.dataset.meta.filename, {
-						metadata: {
-							dataset_ref_id: this.dataset._id,
-							version: this.dataset.meta.versionCount
-						}
-					}), (error) => {
-						if (!error) {
-							resolve(true)
-						}
-						else reject(error)
+				})
+				.pipe(detector)
+				.on('error', (error) => {
+					reject(error)
+				})
+				.pipe(uploadStream)
+				.on('error', (error) => {
+					reject(error)
+				})
+				.on('finish', () => {
+
+					let downloadTime = new Date().getTime() - downloadStart.getTime()
+					if (this.dataset.meta.meanSavingTime != 0) {
+						this.dataset.meta.meanSavingTime = (this.dataset.meta.meanSavingTime + downloadTime) / 2
+					} else {
+						this.dataset.meta.meanSavingTime = downloadTime
 					}
-				);
 
-			}).on('error', (error) => {
-				reject(error)
-			})
+					resolve(true)
+				});
+
 
 		})
 
@@ -149,7 +169,7 @@ export default class Crawler {
 	async checkHash(): Promise < boolean > {
 
 		if (this.dataset.meta.versionCount > 0) {
-			let files = await db.file.find().getFilesByNameAndVersions(this.dataset._id, this.dataset.meta.versionCount - 1, this.dataset.meta.versionCount)
+			let files = await db.file.find().getLastTwoFileVersionsBy_dataset_ref_id(this.dataset._id, this.dataset.meta.versionCount - 1, this.dataset.meta.versionCount)
 			let oldFile = files[files.length - 2]
 			let newFile = files[files.length - 1]
 
@@ -307,11 +327,17 @@ export default class Crawler {
 
 		try {
 
-			let code;
-	
+			let code: number;
+
 			if (error.statusCode) {
 				code = error.statusCode
-			} else if (error.code == 'ENOTFOUND'){
+			} else if (error.name == 'RequestError') {
+				if (error.error.code == 'ENOTFOUND') {
+					code = 404
+				} else {
+					code = 113
+				}
+			} else if (error.code == 'ENOTFOUND') {
 				code = 404
 			} else if (error.code = 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
 				code = 112;
@@ -319,20 +345,14 @@ export default class Crawler {
 				code = 111;
 				l.error('unhandled', error, this.dataset.id);
 			}
-	
-	
-			if (error.error) {
-				l.error('unhandled RP Error', error, this.dataset.id);
-			}
-	
-	
+
 			let err = new DatasetError(error.message, code)
 			this.dataset.crawl_info.errorStore.push(err);
 			this.dataset.crawl_info.errorCount++;
 			if (this.dataset.crawl_info.errorCount >= config.ErrorCountTreshold) {
 				this.dataset.crawl_info.stopped = true;
 			}
-			
+
 		} catch (error) {
 			l.error('addError', error, this.dataset.id)
 		}
