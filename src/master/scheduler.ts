@@ -60,7 +60,7 @@ export class Scheduler {
         }
 
         //recurse
-        await sleep(1000)
+        await sleep(config.CRAWL_ticktime)
         await this.tick()
 
       } else {
