@@ -19,8 +19,8 @@ export class CrawlEmitter {
 			let dataset = await db.dataset.lockDataset(_id)
 
 			if (!dataset || !host) {
-				await db.host.releaseHostByDsID(_id)
 				await db.dataset.releaseDataset(_id)
+				await db.host.releaseHostByDsID(_id)
 				l.error(`Dataset or Host not found: ${_id};`);
 				--this.count
 				return false

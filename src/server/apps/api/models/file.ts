@@ -19,14 +19,8 @@ interface IFile extends Document {
 	filename: string,
 	md5: string,
 	metadata: {
-		dataset_ref_id: {
-			type: ObjectID,
-			index: true
-		}
-		version: {
-			type: number,
-			index: true
-		}
+		dataset_ref_id: ObjectID,
+		version: number
 	}
 }
 
@@ -39,8 +33,14 @@ let fileSchema = new Schema({
 	filename: String,
 	md5: String,
 	metadata: {
-		dataset_ref_id: SchemaTypes.ObjectId,
-		version: Number
+		dataset_ref_id: {
+			type: SchemaTypes.ObjectId,
+			index: true
+		},
+		version: {
+			type: Number,
+			index: true
+		}
 	}
 })
 

@@ -4,7 +4,9 @@ import config from '../server/config';
 //db setup
 import db from '../server/common/database';
 import L from '../server/common/logger'
-import { ObjectID } from 'mongodb';
+import {
+  ObjectID
+} from 'mongodb';
 
 let instance = null;
 
@@ -53,7 +55,9 @@ export class Scheduler {
 
           L.info(String(this.promises.length), 'Hosts')
           L.info(String(this.querys.length), 'Datasets')
-          await Promise.all(this.promises)
+          await Promise.all(this.promises).catch((error) => {
+            console.log('promise', error)
+          })
           L.info(String(this.count), 'Started')
           L.info('---')
 
