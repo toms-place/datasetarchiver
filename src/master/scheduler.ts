@@ -51,10 +51,11 @@ export class Scheduler {
             }
           }
 
-          L.info('Want to Crawl: ' + String(this.querys.length))
-          L.info('Able to Crawl: ' + String(this.promises.length))
+          L.info(String(this.promises.length), 'Hosts')
+          L.info(String(this.querys.length), 'Datasets')
           await Promise.all(this.promises)
-          L.info('Started to crawl: ' + String(this.count))
+          L.info(String(this.count), 'Started')
+          L.info('---')
 
         }
 
@@ -96,7 +97,7 @@ export class Scheduler {
         //L.info(this.resp)
         return false
       } else {
-        this.count += 1
+        ++this.count
         return true
       }
 

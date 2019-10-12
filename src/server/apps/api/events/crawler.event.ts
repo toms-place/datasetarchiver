@@ -34,7 +34,7 @@ export class CrawlEmitter extends EventEmitter {
 			if (locking.nModified == 1) {
 				let crawler = new Crawler(dataset);
 				await crawler.crawl()
-					--this.count
+				--this.count
 				return true;
 			} else {
 				--this.count

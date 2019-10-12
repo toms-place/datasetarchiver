@@ -6,7 +6,6 @@ const {
 	http,
 	https
 } = require('follow-redirects');
-const url = require('url');
 
 import db from '../common/database';
 import {
@@ -15,9 +14,6 @@ import {
 import config from '../config';
 import FileTypeDetector from './fileTypeDetector';
 import l from '../common/logger';
-import {
-	resolve
-} from 'url';
 
 
 class DatasetError extends Error {
@@ -60,18 +56,9 @@ export default class Crawler {
 					throw new Error(`Neither http nor https: ${this.agent}`)
 			}
 
-			if (this.dataset.crawl_info.firstCrawl == true) {
-
-				await this.metaInit()
-				this.calcNextCrawl(true);
-
-			} else {
-
-				await this.download()
-
-				this.calcNextCrawl(await this.checkHash());
-
-			}
+			await this.download()
+			let hasChanged = await this.checkHash()
+			this.calcNextCrawl(hasChanged);
 
 			this.dataset.crawl_info.firstCrawl = false
 			this.dataset.crawl_info.currentlyCrawled = false
@@ -89,7 +76,7 @@ export default class Crawler {
 				await db.host.releaseHost(this.dataset.url.hostname)
 				return false
 			} catch (error) {
-				l.error(error)
+				l.error('DB saving Error:', error)
 				return false
 			}
 		}
@@ -112,7 +99,7 @@ export default class Crawler {
 			}
 		})
 
-		let uploadStream = db.bucket.openUploadStream(this.dataset.meta.filename, {
+		let uploadStream = db.bucket.openUploadStream(this.dataset._id, {
 			metadata: {
 				dataset_ref_id: this.dataset._id,
 				version: this.dataset.meta.versionCount
@@ -126,12 +113,22 @@ export default class Crawler {
 			request(this.dataset.url.href, {
 					followAllRedirects: true,
 					maxRedirects: 10,
-					rejectUnauthorized: false
+					rejectUnauthorized: false,
+					headers: {
+						'User-Agent': 'request'
+					},
+					timeout: 30000
 				})
 				.on('error', (error) => {
 					reject(error)
 				})
-				.on('complete', () => {
+				.on('response', (response) => {
+
+					try {
+						this.checkHeaders(response)
+					} catch (error) {
+						reject(error)
+					}
 
 					let downloadTime = new Date().getTime() - downloadStart.getTime()
 					if (this.dataset.meta.meanDownloadTime != 0) {
@@ -161,7 +158,6 @@ export default class Crawler {
 					resolve(true)
 				});
 
-
 		})
 
 	}
@@ -169,9 +165,12 @@ export default class Crawler {
 	async checkHash(): Promise < boolean > {
 
 		if (this.dataset.meta.versionCount > 0) {
-			let files = await db.file.find().getLastTwoFileVersionsBy_dataset_ref_id(this.dataset._id, this.dataset.meta.versionCount - 1, this.dataset.meta.versionCount)
-			let oldFile = files[files.length - 2]
-			let newFile = files[files.length - 1]
+			//let files = await db.file.find().getLastTwoFileVersionsBy_dataset_ref_id(this.dataset._id, this.dataset.meta.versionCount - 1, this.dataset.meta.versionCount)
+
+			let oldFile = await db.file.find().getFileByVersion(this.dataset._id, this.dataset.meta.versionCount - 1)
+			let newFile = await db.file.find().getFileByVersion(this.dataset._id, this.dataset.meta.versionCount)
+			//let oldFile = files[files.length - 2]
+			//let newFile = files[files.length - 1]
 
 			if (newFile.length <= config.MaxFileSizeInBytes) {
 
@@ -182,13 +181,25 @@ export default class Crawler {
 					this.dataset.crawl_info.stopped = false;
 					return true
 				} else {
-					//not new file deleted
-					db.bucket.delete(newFile._id)
+					//delete not new file
+
+					await new Promise((resolve, reject) => {
+						db.bucket.delete(newFile._id, (error) => {
+							if (!error) resolve()
+							else reject(error)
+						})
+					});
+
 					return false
 				}
 			} else {
 
-				db.bucket.delete(newFile._id)
+				await new Promise((resolve, reject) => {
+					db.bucket.delete(newFile._id, (error) => {
+						if (!error) resolve()
+						else reject(error)
+					})
+				});
 				this.dataset.crawl_info.stopped = true;
 				throw new DatasetError('max file size exceeded', 194)
 
@@ -198,7 +209,12 @@ export default class Crawler {
 			//in case there is no existing file
 			let file = await db.file.findOne().getFileByVersion(this.dataset._id, this.dataset.meta.versionCount);
 			if (file.length > config.MaxFileSizeInBytes) {
-				db.bucket.delete(file._id)
+				await new Promise((resolve, reject) => {
+					db.bucket.delete(file._id, (error) => {
+						if (!error) resolve()
+						else reject(error)
+					})
+				});
 				this.dataset.versions = [];
 				this.dataset.crawl_info.stopped = true;
 				throw new DatasetError('max file size exceeded', 194)
@@ -275,37 +291,27 @@ export default class Crawler {
 	/** TODO
 	 * - metadata generation
 	 */
-	async metaInit(): Promise < any > {
+	checkHeaders(response): void {
 
-		let head;
+		//save redirects
 
-		try {
-			head = await rp.head(this.dataset.url.href, {
-				followAllRedirects: true,
-				maxRedirects: 10,
-				rejectUnauthorized: false
-			});
-			if (parseInt(head['content-length']) > config.MaxFileSizeInBytes) {
-				this.dataset.crawl_info.stopped = true;
-				throw new DatasetError('max file size exceeded', 194)
-			}
-		} catch (error) {
-			throw error
+		let detector = new FileTypeDetector();
+
+		if (parseInt(response.headers['content-length']) > config.MaxFileSizeInBytes) {
+			this.dataset.crawl_info.stopped = true;
+			throw new DatasetError('max file size exceeded', 194)
 		}
 
 		if (!this.dataset.meta.filename) {
 			try {
-				this.dataset.meta.filename = contentDisposition.parse(head['content-disposition']).parameters.filename
+				this.dataset.meta.filename = contentDisposition.parse(response.headers['content-disposition']).parameters.filename
 			} catch (error) {
 				this.dataset.meta.filename = this.dataset.url.pathname.split('/')[this.dataset.url.pathname.split('/').length - 1]
 			}
 		}
 
-
-		let detector = new FileTypeDetector();
-
 		try {
-			detector.setMimeType(head['content-type'].split(';')[0])
+			detector.setMimeType(response.headers['content-type'].split(';')[0])
 		} catch (error) {
 			let fileSplit = this.dataset.meta.filename.split('.')
 			detector.setExtension((fileSplit.length > 1) ? fileSplit[fileSplit.length - 1] : 'unknown')
@@ -325,25 +331,37 @@ export default class Crawler {
 	 */
 	addError(error) {
 
+
 		try {
 
 			let code: number;
 
-			if (error.statusCode) {
-				code = error.statusCode
-			} else if (error.name == 'RequestError') {
-				if (error.error.code == 'ENOTFOUND') {
+			if (error.error) {
+				error = error.error
+				l.info('error', error)
+			}
+
+			switch (error.code) {
+				case 'ETIMEDOUT':
+					l.info('ETIMEDOUT', error);
+					code = 114
+					break;
+				case 'ESOCKETTIMEDOUT':
+					l.info('ESOCKETTIMEDOUT', error);
+					code = 114
+					break;
+				case 'ENOTFOUND':
 					code = 404
-				} else {
-					code = 113
-				}
-			} else if (error.code == 'ENOTFOUND') {
-				code = 404
-			} else if (error.code = 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
-				code = 112;
-			} else {
-				code = 111;
-				l.error('unhandled', error, this.dataset.id);
+					break;
+				case 'UNABLE_TO_VERIFY_LEAF_SIGNATURE':
+					l.info('UNABLE_TO_VERIFY_LEAF_SIGNATURE', error);
+					code = 112
+					break;
+
+				default:
+					code = 111;
+					l.error('unhandled', error, this.dataset.id);
+					break;
 			}
 
 			let err = new DatasetError(error.message, code)
