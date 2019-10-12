@@ -343,18 +343,18 @@ export default class Crawler {
 
 			switch (error.code) {
 				case 'ETIMEDOUT':
-					l.info('ETIMEDOUT', error);
+					l.info('ETIMEDOUT', error, this.dataset.id);
 					code = 114
 					break;
 				case 'ESOCKETTIMEDOUT':
-					l.info('ESOCKETTIMEDOUT', error);
+					l.info('ESOCKETTIMEDOUT', error, this.dataset.id);
 					code = 114
 					break;
 				case 'ENOTFOUND':
 					code = 404
 					break;
 				case 'UNABLE_TO_VERIFY_LEAF_SIGNATURE':
-					l.info('UNABLE_TO_VERIFY_LEAF_SIGNATURE', error);
+					l.info('UNABLE_TO_VERIFY_LEAF_SIGNATURE', error, this.dataset.id);
 					code = 112
 					break;
 

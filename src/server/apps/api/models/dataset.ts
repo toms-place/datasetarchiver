@@ -7,21 +7,23 @@ import config from '../../../config';
 import db from '../../../common/database';
 import uniqueValidator from 'mongoose-unique-validator'
 import {
-	ObjectID
+	ObjectId
 } from 'mongodb'
 
 export interface IDataset extends Document {
 	id: string,
 	url: URL,
 	crawl_info: any,
-	versions: ObjectID[],
+	versions: ObjectId[],
 	meta: any
 }
 
 export interface IDatasetModel extends Model < IDataset, typeof datasetQueryHelpers > {
-	addMany: (datasets: IDataset[]) => Promise < any >
-		getDatasetIDsAndHostNamesToBeCrawledOneByHost: () => Promise < IDataset[] >
-		releaseDatasets: () => any
+	addMany: (datasets: IDataset[]) => Promise < any > ,
+	getDatasetIDsAndHostNamesToBeCrawledOneByHost: () => Promise < IDataset[] > ,
+	releaseDatasets: () => any,
+	releaseDataset: (_id: ObjectId) => Promise < IDataset >,
+	lockDataset: (_id: ObjectId) => Promise < IDataset >
 }
 
 let datasetSchema = new mongoose.Schema({
@@ -153,6 +155,36 @@ datasetSchema.statics.releaseDatasets = function () {
 			'crawl_info.currentlyCrawled': false
 		}
 	});
+}
+
+datasetSchema.statics.releaseDataset = function (_id: ObjectId) {
+	return this.findByIDAndUpdate(_id, {
+		$set: {
+			'crawl_info.currentlyCrawled': true
+		}
+	}, {
+		new: true
+	})
+}
+
+datasetSchema.statics.lockDataset = function (_id: ObjectId) {
+	return this.findOneAndUpdate({
+		$and: [{
+			_id: _id
+		}, {
+			'crawl_info.nextCrawl': {
+				$lt: new Date()
+			}
+		}, {
+			'crawl_info.currentlyCrawled': false
+		}]
+	}, {
+		$set: {
+			'crawl_info.currentlyCrawled': true
+		}
+	}, {
+		new: true
+	})
 }
 
 datasetSchema.statics.addMany = function (datasets: IDataset[]): Promise < any > {
