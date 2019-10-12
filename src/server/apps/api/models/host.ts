@@ -71,7 +71,7 @@ let hostQueryHelpers = {
 hostSchema.query = hostQueryHelpers
 
 hostSchema.statics.lockHost = function (id: ObjectId) {
-	return this.updateOne({
+	return this.findOneAndUpdate({
 		$and: [{
 			datasets: id
 		}, {
@@ -85,6 +85,8 @@ hostSchema.statics.lockHost = function (id: ObjectId) {
 		$set: {
 			currentlyCrawled: true
 		}
+	}, {
+		new: true
 	})
 };
 

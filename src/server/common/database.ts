@@ -31,20 +31,19 @@ export class Database {
   dataset: IDatasetModel;
   host: IHostModel;
   file: IFileModel;
-  connected: Boolean;
+  mongoose: Mongoose;
 
   constructor() {
     this._conn = mongoose.connection
     this._bucket = null;
     this._models()
-    this.connected = false;
   }
 
-  connect() {
+  async connect(poolSize: number) {
     mongoose.connect(`mongodb://${config.DB_Server}/${config.DB_Name}`, {
       autoIndex: true,
       reconnectTries: Number.MAX_VALUE,
-      poolSize: 1
+      poolSize: poolSize
     }).then(() => {
       this._bucket = new mongoose.mongo.GridFSBucket(this.conn.db, {
         bucketName: 'datasets'
@@ -53,7 +52,7 @@ export class Database {
     }).catch(async (error) => {
       console.log(error.message)
       await sleep(10000)
-      this.connect()
+      this.connect(config.DB_Poolsize)
     })
   }
 

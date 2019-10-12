@@ -14,11 +14,21 @@ export class CrawlEmitter extends EventEmitter {
 		super()
 		this.count = 0
 	}
-	async crawl(id: ObjectId) {
+	async crawl(_id: ObjectId) {
 		try {
 			++this.count
-			let locking = await db.host.lockHost(id)
-			let dataset = await db.dataset.findByIdAndUpdate(id, {
+			let host = await db.host.lockHost(_id)
+			let dataset = await db.dataset.findOneAndUpdate({
+				$and: [{
+					_id: _id
+				}, {
+					'crawl_info.nextCrawl': {
+						$lt: new Date()
+					}
+				}, {
+					'crawl_info.currentlyCrawled': false
+				}]
+			}, {
 				$set: {
 					'crawl_info.currentlyCrawled': true
 				}
@@ -26,21 +36,17 @@ export class CrawlEmitter extends EventEmitter {
 				new: true
 			})
 
-			if (!dataset) {
-				let released = await db.host.releaseHostByDsID(id)
-				l.error(`Dataset not found: ${id}; Host released: ${JSON.stringify(released)}`)
-			}
-
-			if (locking.nModified == 1) {
+			if (!dataset || !host) {
+				let released = await db.host.releaseHostByDsID(_id)
+				l.error(`Dataset or Host not found: ${_id}; Host released: ${JSON.stringify(released)}`)
+				--this.count
+				return false
+			} else {
 				let crawler = new Crawler(dataset);
 				await crawler.crawl()
 				--this.count
 				return true;
-			} else {
-				--this.count
-				return false
 			}
-
 
 		} catch (error) {
 			--this.count

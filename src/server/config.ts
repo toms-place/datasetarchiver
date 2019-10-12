@@ -11,19 +11,21 @@ let port = parseInt(process.env.PORT) || 3000;
 let endpoint = process.env.ENDPOINT || '';
 let DB_Server = process.env.DB_Server || 'localhost:27017';
 let DB_Name = process.env.DB_Name || 'archiver';
+let DB_Poolsize = parseInt(process.env.DB_Poolsize) || 1
 let CRAWL_API = process.env.CRAWL_API || 'https://k8s.ai.wu.ac.at/crawler/api/v1';
 let CRAWL_HostInterval = parseInt(process.env.CRAWL_HostInterval) || 5;
 let CRAWL_minRange = parseInt(process.env.CRAWL_minRange) || 15;
 let CRAWL_maxRange = parseInt(process.env.CRAWL_maxRange) || 120;
-let ErrorCountTreshold = parseInt(process.env.ErrorCountTreshold) || 3;
-let MaxFileSizeInBytes = parseInt(process.env.MaxFileSizeInBytes) || 100000000;
 let CRAWL_DistributionArrayMax = parseInt(process.env.CRAWL_DistributionArrayMax) || 10;
-let mode = process.env.MODE || "server";
-let secret = process.env.SECRET || "THIS_IS_A_SECRET";
-let pass = process.env.PASS || "THIS_IS_A_PASS";
 let CRAWLER_PORT = parseInt(process.env.CRAWLER_PORT) || 3000
 let CRAWL_asyncCount = parseInt(process.env.CRAWL_asyncCount) || 10
 let CRAWL_timeout = parseInt(process.env.CRAWL_timeout) || 30000
+let CRAWL_ticktime = parseInt(process.env.CRAWL_ticktime) || 1000
+let mode = process.env.MODE || "server";
+let secret = process.env.SECRET || "THIS_IS_A_SECRET";
+let pass = process.env.PASS || "THIS_IS_A_PASS";
+let ErrorCountTreshold = parseInt(process.env.ErrorCountTreshold) || 3;
+let MaxFileSizeInBytes = parseInt(process.env.MaxFileSizeInBytes) || 100000000;
 
 export default {
   env: env,
@@ -48,5 +50,7 @@ export default {
   CRAWLER_PORT: CRAWLER_PORT,
   CRAWL_asyncCount: CRAWL_asyncCount,
   CRAWL_API: CRAWL_API,
-  CRAWL_timeout: CRAWL_timeout
+  CRAWL_timeout: CRAWL_timeout,
+  CRAWL_ticktime: CRAWL_ticktime,
+  DB_Poolsize: DB_Poolsize
 };
