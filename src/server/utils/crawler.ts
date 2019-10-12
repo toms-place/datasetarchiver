@@ -117,7 +117,7 @@ export default class Crawler {
 					headers: {
 						'User-Agent': 'request'
 					},
-					timeout: 30000
+					timeout: config.CRAWL_timeout
 				})
 				.on('error', (error) => {
 					reject(error)

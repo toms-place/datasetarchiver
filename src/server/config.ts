@@ -23,6 +23,7 @@ let secret = process.env.SECRET || "THIS_IS_A_SECRET";
 let pass = process.env.PASS || "THIS_IS_A_PASS";
 let CRAWLER_PORT = parseInt(process.env.CRAWLER_PORT) || 3000
 let CRAWL_asyncCount = parseInt(process.env.CRAWL_asyncCount) || 10
+let CRAWL_timeout = parseInt(process.env.CRAWL_timeout) || 30000
 
 export default {
   env: env,
@@ -46,5 +47,6 @@ export default {
   mode: mode,
   CRAWLER_PORT: CRAWLER_PORT,
   CRAWL_asyncCount: CRAWL_asyncCount,
-  CRAWL_API: CRAWL_API
+  CRAWL_API: CRAWL_API,
+  CRAWL_timeout: CRAWL_timeout
 };
