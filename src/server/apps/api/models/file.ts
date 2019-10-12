@@ -6,7 +6,9 @@ import {
 	SchemaTypes,
 	model
 } from 'mongoose';
-import {  ObjectID } from 'mongodb'
+import {
+	ObjectID
+} from 'mongodb'
 
 
 interface IFile extends Document {
@@ -17,8 +19,14 @@ interface IFile extends Document {
 	filename: string,
 	md5: string,
 	metadata: {
-		dataset_ref_id: ObjectID,
-		version: number
+		dataset_ref_id: {
+			type: ObjectID,
+			index: true
+		}
+		version: {
+			type: number,
+			index: true
+		}
 	}
 }
 
@@ -59,7 +67,7 @@ let fileQueryHelpers = {
 			}]
 		})
 	},
-	getLastTwoFileVersionsBy_dataset_ref_id(this: DocumentQuery < any, IFile > , dataset_ref_id:number, version1:number, version2:number) {
+	getLastTwoFileVersionsBy_dataset_ref_id(this: DocumentQuery < any, IFile > , dataset_ref_id: number, version1: number, version2: number) {
 		return this.find({
 			'metadata.dataset_ref_id': dataset_ref_id
 		}).or([{

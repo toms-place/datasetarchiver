@@ -331,7 +331,6 @@ export default class Crawler {
 	 */
 	addError(error) {
 
-
 		try {
 
 			let code: number;

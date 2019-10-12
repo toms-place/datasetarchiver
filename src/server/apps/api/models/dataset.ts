@@ -158,7 +158,7 @@ datasetSchema.statics.releaseDatasets = function () {
 }
 
 datasetSchema.statics.releaseDataset = function (_id: ObjectId) {
-	return this.findByIDAndUpdate(_id, {
+	return this.findByIdAndUpdate(_id, {
 		$set: {
 			'crawl_info.currentlyCrawled': true
 		}
