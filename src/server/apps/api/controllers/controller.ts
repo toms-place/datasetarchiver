@@ -1,6 +1,7 @@
 import {
   CrawlerService,
-  addHrefResponse
+  addHrefResponse,
+  IResource
 } from '../services/crawler.service';
 import {
   Request,
@@ -21,10 +22,7 @@ const {
 import bcrypt from 'bcrypt';
 import {
   ObjectId
-} from "bson";
-
-
-
+} from "mongodb";
 
 export class Controller {
   async addHref(req: Request, res: Response, next: NextFunction): Promise < void > {
@@ -47,6 +45,7 @@ export class Controller {
       next(new Error('not found'))
     }
   }
+
   async addManyHrefs(req: Request, res: Response, next: NextFunction): Promise < void > {
     let match;
     try {
@@ -74,6 +73,7 @@ export class Controller {
       next(new Error('not found'))
     }
   }
+
   async crawlID(req: Request, res: Response, next: NextFunction): Promise < void > {
     let match;
     try {
@@ -426,6 +426,63 @@ export class Controller {
       return
     }
   }
+
+
+  async addResources(req: Request, res: Response, next: NextFunction): Promise < void > {
+    let match;
+    let resp = [];
+    //todo make it local passport
+    try {
+      match = await bcrypt.compare(req.query.secret, config.secret)
+    } catch (error) {
+      L.error(error)
+    }
+    if (req.body && match) {
+      try {
+        if (isArray(req.body)) {
+          let batches = await batch(req.body)
+          for (let batch of batches) {
+            let res = await CrawlerService.addResources(batch)
+            resp.push(res)
+          } 
+        } else {
+          let error = new Error('no array');
+          next(error)
+          return
+        }
+        res.json(resp);
+      } catch (error) {
+        console.log(error)
+        next(error)
+      }
+    } else {
+      next(new Error('not found'))
+    }
+  }
+
 }
 
+
 export default new Controller();
+
+
+
+
+async function batch(data:IResource[]) {
+  let batches = [];
+  let count = 0;
+  batches[count] = [];
+  for (let i = 0; i < data.length; i++) {
+    try {
+      batches[count].push(data[i])
+      if (i != 0 && i % config.batchAmount == 0) {
+        count++;
+        batches[count] = [];
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  return batches
+}

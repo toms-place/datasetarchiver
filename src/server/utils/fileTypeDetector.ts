@@ -31,8 +31,8 @@ export default class fileTypeDetector extends FileType{
 				this.mimeType = mimeTypeNew
 				this.extension = mime.getExtension(mimeTypeNew)
 			} else {
-				this.extension = undefined
-				this.mimeType = undefined
+				this.extension = ''
+				this.mimeType = ''
 			}
 		}
 	}
@@ -50,8 +50,8 @@ export default class fileTypeDetector extends FileType{
 				this.extension = extensionNew
 				this.mimeType = mime.getType(extensionNew)
 			} else {
-				this.extension = undefined
-				this.mimeType = undefined
+				this.extension = ''
+				this.mimeType = ''
 			}
 		}
 	}

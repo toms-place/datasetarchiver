@@ -12,11 +12,11 @@ api.set('trust proxy', 'loopback')
 
 //body parser
 api.use(bodyParser.json({
-  limit: process.env.REQUEST_LIMIT || '100kb'
+  limit: process.env.REQUEST_LIMIT || '10000kb'
 }));
 api.use(bodyParser.urlencoded({
   extended: true,
-  limit: process.env.REQUEST_LIMIT || '100kb'
+  limit: process.env.REQUEST_LIMIT || '10000kb'
 }));
 
 //cookie parser

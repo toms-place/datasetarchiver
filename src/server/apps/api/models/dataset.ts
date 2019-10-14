@@ -9,6 +9,8 @@ import uniqueValidator from 'mongoose-unique-validator'
 import {
 	ObjectId
 } from 'mongodb'
+import FileTypeDetector from '../../../utils/fileTypeDetector';
+
 
 export interface IDataset extends Document {
 	id: string,
@@ -19,10 +21,10 @@ export interface IDataset extends Document {
 }
 
 export interface IDatasetModel extends Model < IDataset, typeof datasetQueryHelpers > {
-	addMany: (datasets: IDataset[]) => Promise < any > ,
+	addMany: (datasets: IDataset[]) => Promise < number > ,
 	getDatasetIDsAndHostNamesToBeCrawledOneByHost: () => Promise < IDataset[] > ,
 	releaseDatasets: () => any,
-	releaseDataset: (_id: ObjectId) => Promise < IDataset >,
+	releaseDataset: (_id: ObjectId) => Promise < IDataset > ,
 	lockDataset: (_id: ObjectId) => Promise < IDataset >
 }
 
@@ -86,9 +88,20 @@ let datasetSchema = new mongoose.Schema({
 			type: Number,
 			default: 0
 		},
-		filename: String,
-		filetype: String,
-		extension: String,
+		filename: {
+			type: String,
+			default: ''
+		},
+		filetype: {
+			type: String,
+			default: '',
+			index: true
+		},
+		extension: {
+			type: String,
+			default: '',
+			index: true
+		},
 		insertDate: {
 			type: Date,
 			default: new Date()
@@ -187,7 +200,109 @@ datasetSchema.statics.lockDataset = function (_id: ObjectId) {
 	})
 }
 
-datasetSchema.statics.addMany = function (datasets: IDataset[]): Promise < any > {
+datasetSchema.statics.addMany = async function (datasets: IDataset[]): Promise < any > {
+
+	try {
+		let docs = await db.dataset.insertMany(datasets, {
+			ordered: false
+		})
+
+
+		if (docs.length == 0) {
+
+			let ids: Array < any > = datasets.map(dataset => {
+				return dataset.id
+			});
+			let oldDatasets = await db.dataset.find({
+				id: {
+					$in: ids
+				}
+			})
+			let changeCount = 0;
+			for (let oldDS of oldDatasets) {
+				for (let newDS of datasets) {
+					if (newDS.id == oldDS.id) {
+
+						let exists = oldDS.meta.source.some((src) => {
+							return src.href == newDS.meta.source[0].href
+						})
+						if (!exists) {
+							oldDS.meta.source.push(newDS.meta.source[0]);
+							await oldDS.save();
+							++changeCount;
+						}
+					}
+				}
+			}
+			return changeCount
+		} else {
+			for (let doc of docs) {
+				await db.host.updateOne({
+					name: doc.url.hostname
+				}, {
+					$push: {
+						datasets: doc._id
+					}
+				}, {
+					upsert: true,
+					setDefaultsOnInsert: true
+				})
+			}
+			return docs.length
+		}
+
+
+	} catch (error) {
+		if (error.code == 11000) {
+			let _ids: Array < any > = error.result.result.insertedIds.map(dataset => {
+				return dataset._id;;
+			});
+
+			let insertedDatasets = await db.dataset.find({
+				_id: {
+					$in: _ids
+				}
+			}, '_id url.hostname')
+
+			for (let dataset of insertedDatasets) {
+				await db.host.updateOne({
+					name: dataset.url.hostname
+				}, {
+					$push: {
+						datasets: dataset._id
+					}
+				}, {
+					upsert: true,
+					setDefaultsOnInsert: true
+				})
+			}
+
+			for (let writeError of error.result.result.writeErrors) {
+				let newDS = writeError.err.op
+				let oldDS = await db.dataset.findOne({
+					id: newDS.id
+				})
+
+				let exists = oldDS.meta.source.some((src) => {
+					return src.href == newDS.meta.source[0].href
+				})
+
+				if (!exists) {
+					oldDS.meta.source.push(newDS.meta.source[0])
+				}
+
+				await oldDS.save()
+			}
+
+			return _ids.length
+
+		} else {
+			console.log('here')
+			throw error
+		}
+	}
+
+	/*
 	return new Promise < any > (async (resolve, reject) => {
 		db.dataset.insertMany(datasets, {
 			ordered: false
@@ -212,6 +327,44 @@ datasetSchema.statics.addMany = function (datasets: IDataset[]): Promise < any >
 					})
 				}
 
+
+				console.log(error.result.result)
+
+				let existingDataset: IDataset;
+				let source: URL;
+				let flag: Boolean = false;
+				let didAny: Boolean = false;
+				let format;
+
+				if (false) {
+				let exists = existingDataset.meta.source.some((src) => {
+					return src.href == source.href
+				  })
+		
+				  if (!exists) {
+					existingDataset.meta.source.push(source)
+					flag = true;
+					didAny = true;
+				  }
+				  if (format) {
+					let detector = new FileTypeDetector(format)
+					if (existingDataset.meta.extension != detector.extension || existingDataset.meta.filetype != detector.mimeType) {
+					  existingDataset.meta.filetype != detector.mimeType
+					  existingDataset.meta.extension = detector.extension
+					  flag = true;
+					  didAny = true;
+					}
+				  }
+				  if (flag == true) {
+					try {
+					  await existingDataset.save()
+					} catch (error) {
+					  console.log(error)
+					}
+					flag = false;
+				  }
+				}
+
 				resolve(datasets.length)
 
 			} else {
@@ -230,7 +383,7 @@ datasetSchema.statics.addMany = function (datasets: IDataset[]): Promise < any >
 				resolve(docs.length)
 			}
 		});
-	})
+	})*/
 };
 
 datasetSchema.statics.getDatasetIDsAndHostNamesToBeCrawledOneByHost = function (): Promise < IDataset[] > {

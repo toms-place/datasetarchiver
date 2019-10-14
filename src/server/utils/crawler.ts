@@ -333,37 +333,30 @@ export default class Crawler {
 
 		try {
 
-			let code: number;
-
-			if (error.error) {
-				error = error.error
-				l.info('error', error)
-			}
+			let statusCode: number;
 
 			switch (error.code) {
 				case 'ETIMEDOUT':
-					l.info('ETIMEDOUT', error, this.dataset.id);
-					code = 114
+					statusCode = 114
 					break;
 				case 'ESOCKETTIMEDOUT':
-					l.info('ESOCKETTIMEDOUT', error, this.dataset.id);
-					code = 114
+					statusCode = 114
 					break;
 				case 'ENOTFOUND':
-					code = 404
+					statusCode = 404
 					break;
 				case 'UNABLE_TO_VERIFY_LEAF_SIGNATURE':
 					l.info('UNABLE_TO_VERIFY_LEAF_SIGNATURE', error, this.dataset.id);
-					code = 112
+					statusCode = 112
 					break;
 
 				default:
-					code = 111;
+					statusCode = 111;
 					l.error('unhandled', error, this.dataset.id);
 					break;
 			}
 
-			let err = new DatasetError(error.message, code)
+			let err = new DatasetError(error.message, statusCode)
 			this.dataset.crawl_info.errorStore.push(err);
 			this.dataset.crawl_info.errorCount++;
 			if (this.dataset.crawl_info.errorCount >= config.ErrorCountTreshold) {

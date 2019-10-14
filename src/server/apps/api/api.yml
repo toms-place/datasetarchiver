@@ -220,6 +220,28 @@ paths:
         200:
           description: Returns an object of what has been added
           content: {}
+  /addResources:
+    post:
+      summary: add many resources
+      parameters:
+        - in: query
+          name: secret
+          description: Ask thomas for the secret
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/resources'
+      tags:
+      - Datasetarchiver
+      description:
+      responses:
+        200:
+          description: Returns array with booleans
 
 
 components:
@@ -264,6 +286,22 @@ components:
         type: object
         $ref: '#/components/schemas/file'
       title: files
+    resource:
+      title: resource
+      type: object
+      properties:
+        href:
+          type: string
+        source:
+          type: string
+        format:
+          type: string
+    resources:
+      type: array
+      items:
+        type: object
+        $ref: '#/components/schemas/resource'
+      title: resources
   examples:
     crawl_info:
       title: crawl_info

@@ -1,7 +1,9 @@
 import L from '../../../common/logger'
 import db from '../../../common/database';
 import config from '../../../config';
-import crawlEmitter, {CrawlEmitter} from '../events/crawler.event';
+import crawlEmitter, {
+  CrawlEmitter
+} from '../events/crawler.event';
 import FileTypeDetector from '../../../utils/fileTypeDetector';
 import {
   IDataset
@@ -9,8 +11,13 @@ import {
 import sanitize from "sanitize-filename";
 import {
   ObjectId
-} from "bson";
+} from "mongodb"
 
+export interface IResource {
+  href: URL['href'];
+  source: URL['href'];
+  format: string;
+};
 
 export interface addHrefResponse {
   datasetstatus: Number;
@@ -140,12 +147,67 @@ export class CrawlerService {
       throw error
     }
 
+  }
+
+  static async addResources(resources: IResource[]): Promise < number > {
+    let datasets = []
+    let url: URL;
+    let source: URL;
+    let dataset: IDataset;
+
+    for (let resource of resources) {
+
+      try {
+        url = new URL(resource.href)
+      } catch (error) {
+        continue;
+      }
+
+      try {
+
+        try {
+          source = new URL(resource.source)
+        } catch (error) {
+          source = undefined
+        }
+
+        //index key length max = 1024 bytes
+        if (Buffer.byteLength(url.href, 'utf8') > 1024) {
+          continue;
+        }
+
+        dataset = new db.dataset({
+          url: url,
+          id: url.href,
+          meta: undefined,
+          crawl_info: undefined
+        });
+
+        if (resource.format) {
+          let detector = new FileTypeDetector(resource.format)
+          dataset.meta.filetype = detector.mimeType
+          dataset.meta.extension = detector.extension
+        }
+
+        if (source) {
+          dataset.meta.source.push(source)
+        }
+
+        datasets.push(dataset)
+
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    return db.dataset.addMany(datasets)
 
   }
 
+
   static async addManyHrefs(hrefs: Array < URL['href'] > ): Promise < any > {
     let resp = [];
-    let batches = batch(hrefs)
+    let batches = await batch(hrefs)
     for (let batch of batches) {
       let datasets = []
       for (let href of batch) {
@@ -385,7 +447,7 @@ export default new CrawlerService();
 
 
 
-function batch(results) {
+async function batch(results) {
   let batches = [];
   let count = 0;
   batches[count] = [];

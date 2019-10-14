@@ -13,6 +13,7 @@ router.use(function auth(req, res, next) {
 });
 */
 
+//TODO local passport!
 //routes
 router.get('/getVersions', controller.getVersions)
 router.get('/dumpLastVersions', controller.dumpLastVersions)
@@ -26,7 +27,8 @@ router.get('/file/*', controller.getFileByUrl)
 router.get('/getDatasets', controller.getDatasets)
 router.get('/getDataset', controller.getDataset)
 //router.get('/add/url/*', controller.addUrl)
-router.get('/add/:', controller.getDataset)
+router.post('/addResources', controller.addResources)
+//router.get('/add/:', controller.addResources)
 router.post('/addHref', controller.addHref)
 router.post('/addManyHrefs', controller.addManyHrefs)
 router.post('/crawlID', controller.crawlID)

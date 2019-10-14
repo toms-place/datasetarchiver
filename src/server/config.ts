@@ -24,6 +24,7 @@ let CRAWL_ticktime = parseInt(process.env.CRAWL_ticktime) || 1000
 let mode = process.env.MODE || "server";
 let secret = process.env.SECRET || "THIS_IS_A_SECRET";
 let pass = process.env.PASS || "THIS_IS_A_PASS";
+let batchAmount = parseInt(process.env.batchAmount) || 10000;
 let ErrorCountTreshold = parseInt(process.env.ErrorCountTreshold) || 3;
 let MaxFileSizeInBytes = parseInt(process.env.MaxFileSizeInBytes) || 100000000;
 
@@ -52,5 +53,6 @@ export default {
   CRAWL_API: CRAWL_API,
   CRAWL_timeout: CRAWL_timeout,
   CRAWL_ticktime: CRAWL_ticktime,
-  DB_Poolsize: DB_Poolsize
+  DB_Poolsize: DB_Poolsize,
+  batchAmount: batchAmount
 };
