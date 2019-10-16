@@ -318,6 +318,9 @@ datasetSchema.statics.addMany = async function (datasets: IDataset[]): Promise <
 
 			return _ids.length + changeCount
 
+		} else if (error.code == 17280){
+			console.log(error)
+			return error.result.result.nInserted
 		} else {
 			throw error
 		}

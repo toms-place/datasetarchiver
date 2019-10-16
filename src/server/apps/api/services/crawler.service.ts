@@ -31,8 +31,7 @@ export class CrawlerService {
     try {
 
       if (crawlEmitter.count < config.CRAWL_asyncCount) {
-        crawlEmitter.crawl(id);
-        return true
+        return crawlEmitter.crawl(id);
       } else {
         return false
       }

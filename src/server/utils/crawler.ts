@@ -93,6 +93,7 @@ export default class Crawler {
 
 			let downloadStart = new Date()
 
+			request.debug = true
 			request(this.dataset.url.href, {
 					followAllRedirects: true,
 					maxRedirects: 10,
@@ -100,7 +101,10 @@ export default class Crawler {
 					headers: {
 						'User-Agent': 'request'
 					},
-					timeout: config.CRAWL_timeout
+					timeout: config.CRAWL_timeout,
+					pool: {
+						
+					}
 				})
 				.on('error', (error) => {
 					reject(error)

@@ -35,7 +35,7 @@ let main = async () => {
 				let url = new URL(resource.url.value)
 				//index key length max = 1024 bytes
 				if (Buffer.byteLength(url.href, 'utf8') >= 1024 || url.href.length >= 1024) {
-					console.log('key too large:', url.href)
+					console.log('url key too large:', url.href)
 					continue;
 				}
 
@@ -50,8 +50,12 @@ let main = async () => {
 					try {
 						source = new URL(resource.dataset.value).href
 						object2insert.source = source
+						if (Buffer.byteLength(source, 'utf8') >= 1024 || source.length >= 1024) {
+							console.log('source key too large:', source)
+							object2insert.source = undefined;
+						}
 					} catch (error) {
-
+						object2insert.source = undefined
 					}
 				}
 
