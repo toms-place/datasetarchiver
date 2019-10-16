@@ -1,11 +1,6 @@
-import rp from 'request-promise-native';
 import request from 'request';
 
 import contentDisposition from 'content-disposition';
-const {
-	http,
-	https
-} = require('follow-redirects');
 
 import db from '../common/database';
 import {
@@ -43,18 +38,6 @@ export default class Crawler {
 	async crawl(): Promise < boolean > {
 
 		try {
-
-			//agent initialisation
-			switch (this.dataset.url.protocol) {
-				case 'https:':
-					this.agent = https
-					break;
-				case 'http:':
-					this.agent = http
-					break;
-				default:
-					throw new Error(`Neither http nor https: ${this.agent}`)
-			}
 
 			await this.download()
 			let hasChanged = await this.checkHash()

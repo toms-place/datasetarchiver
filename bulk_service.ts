@@ -1,5 +1,4 @@
 import rp from 'request-promise-native'
-import config from './src/server/config'
 const sleep = require('util').promisify(setTimeout);
 import {
 	CrawlerService,
