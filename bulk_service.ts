@@ -7,7 +7,7 @@ import {
   } from './src/server/apps/api/services/crawler.service';
 
 let main = async () => {
-	let OFFSET = 1000000;
+	let OFFSET = 0;
 	let LIMIT = 10000
 	let flag = true;
 	while (flag == true) {
