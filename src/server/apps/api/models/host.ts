@@ -91,7 +91,9 @@ hostSchema.statics.lockHost = function (id: ObjectId) {
 };
 
 hostSchema.statics.releaseHosts = function () {
-	return this.updateMany({}, {
+	return this.updateMany({
+		currentlyCrawled: true
+	}, {
 		$set: {
 			currentlyCrawled: false,
 			nextCrawl: new Date(new Date().getTime() + config.CRAWL_HostInterval * 1000)
