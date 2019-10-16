@@ -1,12 +1,5 @@
-import rp from 'request-promise-native';
 import request from 'request';
-
 import contentDisposition from 'content-disposition';
-const {
-	http,
-	https
-} = require('follow-redirects');
-
 import db from '../common/database';
 import {
 	IDataset
@@ -14,7 +7,6 @@ import {
 import config from '../config';
 import FileTypeDetector from './fileTypeDetector';
 import l from '../common/logger';
-
 
 class DatasetError extends Error {
 	message: string;
@@ -26,6 +18,8 @@ class DatasetError extends Error {
 	}
 }
 
+let count = 0;
+
 /** TODO
  * - is dataset compressed?
  * - filetype detection
@@ -33,7 +27,6 @@ class DatasetError extends Error {
  */
 export default class Crawler {
 	url: URL;
-	agent: any
 	dataset: IDataset;
 
 	constructor(dataset: IDataset) {
@@ -44,22 +37,8 @@ export default class Crawler {
 
 		try {
 
-			//agent initialisation
-			switch (this.dataset.url.protocol) {
-				case 'https:':
-					this.agent = https
-					break;
-				case 'http:':
-					this.agent = http
-					break;
-				default:
-					throw new Error(`Neither http nor https: ${this.agent}`)
-			}
-
 			await this.download()
-			let hasChanged = await this.checkHash()
-			this.calcNextCrawl(hasChanged);
-
+			this.calcNextCrawl(await this.checkHash());
 			this.dataset.crawl_info.firstCrawl = false
 			this.dataset.crawl_info.currentlyCrawled = false
 			await this.dataset.save()
