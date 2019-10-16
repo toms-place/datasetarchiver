@@ -1,12 +1,15 @@
 import request from 'request';
+
 import contentDisposition from 'content-disposition';
+
 import db from '../common/database';
 import {
 	IDataset
 } from '../apps/api/models/dataset';
 import config from '../config';
-import FileTypeDetector from './fileTypeDetector';
+import fileTypeDetector from './fileTypeDetector';
 import l from '../common/logger';
+
 
 class DatasetError extends Error {
 	message: string;
@@ -18,8 +21,6 @@ class DatasetError extends Error {
 	}
 }
 
-let count = 0;
-
 /** TODO
  * - is dataset compressed?
  * - filetype detection
@@ -27,6 +28,7 @@ let count = 0;
  */
 export default class Crawler {
 	url: URL;
+	agent: any
 	dataset: IDataset;
 
 	constructor(dataset: IDataset) {
@@ -38,7 +40,9 @@ export default class Crawler {
 		try {
 
 			await this.download()
-			this.calcNextCrawl(await this.checkHash());
+			let hasChanged = await this.checkHash()
+			this.calcNextCrawl(hasChanged);
+
 			this.dataset.crawl_info.firstCrawl = false
 			this.dataset.crawl_info.currentlyCrawled = false
 			await this.dataset.save()
@@ -69,7 +73,7 @@ export default class Crawler {
 	 */
 	async download(): Promise < boolean > {
 
-		let detector = new FileTypeDetector()
+		let detector = new fileTypeDetector()
 
 		detector.on('file-type', (filetype) => {
 			if (filetype === null) {} else {
@@ -89,14 +93,17 @@ export default class Crawler {
 
 			let downloadStart = new Date()
 
+			//request.debug = true
 			request(this.dataset.url.href, {
 					followAllRedirects: true,
-					maxRedirects: 10,
+					maxRedirects: 5,
 					rejectUnauthorized: false,
 					headers: {
 						'User-Agent': 'request'
 					},
-					timeout: config.CRAWL_timeout
+					timeout: config.CRAWL_timeout,
+					gzip: true,
+					jar: true
 				})
 				.on('error', (error) => {
 					reject(error)
@@ -104,7 +111,7 @@ export default class Crawler {
 				.on('response', (response) => {
 
 					try {
-						this.checkHeaders(response)
+						this.checkHeaders(response.headers)
 					} catch (error) {
 						reject(error)
 					}
@@ -270,27 +277,27 @@ export default class Crawler {
 	/** TODO
 	 * - metadata generation
 	 */
-	checkHeaders(response): void {
+	checkHeaders(headers): void {
 
 		//save redirects
 
-		let detector = new FileTypeDetector();
+		let detector = new fileTypeDetector();
 
-		if (parseInt(response.headers['content-length']) > config.MaxFileSizeInBytes) {
+		if (parseInt(headers['content-length']) > config.MaxFileSizeInBytes) {
 			this.dataset.crawl_info.stopped = true;
 			throw new DatasetError('max file size exceeded', 194)
 		}
 
 		if (!this.dataset.meta.filename) {
 			try {
-				this.dataset.meta.filename = contentDisposition.parse(response.headers['content-disposition']).parameters.filename
+				this.dataset.meta.filename = contentDisposition.parse(headers['content-disposition']).parameters.filename
 			} catch (error) {
 				this.dataset.meta.filename = this.dataset.url.pathname.split('/')[this.dataset.url.pathname.split('/').length - 1]
 			}
 		}
 
 		try {
-			detector.setMimeType(response.headers['content-type'].split(';')[0])
+			detector.setMimeType(headers['content-type'].split(';')[0])
 		} catch (error) {
 			let fileSplit = this.dataset.meta.filename.split('.')
 			detector.setExtension((fileSplit.length > 1) ? fileSplit[fileSplit.length - 1] : 'unknown')

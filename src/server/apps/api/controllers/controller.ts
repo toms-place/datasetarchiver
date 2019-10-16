@@ -25,55 +25,6 @@ import {
 } from "mongodb";
 
 export class Controller {
-  async addHref(req: Request, res: Response, next: NextFunction): Promise < void > {
-    let match;
-    try {
-      match = await bcrypt.compare(req.query.secret, config.secret)
-    } catch (error) {
-      L.error(error)
-    }
-    if (req.query.href && match) {
-      let r: addHrefResponse;
-      try {
-        r = await CrawlerService.addHref(req.query.href, req.query.source, req.query.filename, req.query.filetype, req.query.extension)
-        res.json(r);
-      } catch (error) {
-        console.log(error)
-        next(error)
-      }
-    } else {
-      next(new Error('not found'))
-    }
-  }
-
-  async addManyHrefs(req: Request, res: Response, next: NextFunction): Promise < void > {
-    let match;
-    try {
-      match = await bcrypt.compare(req.query.secret, config.secret)
-    } catch (error) {
-      L.error(error)
-    }
-    if (req.query.hrefs && match) {
-      let r: addHrefResponse;
-      try {
-        let array = JSON.parse(req.query.hrefs)
-        if (isArray(array)) {
-          r = await CrawlerService.addManyHrefs(array)
-        } else {
-          let error = new Error('no array');
-          next(error)
-          return
-        }
-        res.json(r);
-      } catch (error) {
-
-        next(error)
-      }
-    } else {
-      next(new Error('not found'))
-    }
-  }
-
   async crawlID(req: Request, res: Response, next: NextFunction): Promise < void > {
     let match;
     try {

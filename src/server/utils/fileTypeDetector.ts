@@ -10,7 +10,7 @@ export default class fileTypeDetector extends FileType{
 	stackCount: number;
 
 	constructor(mimeType ? : string, extension ? : string) {
-		super()
+		super();
 		this.mimeType = mimeType;
 		this.extension = extension;
 		this.stackCount = 0;

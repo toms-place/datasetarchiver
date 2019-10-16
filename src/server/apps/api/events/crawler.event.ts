@@ -26,7 +26,7 @@ export class CrawlEmitter {
 				return false
 			} else {
 				let crawler = new Crawler(dataset);
-				await crawler.crawl();
+				crawler.crawl();
 				--this.count
 				return true;
 			}

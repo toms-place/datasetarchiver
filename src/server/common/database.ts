@@ -25,6 +25,18 @@ const sleep = require('util').promisify(setTimeout);
 
 let instance = null;
 
+mongoose.connection.on('connecting', () => {
+	console.log(`Process ${process.pid}: Database tries to connect`)
+})
+
+mongoose.connection.on('connected', () => {
+  console.log(`Process ${process.pid}: Database connection successful`)
+})
+
+mongoose.connection.on('reconnected', () => {
+	console.log(`Process ${process.pid}: Database reconnected`)
+})
+
 export class Database {
   _conn: Mongoose['connection'];
   _bucket: GridFSBucket;

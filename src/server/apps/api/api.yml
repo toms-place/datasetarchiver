@@ -158,68 +158,6 @@ paths:
       responses:
         200:
           description: Returns a boolean if crawl started
-  /addHref:
-    post:
-      parameters:
-        - in: query
-          name: href
-          description: The href which links to the data
-          schema:
-            type: string
-          required: true
-        - in: query
-          name: source
-          description: The source of the href provided
-          schema:
-            type: string
-        - in: query
-          name: filename
-          description: The name of the file provided
-          schema:
-            type: string
-        - in: query
-          name: filytype
-          description: The type of the file provided
-          schema:
-            type: string
-        - in: query
-          name: secret
-          description: Ask thomas for the secret
-          schema:
-            type: string
-          required: true
-      tags:
-      - Datasetarchiver
-      description: TODO make it a json request
-      responses:
-        200:
-          description: Returns an object of what has been added
-          content: {}
-  /addManyHrefs:
-    post:
-      parameters:
-        - in: query
-          name: hrefs
-          description: The href which links to the data
-          schema:
-            oneOf:
-              - type: array
-              - type: object
-              - type: string
-          required: true
-        - in: query
-          name: secret
-          description: Ask thomas for the secret
-          schema:
-            type: string
-          required: true
-      tags:
-      - Datasetarchiver
-      description: TODO make it a json request
-      responses:
-        200:
-          description: Returns an object of what has been added
-          content: {}
   /addResources:
     post:
       summary: add many resources

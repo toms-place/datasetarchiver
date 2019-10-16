@@ -26,12 +26,8 @@ router.get('/file/byDatasetID/:id', controller.getFileByDatasetID)
 router.get('/file/*', controller.getFileByUrl)
 router.get('/getDatasets', controller.getDatasets)
 router.get('/getDataset', controller.getDataset)
-//router.get('/add/url/*', controller.addUrl)
-router.post('/addResources', controller.addResources)
-//router.get('/add/:', controller.addResources)
-router.post('/addHref', controller.addHref)
-router.post('/addManyHrefs', controller.addManyHrefs)
 router.post('/crawlID', controller.crawlID)
+router.post('/addResources', controller.addResources)
 
 router.use('/\*', errorEmitter);
 
