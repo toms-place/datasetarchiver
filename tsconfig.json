@@ -9,6 +9,6 @@
     "outDir": "dist",
     "typeRoots": ["node_modules/@types"]
   },
-  "include": ["typings.d.ts", "src/server/**/*.ts", "src/master/**/*.ts"],
+  "include": ["typings.d.ts", "src/server/**/*.ts", "src/master/**/*.ts", "bulk_service.ts"],
   "exclude": ["node_modules"]
 }

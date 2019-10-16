@@ -7,7 +7,7 @@ import {
 	IDataset
 } from '../apps/api/models/dataset';
 import config from '../config';
-import FileTypeDetector from './fileTypeDetector';
+import fileTypeDetector from './fileTypeDetector';
 import l from '../common/logger';
 
 
@@ -73,7 +73,7 @@ export default class Crawler {
 	 */
 	async download(): Promise < boolean > {
 
-		let detector = new FileTypeDetector()
+		let detector = new fileTypeDetector()
 
 		detector.on('file-type', (filetype) => {
 			if (filetype === null) {} else {
@@ -278,7 +278,7 @@ export default class Crawler {
 
 		//save redirects
 
-		let detector = new FileTypeDetector();
+		let detector = new fileTypeDetector();
 
 		if (parseInt(response.headers['content-length']) > config.MaxFileSizeInBytes) {
 			this.dataset.crawl_info.stopped = true;

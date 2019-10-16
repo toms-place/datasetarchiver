@@ -4,7 +4,7 @@ import config from '../../../config';
 import crawlEmitter, {
   CrawlEmitter
 } from '../events/crawler.event';
-import FileTypeDetector from '../../../utils/fileTypeDetector';
+import fileTypeDetector from '../../../utils/fileTypeDetector';
 import {
   IDataset
 } from '../models/dataset';
@@ -94,7 +94,7 @@ export class CrawlerService {
           crawl_info: undefined
         });
 
-        let detector = new FileTypeDetector(resource.format)
+        let detector = new fileTypeDetector(resource.format)
         dataset.meta.filetype = detector.mimeType
         dataset.meta.extension = detector.extension
 

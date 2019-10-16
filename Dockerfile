@@ -1,6 +1,6 @@
 # BUILD
 # use latest version of node
-FROM node:12.4.0-alpine AS builder
+FROM node:12.12.0-alpine AS builder
 
 # set working directory
 WORKDIR /
@@ -22,7 +22,7 @@ RUN npm run compile
 
 # SERVICE
 # use latest version of node
-FROM node:12.4.0-alpine
+FROM node:12.12.0-alpine
 
 
 RUN apk add --no-cache bash
