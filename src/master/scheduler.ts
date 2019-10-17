@@ -43,12 +43,14 @@ export class Scheduler {
             this.hostnames.push(query._id)
           }
 
+          host:
           for (let host of this.hostsToCrawl) {
             for (let query of this.querys) {
               if (host.name == query._id) {
                 this.promises.push(
                   this.crawl(query.id)
                 )
+                continue host;
               }
             }
           }
