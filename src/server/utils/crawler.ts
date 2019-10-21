@@ -13,11 +13,11 @@ import l from '../common/logger';
 
 class DatasetError extends Error {
 	message: string;
-	statusCode: number;
-	constructor(message: string, statusCode: number) {
+	code: number;
+	constructor(message: string, code: number) {
 		super()
 		this.message = message
-		this.statusCode = statusCode
+		this.code = code
 	}
 }
 
@@ -335,7 +335,9 @@ export default class Crawler {
 					l.info('UNABLE_TO_VERIFY_LEAF_SIGNATURE', error, this.dataset.id);
 					statusCode = 112
 					break;
-
+				case 194:
+					statusCode = 194
+					break;
 				default:
 					statusCode = 111;
 					l.error('unhandled', error, this.dataset.id);

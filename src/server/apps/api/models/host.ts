@@ -16,7 +16,7 @@ export interface IHost extends Document {
 }
 
 export interface IHostModel extends Model < IHost, typeof hostQueryHelpers > {
-	lockHost: (id: ObjectId) => any,
+	lockHost: (hostname: String) => any,
 	releaseHostByDsID: (id: ObjectId) => any,
 	releaseHost: (hostname: String) => any,
 	releaseHosts: () => any
@@ -64,16 +64,16 @@ let hostQueryHelpers = {
 			}, {
 				currentlyCrawled: false
 			}]
-		})
+		}).select({ "name": 1, "_id": 0});
 	}
 };
 
 hostSchema.query = hostQueryHelpers
 
-hostSchema.statics.lockHost = function (id: ObjectId) {
+hostSchema.statics.lockHost = function (hostname: String) {
 	return this.findOneAndUpdate({
 		$and: [{
-			datasets: id
+			name: hostname
 		}, {
 			nextCrawl: {
 				$lt: new Date()
@@ -87,7 +87,7 @@ hostSchema.statics.lockHost = function (id: ObjectId) {
 		}
 	}, {
 		new: true
-	})
+	}).select({ "_id": 1});
 };
 
 hostSchema.statics.releaseHosts = function () {
@@ -109,7 +109,7 @@ hostSchema.statics.releaseHost = function (hostname) {
 			currentlyCrawled: false,
 			nextCrawl: new Date(new Date().getTime() + config.CRAWL_HostInterval * 1000)
 		}
-	});
+	}).select({ "_id": 1});;
 };
 
 hostSchema.statics.releaseHostByDsID = function (id: ObjectId) {
@@ -120,7 +120,7 @@ hostSchema.statics.releaseHostByDsID = function (id: ObjectId) {
 			currentlyCrawled: false,
 			nextCrawl: new Date(new Date().getTime() + config.CRAWL_HostInterval * 1000)
 		}
-	});
+	}).select({ "_id": 1});;
 };
 
 export default mongoose.model < IHost, IHostModel > ('hosts', hostSchema)

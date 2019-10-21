@@ -12,15 +12,15 @@ export class CrawlEmitter {
 	constructor() {
 		this.count = 0
 	}
-	async crawl(_id: ObjectId) {
+	async crawl(_id: ObjectId, hostname: String) {
 		try {
 			++this.count
-			let host = await db.host.lockHost(_id)
+			let host = await db.host.lockHost(hostname)
 			let dataset = await db.dataset.lockDataset(_id)
 
 			if (!dataset || !host) {
 				await db.dataset.releaseDataset(_id)
-				await db.host.releaseHostByDsID(_id)
+				await db.host.releaseHost(hostname)
 				l.error(`Dataset or Host not found: ${_id} - NoDS: ${!dataset}, NoHost: ${!host}`);
 				--this.count
 				return false

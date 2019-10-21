@@ -27,11 +27,11 @@ export interface addHrefResponse {
 
 export class CrawlerService {
 
-  static async crawlID(id: ObjectId): Promise < boolean > {
+  static async crawlID(id: ObjectId, hostname: String): Promise < boolean > {
     try {
 
       if (crawlEmitter.count < config.CRAWL_asyncCount) {
-        return crawlEmitter.crawl(id);
+        return crawlEmitter.crawl(id, hostname);
       } else {
         return false
       }
@@ -243,7 +243,10 @@ export class CrawlerService {
       let ds = await db.dataset.findOne({
         id: url
       })
-      return ds
+      let file = await db.file.find({_id: {$in:ds.versions}})
+      let populatedDS = JSON.parse(JSON.stringify(ds))
+      populatedDS.versions = file
+      return populatedDS
     } catch (error) {
       throw error
     }

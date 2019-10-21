@@ -32,7 +32,7 @@ export class Controller {
     } catch (error) {
       L.error(error)
     }
-    if (req.query.id && match) {
+    if (req.query.id && req.query.hostname && match) {
       let id: ObjectId;
       try {
         id = new ObjectId(req.query.id)
@@ -41,7 +41,7 @@ export class Controller {
         return
       }
       try {
-        let r = await CrawlerService.crawlID(id)
+        let r = await CrawlerService.crawlID(id, req.query.hostname)
         res.json({
           crawling: r,
           id: id
@@ -51,7 +51,7 @@ export class Controller {
         return
       }
     } else {
-      next(new Error('not found'))
+      next(new Error(`${JSON.stringify(req.query)} not found`))
     }
   }
 
@@ -213,6 +213,39 @@ export class Controller {
       res.type(ds.meta.filetype)
       res.header('Content-disposition', `attachment; filename=${ds.meta.filename}.${ds.meta.extension}`);
       stream.pipe(res)
+
+    } catch (error) {
+      next(error)
+      return
+    }
+  }
+
+
+  async getDatasetByUrl(req: Request, res: Response, next: NextFunction): Promise < void > {
+    //check query
+    let param = req.url.split('/dataset/')[1]
+
+    let url: URL;
+
+    try {
+      url = new URL(param)
+    } catch (error) {
+      try {
+        param = decodeURIComponent(param)
+        url = new URL(param)
+      } catch (error) {
+        next(new Error('url not correct'))
+      }
+    }
+
+    try {
+
+      let ds = await CrawlerService.getDatasetByUrl(url.href)
+      if (!ds) {
+        next(new Error('no dataset found'))
+      }
+
+      res.json(ds)
 
     } catch (error) {
       next(error)

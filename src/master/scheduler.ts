@@ -35,20 +35,15 @@ export class Scheduler {
         this.hostsToCrawl = await db.host.find().getHostsToCrawl()
         this.querys = await db.dataset.getDatasetIDsAndHostNamesToBeCrawledOneByHost()
         this.promises = [];
-        this.hostnames = [];
 
         if (this.querys) {
-
-          for (let query of this.querys) {
-            this.hostnames.push(query._id)
-          }
 
           host:
           for (let host of this.hostsToCrawl) {
             for (let query of this.querys) {
               if (host.name == query._id) {
                 this.promises.push(
-                  this.crawl(query.id)
+                  this.crawl(query.id, query._id)
                 )
                 continue host;
               }
@@ -92,9 +87,9 @@ export class Scheduler {
     }
   }
 
-  async crawl(id: ObjectID) {
+  async crawl(id: ObjectID, hostname) {
     try {
-      this.href = `${config.CRAWL_API}/crawlID?id=${id}&secret=${config.pass}`
+      this.href = `${config.CRAWL_API}/crawlID?id=${id}&hostname=${hostname}&secret=${config.pass}`
       this.resp = await rp.post(this.href, {
         rejectUnauthorized: false
       })

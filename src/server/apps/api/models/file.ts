@@ -1,10 +1,10 @@
-import {
+import mongoose, {
 	Document,
 	DocumentQuery,
 	Model,
 	Schema,
 	SchemaTypes,
-	model
+	model,
 } from 'mongoose';
 import {
 	ObjectID

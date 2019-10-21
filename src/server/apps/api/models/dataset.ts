@@ -162,7 +162,14 @@ datasetSchema.plugin(uniqueValidator);
 
 datasetSchema.statics.releaseDatasets = function () {
 	return this.updateMany({
-		'crawl_info.stopped': false
+		$and: [{
+				'crawl_info.currentlyCrawled': true
+			},
+
+			{
+				'crawl_info.stopped': false
+			}
+		]
 	}, {
 		$set: {
 			'crawl_info.currentlyCrawled': false
@@ -177,7 +184,9 @@ datasetSchema.statics.releaseDataset = function (_id: ObjectId) {
 		}
 	}, {
 		new: true
-	})
+	}).select({
+		"_id": 1
+	});
 }
 
 datasetSchema.statics.lockDataset = function (_id: ObjectId) {
@@ -197,7 +206,9 @@ datasetSchema.statics.lockDataset = function (_id: ObjectId) {
 		}
 	}, {
 		new: true
-	})
+	}).select({
+		'meta.source': 0
+	});
 }
 
 datasetSchema.statics.addMany = async function (datasets: IDataset[]): Promise < number > {
@@ -318,7 +329,7 @@ datasetSchema.statics.addMany = async function (datasets: IDataset[]): Promise <
 
 			return _ids.length + changeCount
 
-		} else if (error.code == 17280){
+		} else if (error.code == 17280) {
 			console.log(error)
 			return error.result.result.nInserted
 		} else {
@@ -352,6 +363,8 @@ datasetSchema.statics.getDatasetIDsAndHostNamesToBeCrawledOneByHost = function (
 					'$first': '$_id'
 				}
 			}
+		}, {
+
 		}]).allowDiskUse(true);
 };
 
