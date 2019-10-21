@@ -25,6 +25,22 @@ paths:
       responses:
         200:
           description: Returns last version of file by url
+  /dataset/{url}:
+    get:
+      summary: Get dataset by URL
+      parameters:
+        - in: path
+          name: url
+          schema:
+            type: string
+          required: true
+          description: reference of the dataset
+      tags:
+      - Datasetarchiver
+      description:
+      responses:
+        200:
+          description: Returns all versions and the meta information for the dataset
   /getFile:
     get:
       parameters:
