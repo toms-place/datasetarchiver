@@ -284,6 +284,25 @@ export class Controller {
   }
 
 
+
+
+  async getDatasetsByHostname(req: Request, res: Response, next: NextFunction): Promise < void > {
+    try {
+
+      let ds = await CrawlerService.getDatasetsByHostname(req.params.hostname)
+      if (!ds) {
+        next(new Error('no dataset found'))
+      }
+
+      res.json(ds)
+
+    } catch (error) {
+      next(error)
+      return
+    }
+  }
+
+
   async dumpLastVersions(req: Request, res: Response, next: NextFunction): Promise < void > {
     //check query
     if (req.query.byType) {

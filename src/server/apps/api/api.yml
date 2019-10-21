@@ -44,6 +44,28 @@ paths:
               schema:
                 type: object
                 $ref: '#/components/schemas/Dataset'
+  /datasets/{hostname}:
+    get:
+      summary: Get datasets by Hostname
+      parameters:
+        - in: path
+          name: hostname
+          schema:
+            type: string
+          required: true
+          description: reference of the hostname
+      tags:
+      - Datasetarchiver
+      responses:
+        200:
+          description: Returns all versions and the meta information for the dataset
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  $ref: '#/components/schemas/Dataset'
   /getFile:
     get:
       summary: Get file by _id from versions array

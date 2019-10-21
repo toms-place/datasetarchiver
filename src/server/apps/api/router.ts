@@ -24,6 +24,7 @@ router.get('/dataset', (req, res, next) => {
 router.get('/file/byDatasetID/:id', controller.getFileByDatasetID)
 router.get('/file/*', controller.getFileByUrl)
 router.get('/dataset/*', controller.getDatasetByUrl)
+router.get('/datasets/:hostname', controller.getDatasetsByHostname)
 
 router.post('/crawlID', controller.crawlID)
 router.post('/addResources', controller.addResources)

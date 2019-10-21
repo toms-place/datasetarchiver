@@ -252,6 +252,25 @@ export class CrawlerService {
     }
   }
 
+
+  static async getDatasetsByHostname(hostname: URL['hostname']): Promise < IDataset[] > {
+    try {
+      let ds = await db.dataset.find({
+        'meta.source.hostname': hostname
+      })
+      let populatedDS = [];
+      for (let newDs of ds) {
+        let file = await db.file.find({_id: {$in:newDs.versions}})
+        let newpopulatedDS = JSON.parse(JSON.stringify(newDs))
+        newpopulatedDS.versions = file
+        populatedDS.push(newpopulatedDS)
+      }
+      return populatedDS
+    } catch (error) {
+      throw error
+    }
+  }
+
   static async getDatasetsByFileType(extension): Promise < IDataset[] > {
     try {
       let array = await db.dataset.find({

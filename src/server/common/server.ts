@@ -36,7 +36,7 @@ export default class ExpressServer {
 
     //installValidator(app)
 
-    app.use(favicon(path.join(root, 'public', 'api-explorer', 'favicon-32x32.png')));
+    app.use(favicon(path.join(pathToSwaggerUi, 'favicon-32x32.png')));
 
     //route setup
     if (config.mode == 'scheduler') {
