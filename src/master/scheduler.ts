@@ -41,9 +41,9 @@ export class Scheduler {
           host:
           for (let host of this.hostsToCrawl) {
             for (let query of this.querys) {
-              if (host.name == query._id) {
+              if (host.name == query.hostname) {
                 this.promises.push(
-                  this.crawl(query.id, query._id)
+                  this.crawl(query.dataset_id, query.hostname)
                 )
                 continue host;
               }

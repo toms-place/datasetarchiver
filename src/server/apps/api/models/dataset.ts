@@ -364,6 +364,10 @@ datasetSchema.statics.getDatasetIDsAndHostNamesToBeCrawledOneByHost = function (
 				}
 			}
 		}, {
+			$project: {
+				hostname: '$_id',
+				dataset_id: '$id'
+			}
 
 		}]).allowDiskUse(true);
 };
