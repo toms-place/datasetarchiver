@@ -3,9 +3,9 @@ doctype html
 head
   meta(charset='UTF-8')
   title datasetarchiver api docu
-  link(rel='stylesheet' type='text/css' href=`${basePath}/public/api-explorer/swagger-ui.css`)
-  link(rel='icon' type='image/png' href=`${basePath}/public/api-explorer/favicon-32x32.png` sizes='32x32')
-  link(rel='icon' type='image/png' href=`${basePath}/public/api-explorer/favicon-16x16.png` sizes='16x16')
+  link(rel='stylesheet' type='text/css' href=`${basePath}/swagger/swagger-ui.css`)
+  link(rel='icon' type='image/png' href=`${basePath}/swagger/favicon-32x32.png` sizes='32x32')
+  link(rel='icon' type='image/png' href=`${basePath}/swagger/favicon-16x16.png` sizes='16x16')
   style.
     html {
     box-sizing: border-box;
@@ -22,8 +22,8 @@ head
     background: #fafafa;
     }
 #swagger-ui
-script(src=`${basePath}/public/api-explorer/swagger-ui-bundle.js`)
-script(src=`${basePath}/public/api-explorer/swagger-ui-standalone-preset.js`)
+script(src=`${basePath}/swagger/swagger-ui-bundle.js`)
+script(src=`${basePath}/swagger/swagger-ui-standalone-preset.js`)
 script.
   window.onload = function() {
   // Begin Swagger UI call region

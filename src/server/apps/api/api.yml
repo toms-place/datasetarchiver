@@ -21,7 +21,6 @@ paths:
           description: reference of the file
       tags:
       - Datasetarchiver
-      description:
       responses:
         200:
           description: Returns last version of file by url
@@ -37,12 +36,17 @@ paths:
           description: reference of the dataset
       tags:
       - Datasetarchiver
-      description:
       responses:
         200:
           description: Returns all versions and the meta information for the dataset
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: '#/components/schemas/Dataset'
   /getFile:
     get:
+      summary: Get file by _id from versions array
       parameters:
         - in: query
           name: id
@@ -52,17 +56,17 @@ paths:
           required: true
         - in: query
           name: as
-          description: defines method to get files (stream, zip)
+          description: defines method to get files (stream, zip, download)
           schema:
             type: string
       tags:
       - Datasetarchiver
-      description:
       responses:
         200:
-          description: Returns file with specified method default is stream
+          description: Returns file with specified method default is download with correct type header
   /getFiles:
     get:
+      summary: Get files by type
       parameters:
         - in: query
           name: byType
@@ -82,26 +86,28 @@ paths:
       responses:
         200:
           description: Returns files with specified method default is stream (only newest versions)
-  /getVersions:
+  /getDataset:
     get:
+      summary: Get dataset by _id
       parameters:
         - in: query
-          name: byType
-          description: defines Type of files to get (csv, text/csv, zip, etc..)
+          name: id
+          description: ObjectId of dataset
           schema:
             type: string
+          required: true
       tags:
       - Datasetarchiver
-      description:
       responses:
-        '200':
-          description: Returns an array of file objects containing the _ids of the versions
+        200:
+          description: Returns dataset
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/files'
+                $ref: '#/components/schemas/Dataset'
   /getDatasets:
     get:
+      summary: Get dataset by filetype
       parameters:
         - in: query
           name: byType
@@ -110,7 +116,6 @@ paths:
             type: string
       tags:
       - Datasetarchiver
-      description:
       responses:
         200:
           description: Returns array of datasets
@@ -122,6 +127,7 @@ paths:
                   $ref: '#/components/schemas/Dataset'
   /dumpLastVersions:
     get:
+      summary: Get a zip dump for all last versions of a filetype
       parameters:
         - in: query
           name: byType
@@ -130,50 +136,9 @@ paths:
             type: string
       tags:
       - Datasetarchiver
-      description:
       responses:
         200:
           description: Downloads a zip file containing all files and a meta.json file
-  /getDataset:
-    get:
-      parameters:
-        - in: query
-          name: id
-          description: ObjectId of dataset
-          schema:
-            type: string
-          required: true
-      tags:
-      - Datasetarchiver
-      description:
-      responses:
-        200:
-          description: Returns dataset
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Dataset'
-  /crawlID:
-    post:
-      parameters:
-        - in: query
-          name: id
-          description: Crawls the id which links to the data
-          schema:
-            type: string
-          required: true
-        - in: query
-          name: secret
-          description: Ask thomas for the secret
-          schema:
-            type: string
-          required: true
-      tags:
-      - Datasetarchiver
-      description: crawl id
-      responses:
-        200:
-          description: Returns a boolean if crawl started
   /addResources:
     post:
       summary: add many resources
@@ -196,6 +161,28 @@ paths:
       responses:
         200:
           description: Returns array with booleans
+  /crawlID:
+    post:
+      summary: Only for crawling purposes
+      parameters:
+        - in: query
+          name: id
+          description: Crawls the id which links to the data
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: secret
+          description: Ask thomas for the secret
+          schema:
+            type: string
+          required: true
+      tags:
+      - Datasetarchiver
+      description: crawl id
+      responses:
+        200:
+          description: Returns a boolean if crawl started
 
 
 components:
@@ -301,6 +288,29 @@ components:
       title: versions
       type: array
       items:
-        type: string
+        type: object
+        $ref: '#/components/examples/version'
       uniqueItems: true
+    version:
+      type: object
+      properties:
+          metadata:
+            type: object
+            properties:
+              dataset_ref_id:
+                type: string
+              version:
+                type: number
+          _id:
+            type: string
+          length:
+            type: number
+          chunkSize:
+            type: number
+          uploadDate:
+            type: string
+          filename:
+            type: string
+          md5:
+            type: string
 

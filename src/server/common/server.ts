@@ -9,8 +9,8 @@ import crawlerAPI from '../apps/api/api'
 import schedulerAPI from '../apps/scheduler/scheduler'
 import viewsAPP from '../apps/browser/app'
 var favicon = require('serve-favicon');
-import cors from 'cors' 
-
+import cors from 'cors'
+const pathToSwaggerUi = require('swagger-ui-dist').absolutePath()
 
 const root = path.normalize(__dirname + '/../..');
 const app = express();
@@ -45,6 +45,7 @@ export default class ExpressServer {
     } else {
       app.use(config.endpoint + `/api/v1`, crawlerAPI);
       app.use(config.endpoint + `/public`, express.static(`${root}/public`));
+      app.use(config.endpoint + `/swagger`, express.static(pathToSwaggerUi))
       app.use(config.endpoint + '/', viewsAPP);
       app.use('/', viewsAPP);
     }
