@@ -42,7 +42,8 @@ let datasetSchema = new mongoose.Schema({
 	crawl_info: {
 		currentlyCrawled: {
 			type: Boolean,
-			default: false
+			default: false,
+			index: true
 		},
 		firstCrawl: {
 			type: Boolean,
@@ -54,7 +55,8 @@ let datasetSchema = new mongoose.Schema({
 		},
 		nextCrawl: {
 			type: Date,
-			default: new Date()
+			default: new Date(),
+			index: true
 		},
 		lastCrawlAttempt: {
 			type: Date,
@@ -74,15 +76,18 @@ let datasetSchema = new mongoose.Schema({
 		},
 		stopped: {
 			type: Boolean,
-			default: false
+			default: false,
+			index: true
 		}
 	},
 	versions: [{
-		type: mongoose.Schema.Types.ObjectId
+		type: mongoose.Schema.Types.ObjectId,
+		index: true
 	}],
 	meta: {
 		source: [{
-			type: mongoose.Schema.Types.Mixed
+			type: mongoose.Schema.Types.Mixed,
+			index: true
 		}],
 		versionCount: {
 			type: Number,

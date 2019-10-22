@@ -194,6 +194,12 @@ paths:
             type: string
           required: true
         - in: query
+          name: hostname
+          description: The hostname of the dataset to crawl
+          schema:
+            type: string
+          required: true
+        - in: query
           name: secret
           description: Ask thomas for the secret
           schema:

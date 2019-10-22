@@ -9,6 +9,9 @@ import {
 import config from '../config';
 import fileTypeDetector from './fileTypeDetector';
 import l from '../common/logger';
+import {
+	Binary
+} from 'bson';
 
 
 class DatasetError extends Error {
@@ -92,6 +95,7 @@ export default class Crawler {
 		return new Promise((resolve, reject) => {
 
 			let downloadStart = new Date()
+			let dataByteCount = 0
 
 			//request.debug = true
 			request(this.dataset.url.href, {
@@ -107,6 +111,13 @@ export default class Crawler {
 				})
 				.on('error', (error) => {
 					reject(error)
+				})
+				.on('data', (data) => {
+					dataByteCount += data.length
+					if (dataByteCount >= config.MaxFileSizeInBytes) {
+						reject(new DatasetError('max file size exceeded', 194))
+					}
+
 				})
 				.on('response', (response) => {
 

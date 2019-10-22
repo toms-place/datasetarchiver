@@ -26,19 +26,19 @@ let hostSchema = new mongoose.Schema({
 	name: {
 		type: String,
 		required: true,
-		unique: true
+		unique: true,
+		index: true
 	},
 	currentlyCrawled: {
 		type: Boolean,
-		default: false
+		default: false,
+		index: true
 	},
 	nextCrawl: {
 		type: Date,
-		default: new Date()
-	},
-	datasets: [{
-		type: mongoose.SchemaTypes.ObjectId,
-	}]
+		default: new Date(),
+		index: true
+	}
 })
 
 let hostQueryHelpers = {
