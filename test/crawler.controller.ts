@@ -3,24 +3,24 @@ import {
   expect
 } from 'chai';
 import request from 'supertest';
-import Server from '../server';
-import db from '../server/common/database';
+import Server from '../src/server';
+import db from '../src/server/common/database';
 import {
   CrawlerService
-} from '../server/api/services/crawler.service';
-import config from '../server/config';
+} from '../src/server/apps/api/services/crawler.service';
+import config from '../src/server/config';
 
 before(async function () {
-  await CrawlerService.addHref(`http://localhost:3000${config.endpoint}/public/testfiles/test.api.1.csv`)
-  await CrawlerService.addHref(`http://localhost:3000${config.endpoint}/public/testfiles/test.api.2.csv`)
-  await CrawlerService.addHref(`http://localhost:3000${config.endpoint}/public/testfiles/test.api.maxsize.csv`)
-  await CrawlerService.addHref(`http://localhost:3000${config.endpoint}/public/testfiles/test.api.maxsize.1.csv`)
-  await CrawlerService.addHref('http://donotreachme/test/1.csv')
-  await CrawlerService.addHref('http://donotreachme/test/2.csv')
+  await CrawlerService.addResources([{href:`http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.1.csv`, source:'',format:''}])
+  await CrawlerService.addResources([{href:`http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.2.csv`, source:'',format:''}])
+  await CrawlerService.addResources([{href:`http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.maxsize.csv`, source:'',format:''}])
+  await CrawlerService.addResources([{href:`http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.maxsize.1.csv`, source:'',format:''}])
+  await CrawlerService.addResources([{href:'http://donotreachme/test/1.csv', source:'', format:''}])
+  await CrawlerService.addResources([{href:'http://donotreachme/test/2.csv', source:'', format:''}])
   await db.dataset.updateMany({
     id: ['http://donotreachme/test/2.csv'
-    ,`http://localhost:3000${config.endpoint}/public/testfiles/test.api.maxsize.1.csv`
-    ,`http://localhost:3000${config.endpoint}/public/testfiles/test.api.2.csv`]
+    ,`http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.maxsize.1.csv`
+    ,`http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.2.csv`]
   }, {
     $set: {
       'crawl_info.firstCrawl': false
@@ -36,13 +36,13 @@ after(async function () {
 
   let res = await db.dataset.deleteMany({
     id: {
-      $in: [`http://localhost:3000${config.endpoint}/public/testfiles/test.api.csv`
-      , `http://localhost:3000${config.endpoint}/public/testfiles/test.api.1.csv`
-      , `http://localhost:3000${config.endpoint}/public/testfiles/test.api.2.csv`
+      $in: [`http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.csv`
+      , `http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.1.csv`
+      , `http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.2.csv`
       , 'http://donotreachme/test/1.csv'
       , 'http://donotreachme/test/2.csv'
-      , `http://localhost:3000${config.endpoint}/public/testfiles/test.api.maxsize.csv`
-      , `http://localhost:3000${config.endpoint}/public/testfiles/test.api.maxsize.1.csv`]
+      , `http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.maxsize.csv`
+      , `http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.maxsize.1.csv`]
     }
   })
   let host = await db.host.deleteMany({
@@ -69,7 +69,7 @@ describe('API Tests:', () => {
   describe('ADD', () => {
     it('should add a href to db', () =>
       request(Server)
-      .get(`${config.endpoint}/api/v1/addHref?href=http://localhost:3000${config.endpoint}/public/testfiles/test.api.csv`)
+      .post(`${config.ENDPOINT}/api/v1/addHref?href=http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.csv`)
       .then(r => {
         expect(r.body['datasetstatus']).to.equal(200);
       }));
@@ -78,7 +78,7 @@ describe('API Tests:', () => {
   describe('CRAWL meta', () => {
     it('should crawl meta to init href', () =>
       request(Server)
-      .get(`${config.endpoint}/api/v1/crawlHrefSync?href=http://localhost:3000${config.endpoint}/public/testfiles/test.api.1.csv`)
+      .get(`${config.ENDPOINT}/api/v1/crawlHrefSync?href=http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.1.csv`)
       .then(r => {
         expect(r.body).to.equal(true);
       }));
@@ -87,7 +87,7 @@ describe('API Tests:', () => {
   describe('CRAWL first', () => {
     it('should download whole file', () =>
       request(Server)
-      .get(`${config.endpoint}/api/v1/crawlHrefSync?href=http://localhost:3000${config.endpoint}/public/testfiles/test.api.2.csv`)
+      .get(`${config.ENDPOINT}/api/v1/crawlHrefSync?href=http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.2.csv`)
       .then(r => {
         expect(r.body).to.equal(true);
       }));
@@ -96,7 +96,7 @@ describe('API Tests:', () => {
   describe('CRAWL second', () => {
     it('should download whole file', () =>
       request(Server)
-      .get(`${config.endpoint}/api/v1/crawlHrefSync?href=http://localhost:3000${config.endpoint}/public/testfiles/test.api.2.csv`)
+      .get(`${config.ENDPOINT}/api/v1/crawlHrefSync?href=http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.2.csv`)
       .then(r => {
         expect(r.body).to.equal(true);
       }));
@@ -105,7 +105,7 @@ describe('API Tests:', () => {
   describe('CRAWL third', () => {
     it('should download whole file and calc new crawl', () =>
       request(Server)
-      .get(`${config.endpoint}/api/v1/crawlHrefSync?href=http://localhost:3000${config.endpoint}/public/testfiles/test.api.2.csv`)
+      .get(`${config.ENDPOINT}/api/v1/crawlHrefSync?href=http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.2.csv`)
       .then(r => {
         expect(r.body).to.equal(true);
       }));
@@ -119,7 +119,7 @@ describe('API failing Tests:', () => {
   describe('ADD fail', () => {
     it('should add a href to db and fail because of duplicate', () =>
       request(Server)
-      .get(`${config.endpoint}/api/v1/addHref?href=http://localhost:3000${config.endpoint}/public/testfiles/test.api.1.csv`)
+      .get(`${config.ENDPOINT}/api/v1/addHref?href=http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.1.csv`)
       .then(r => {
         expect(r.body['datasetstatus']).to.equal(409);
       }));
@@ -128,7 +128,7 @@ describe('API failing Tests:', () => {
   describe('CRAWL first fail', () => {
     it('should download whole file and fail', () =>
       request(Server)
-      .get(`${config.endpoint}/api/v1/crawlHrefSync?href=http://donotreachme/test/1.csv`)
+      .get(`${config.ENDPOINT}/api/v1/crawlHrefSync?href=http://donotreachme/test/1.csv`)
       .then(r => {
         expect(r.body).to.equal(false);
       }));
@@ -137,7 +137,7 @@ describe('API failing Tests:', () => {
   describe('CRAWL second fail', () => {
     it('should download whole file and fail', () =>
       request(Server)
-      .get(`${config.endpoint}/api/v1/crawlHrefSync?href=http://donotreachme/test/2.csv`)
+      .get(`${config.ENDPOINT}/api/v1/crawlHrefSync?href=http://donotreachme/test/2.csv`)
       .then(r => {
         expect(r.body).to.equal(false);
       }));
@@ -146,7 +146,7 @@ describe('API failing Tests:', () => {
   describe('CRAWL firts fail max size', () => {
     it('should download head of file and fail because of max file size', () =>
       request(Server)
-      .get(`${config.endpoint}/api/v1/crawlHrefSync?href=http://localhost:3000${config.endpoint}/public/testfiles/test.api.maxsize.csv`)
+      .get(`${config.ENDPOINT}/api/v1/crawlHrefSync?href=http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.maxsize.csv`)
       .then(r => {
         expect(r.body).to.equal(false);
       }));
@@ -155,7 +155,7 @@ describe('API failing Tests:', () => {
   describe('CRAWL second fail max size', () => {
     it('should download whole file and fail because of max file size', () =>
       request(Server)
-      .get(`${config.endpoint}/api/v1/crawlHrefSync?href=http://localhost:3000${config.endpoint}/public/testfiles/test.api.maxsize.1.csv`)
+      .get(`${config.ENDPOINT}/api/v1/crawlHrefSync?href=http://localhost:3000${config.ENDPOINT}/public/testfiles/test.api.maxsize.1.csv`)
       .then(r => {
         expect(r.body).to.equal(false);
       }));

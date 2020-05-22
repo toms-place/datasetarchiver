@@ -1,0 +1,123 @@
+include includes/head.pug
+title stats | datasetarchiver
+h1 Stats of the datasetarchiver
+
+div.container
+  section.basicStats.stats
+    table
+      th(colspan="2") Basic descriptive Statistics
+      tr
+        td(style="text-align:right")#datasetCount.count_stats
+        td Datasets
+      tr
+        td(style="text-align:right")#hostCount.count_stats
+        td Hosts
+      tr
+        td(style="text-align:right")#sourceCount.count_stats
+        td Sources
+      tr
+        td(style="text-align:right")#fileCount.count_stats
+        td Files
+
+  section.advancedStats.stats
+    div.forms
+      form(name="datasetCountPerHost" action="/api/v1/stats/datasetCountPerHost?limit=5", id="demo_form_1" class="demo_form")
+        input(type="submit" value="show the Dataset count per Host")
+      p#datasetCountPerHost
+    div.forms
+      form(name="fileTypeDistribution" action="/api/v1/stats/fileTypeDistribution", id="demo_form_2" class="demo_form")
+        input(type="submit" value="show the file Distribution")
+      p#fileTypeDistribution
+
+
+
+
+script.
+  let changeIDwithAPIrequest = (IdToChange, getRequest) => {
+    let xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById(IdToChange).innerHTML = this.response;
+      } else if(this.readyState == (1 || 2 || 3)) {
+        document.getElementById(IdToChange).innerHTML = `loading...`
+      } else {
+        document.getElementById(IdToChange).innerHTML = `Error: ${this.status}`
+      }
+    };
+    xhttp.open("GET", getRequest, true);
+    xhttp.send();
+  }
+
+  let changeView = (IdToChange, getRequest, firstKey, secondKey) => {
+    let xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        let div = ''
+        let res = JSON.parse(this.response)
+        let i = 0;
+        while (i < 5 && i < res.length) {
+          div += res[i][firstKey] + ': ' + res[i][secondKey] + '<br \>'
+          i++
+        }
+        document.getElementById(IdToChange).innerHTML = div
+      } else if(this.readyState == (1 || 2 || 3)) {
+        document.getElementById(IdToChange).innerHTML = `loading...`
+      } else {
+        document.getElementById(IdToChange).innerHTML = `Error: ${this.status}`
+      }
+    };
+    xhttp.open("GET", getRequest, true);
+    xhttp.send();
+  }
+
+  let setTable = () => {
+
+    let xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        let res = JSON.parse(this.response)
+        document.getElementById('datasetCount').innerHTML = res.datasetCount;
+        document.getElementById('hostCount').innerHTML = res.hostCount;
+        document.getElementById('sourceCount').innerHTML = res.sourceCount;
+        document.getElementById('fileCount').innerHTML = res.fileCount;
+      } else if(this.readyState == (1 || 2 || 3)) {
+        document.getElementById('datasetCount').innerHTML = `loading...`;
+        document.getElementById('hostCount').innerHTML = `loading...`;
+        document.getElementById('sourceCount').innerHTML = `loading...`;
+        document.getElementById('fileCount').innerHTML = `loading...`;
+      } else {
+        document.getElementById('datasetCount').innerHTML = `Error: ${this.status}`;
+        document.getElementById('hostCount').innerHTML = `Error: ${this.status}`;
+        document.getElementById('sourceCount').innerHTML = `Error: ${this.status}`;
+        document.getElementById('fileCount').innerHTML = `Error: ${this.status}`;
+      }
+    };
+    xhttp.open("GET", "/api/v1/stats/basic", true);
+    xhttp.send();
+  }
+
+  setTable()
+
+
+  for (let form of document.getElementsByClassName('demo_form')) {
+    document.getElementById(form.id).onsubmit = (e) => {
+      e.preventDefault();
+      if (form.firstChild.type == 'submit') {
+        switch (form.name) {
+          case 'datasetCountPerHost':
+            changeView(form.name, form.action, "datasets", "hostname")
+            break;
+          case 'fileTypeDistribution':
+            changeView(form.name, form.action, "_id", "count")
+            break;
+
+          default:
+            console.log('asdf')
+            changeIDwithAPIrequest(form.name, form.action)
+            break;
+        }
+      } else {
+        changeIDwithAPIrequest(form.name, `${form.action}${form.firstChild.value}`)
+      }
+    }
+  }

@@ -1,0 +1,611 @@
+openapi: 3.0.1
+info:
+  title: Datasetarchiver
+  description: Datasetarchiver
+  version: 1.0.1
+servers:
+  - url: /api/v1
+tags:
+  - name: get
+    description: Files and Metadata of individual Datasets
+  - name: stats
+    description: Statistics about the Crawler
+  - name: post
+    description: Dataset, Host, Source, Meta
+  - name: crawl
+    description: crawling functions
+  - name: legacy
+    description: legacy functions
+paths:
+  /post/resource:
+    post:
+      summary: add one resource
+      parameters:
+        - in: query
+          name: secret
+          description: Ask Thomas for the secret
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/resources'
+      tags:
+      - post
+      description:
+      responses:
+        200:
+          description: Returns array with booleans
+  /post/resources:
+    post:
+      summary: add many resources
+      parameters:
+        - in: query
+          name: secret
+          description: Ask Thomas for the secret
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/resources'
+      tags:
+      - post
+      description:
+      responses:
+        200:
+          description: Returns array with booleans
+
+
+
+
+  /get/file/{url}:
+    get:
+      summary: Get file by URL
+      parameters:
+        - in: path
+          name: url
+          schema:
+            type: string
+          required: true
+          description: reference of the file
+      tags:
+      - get
+      responses:
+        200:
+          description: Returns last version of file by url
+  /get/file/{by}/{param}:
+    get:
+      summary: Get file by ID, URL or DatasetID
+      parameters:
+        - in: path
+          name: by
+          schema:
+            type: string
+          required: true
+          description: How to get the file, eg. url, id, dsID (DatasetID)
+        - in: path
+          name: param
+          schema:
+            type: string
+          required: true
+          description: Reference to the file, eg. id, url, dsID
+      tags:
+      - get
+      responses:
+        200:
+          description: Returns last version of file
+
+  /get/files/sparql:
+    get:
+      summary: Get file by Sparql query
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          required: true
+          description: Sparql query
+      tags:
+      - get
+      responses:
+        200:
+          description: Streams all files as zip
+  
+  /get/files:
+    post:
+      summary: Post an array of IDs to get all files as zip
+      tags:
+      - get
+      requestBody:
+        content:
+        
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+              uniqueItems: true
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                payload:     # <--- form field that contains the JSON message
+                  type: array
+                  items:
+                    type: string
+                  uniqueItems: true
+            encoding:
+              payload:
+                contentType: application/json
+      responses:
+        200:
+          description: Streams all files as zip
+
+  /get/files/{by}/{param}:
+    get:
+      summary: Get files by type as zip archive
+      parameters:
+        - in: path
+          name: by
+          schema:
+            type: string
+          required: true
+          description: How to get the file by, eg. type, tag
+        - in: path
+          name: param
+          schema:
+            type: string
+          required: true
+          description: Specify filetype, eg. csv, pdf
+      tags:
+      - get
+      responses:
+        200:
+          description: Streams all files as zip
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+
+  /get/dataset/{url}:
+    get:
+      summary: Get dataset by URL
+      parameters:
+        - in: path
+          name: url
+          schema:
+            type: string
+          required: true
+          description: reference of the dataset
+      tags:
+      - get
+      responses:
+        200:
+          description: Returns all versions and the meta information for the dataset
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: '#/components/schemas/Dataset'
+  /get/dataset/{by}/{param}:
+    get:
+      summary: Get dataset by ID or URL
+      parameters:
+        - in: path
+          name: by
+          schema:
+            type: string
+          required: true
+          description: How to get the file, eg. url, id
+        - in: path
+          name: param
+          schema:
+            type: string
+          required: true
+          description: Reference to the file, eg. id, url
+      tags:
+      - get
+      responses:
+        200:
+          description: Returns all versions and the meta information for the dataset
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: '#/components/schemas/Dataset'
+  /get/datasets/{by}/{param}:
+    get:
+      summary: Get datasets by type
+      parameters:
+        - in: path
+          name: by
+          schema:
+            type: string
+          required: true
+          description: How to get the datasets by, eg. type, tag, hostname
+        - in: path
+          name: param
+          schema:
+            type: string
+          required: true
+          description: Specify filetype, eg. csv, pdf
+      tags:
+      - get
+      responses:
+        200:
+          description: Returns all datasets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  $ref: '#/components/schemas/Dataset'
+
+
+  /stats/datasetCountPerHost:
+    get:
+      summary: Get top Dataset Count per Hostname
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: number
+          required: false
+          description: limit of returned objects (default = 1)
+      tags:
+      - stats
+      responses:
+        200:
+          description: Hostname and Count object
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    hostname:
+                      type: string
+                    count:
+                      type: number
+
+  /stats/basic:
+    get:
+      summary: Get basic count of resources
+      tags:
+      - stats
+      responses:
+        200:
+          description: Hostname and Count object
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  datasetCount:
+                    type: number
+                  hostCount:
+                    type: number
+                  fileCount:
+                    type: number
+                  sourceCount:
+                    type: number
+
+
+
+
+  /crawl:
+    post:
+      summary: Only for crawling purposes
+      parameters:
+        - in: query
+          name: id
+          description: Crawls the id which links to the data
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: hostname
+          description: The hostname of the dataset to crawl
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: secret
+          description: Ask Thomas for the secret
+          schema:
+            type: string
+          required: true
+      tags:
+      - crawl
+      description: crawl id
+      responses:
+        200:
+          description: Returns a boolean if crawl started
+
+
+
+  /dataset/{url}:
+    get:
+      summary: (LEGACY) Get dataset by URL
+      deprecated: true
+      parameters:
+        - in: path
+          name: url
+          schema:
+            type: string
+          required: true
+          description: reference of the dataset
+      tags:
+      - legacy
+      responses:
+        200:
+          description: Returns all versions and the meta information for the dataset
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: '#/components/schemas/Dataset'
+  /datasets/{hostname}:
+    get:
+      deprecated: true
+      summary: (LEGACY) Get datasets by Hostname
+      parameters:
+        - in: path
+          name: hostname
+          schema:
+            type: string
+          required: true
+          description: reference of the hostname
+      tags:
+      - legacy
+      responses:
+        200:
+          description: Returns all versions and the meta information for the dataset
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  $ref: '#/components/schemas/Dataset'
+  /getFile:
+    get:
+      deprecated: true
+      summary: (LEGACY) Get file by _id from versions array
+      parameters:
+        - in: query
+          name: id
+          description: ObjectId of file
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: as
+          description: defines method to get files (stream, zip, download)
+          schema:
+            type: string
+      tags:
+      - legacy
+      responses:
+        200:
+          description: Returns file with specified method default is download with correct type header
+  /getFiles:
+    get:
+      deprecated: true
+      summary: (LEGACY) Get files by type
+      parameters:
+        - in: query
+          name: byType
+          description: defines Type of files to get (csv, text/csv, zip, etc..)
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: as
+          description: defines method to get files (zip, stream)
+          schema:
+            type: string
+      tags:
+      - legacy
+      description:
+        Gets newest Versions of Files (if stream, files seperated by [FILENAME_START\n[filename]\nFILENAME_END])
+      responses:
+        200:
+          description: Returns files with specified method default is stream (only newest versions)
+  /getDataset:
+    get:
+      deprecated: true
+      summary: (LEGACY) Get dataset by _id
+      parameters:
+        - in: query
+          name: id
+          description: ObjectId of dataset
+          schema:
+            type: string
+          required: true
+      tags:
+      - legacy
+      responses:
+        200:
+          description: Returns dataset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dataset'
+  /getDatasets:
+    get:
+      deprecated: true
+      summary: (LEGACY) Get dataset by filetype
+      parameters:
+        - in: query
+          name: byType
+          description: defines type of datasets to get  (csv, text/csv, zip, etc..)
+          schema:
+            type: string
+      tags:
+      - legacy
+      responses:
+        200:
+          description: Returns array of datasets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dataset'
+  /dumpLastVersions:
+    get:
+      deprecated: true
+      summary: (LEGACY) Get a zip dump for all last versions of a filetype
+      parameters:
+        - in: query
+          name: byType
+          description: defines type of datasets to get  (csv, text/csv, zip, etc..)
+          schema:
+            type: string
+      tags:
+      - legacy
+      responses:
+        200:
+          description: Downloads a zip file containing all files and a meta.json file
+
+
+components:
+  schemas:
+    Dataset:
+      title: dataset
+      required:
+      - name
+      type: object
+      properties:
+        _id:
+          type: string
+        id:
+          type: string
+        meta:
+          type: object
+          $ref: '#/components/examples/meta'
+        crawl_info:
+          type: object
+          $ref: '#/components/examples/crawl_info'
+        versions:
+          type: array
+          $ref: '#/components/examples/versions'
+        url:
+          type: object
+    file:
+      title: file
+      type: object
+      properties:
+        file_ids:
+          type: array
+          $ref: '#/components/examples/versions'
+        meta:
+          type: object
+          $ref: '#/components/examples/meta'
+        dataset_id:
+          type: string
+      description: The file_ids array holds all ids of versions of the dataset ([0] is oldest).
+    files:
+      type: array
+      items:
+        type: object
+        $ref: '#/components/schemas/file'
+      title: files
+    resource:
+      title: resource
+      type: object
+      properties:
+        href:
+          type: string
+        source:
+          type: string
+        format:
+          type: string
+    resources:
+      type: array
+      items:
+        type: object
+        $ref: '#/components/schemas/resource'
+      title: resources
+  examples:
+    crawl_info:
+      title: crawl_info
+      type: object
+      properties:
+        firstCrawl:
+          type: boolean
+        crawlInterval:
+          type: number
+        nextCrawl:
+          type: string
+        lastCrawlAttempt:
+          type: string
+        stopped:
+          type: boolean
+        errorCount:
+          type: number
+        errorStore:
+          type: array
+          items:
+            type: object
+        changeDistribution:
+          type: array
+          items:
+            type: object
+    meta:
+      title: meta
+      type: object
+      properties:
+        versionCount:
+          type: number
+        filetype:
+          type: string
+        filename:
+          type: string
+        insertDate:
+          type: string
+        source:
+          type: array
+          items:
+            type: object
+    versions:
+      title: versions
+      type: array
+      items:
+        type: object
+        $ref: '#/components/examples/version'
+      uniqueItems: true
+    version:
+      type: object
+      properties:
+          metadata:
+            type: object
+            properties:
+              dataset_ref_id:
+                type: string
+              version:
+                type: number
+          _id:
+            type: string
+          length:
+            type: number
+          chunkSize:
+            type: number
+          uploadDate:
+            type: string
+          filename:
+            type: string
+          md5:
+            type: string
+

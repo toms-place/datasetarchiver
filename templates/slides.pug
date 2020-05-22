@@ -1,0 +1,49 @@
+doctype html
+head
+  meta(charset='utf-8')
+  meta(name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no')
+  title Dataset Archiving - Bachelor Thesis
+  link(rel='stylesheet' href=`/public/reveal/css/reset.css`)
+  link(rel='stylesheet' href=`/public/reveal/css/reveal.css`)
+  link(rel='stylesheet' href=`/public/reveal/css/theme/solarized.css`)
+  link(rel='stylesheet' href=`/public/reveal/lib/css/monokai.css`)
+  script.
+    var link = document.createElement( 'link' );
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = window.location.search.match( `print-pdf/gi` ) ? '/public/reveal/css/print/pdf.css' : '/public/reveal/css/print/paper.css';
+    document.getElementsByTagName( 'head' )[0].appendChild( link );
+
+
+
+
+.reveal
+  .slides
+    // Use external markdown resource, separate slides by three newlines; vertical slides by two newlines
+    section(data-markdown='/public/bachelor_thesis.md' data-separator='^\r?\n\r?\n\r?\n' data-separator-vertical='^\r?\n\r?\n')
+    section
+      iframe(data-src="/api-explorer" data-preload width=1300 height=650)
+    section
+      iframe(data-src="/stats" data-preload width=400 height=550)
+    section(data-markdown='')
+      textarea(data-template='')
+        | ## Thank You!
+        |
+        | Feedback is very welcome
+        |
+        | ---
+        |
+        | [weber-thomas.at](https://weber-thomas.at/#kontakt)
+
+
+
+script(src=`/public/reveal/js/reveal.js`)
+script.
+  Reveal.initialize({
+    dependencies: [
+      { src: `/public/reveal/plugin/markdown/marked.js` },
+      { src: `/public/reveal/plugin/markdown/markdown.js` },
+      { src: `/public/reveal/plugin/notes/notes.js`, async: true },
+      { src: `/public/reveal/plugin/highlight/highlight.js`, async: true }
+    ]
+  });

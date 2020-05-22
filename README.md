@@ -1,10 +1,10 @@
-# Archives Crawls
+# ODArchiver
 
-* crawls dataset urls and archives them
+* Client:Server Architecture to crawl web ressources
 
 ## prerequisits
 
-* npm
+* npm and node
 * a running mongodb
 
 ## Quick Start
@@ -31,40 +31,6 @@ npm run test
 Compiles the application and starts it in production mode.
 
 ```shell
-npm run compile
+npm run build
 npm start
 ```
-
-## TODO
-
-* API:
-  * JSON addHrefs
-* MASTER:
-  * connect fail, release hosts
-* CRAWLER:
-  * sometimes get header is forbidden
-  * politeness:
-    * robots.txt of host
-    * db with host robots
-
-* mongodb
-  * in kubernetes
-  * files in sharded db?
-* dynamic crawlrate tresholds
-  * comparising sampling for pull based changes
-  * change crawlrate after specific amount of crawls
-
-* file extension
-  * header mime-type and filename=contentdispostions
-  * dictionary
-  * parsing
-  * <https://www.npmjs.com/package/file-type>
-
-## Infos
-
-* first unique url count
-  * 265.203 of 1.241.161
-* second unique url count (csvs from sparql)
-  * 318.925 of 358.300
-* Crawler total csvs
-  * 278.686

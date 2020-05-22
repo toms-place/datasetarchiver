@@ -1,0 +1,32 @@
+body {
+	padding: 10px 30px;
+	font: 14px "Lucida Grande", Helvetica, Arial, sans-serif
+}
+
+a {
+	color: #00b7ff
+}
+
+.container {
+	width: 95%;
+	margin: auto auto;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+th {
+	padding: 5px 10px;
+}
+
+td {
+	padding: 5px 10px;
+	border: 1px solid black;
+	border-left: none;
+	border-right: none;
+}
+
+.stats {
+	margin: 30px 50px;
+}
