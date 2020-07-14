@@ -17,14 +17,16 @@ tables.py
 - each table is assigned a macro name starting with \tabs 
 
 
-full run about 4 hours - make para
+dbread.py - import labels and types and pickle.dump
+
+make para - full run about 4 hours 
 
 csv.db - not part of git repo, everything is created in rayner
 
 nerctools -  cython version of subset check.  nice try, epic fail. slower than pure python.
 
 
-# Extracting types and labels from Wikidata & apply to CSV files
+# Column typing only: Extracting types and labels from Wikidata dump, apply to list of CSV files
 
 lite.sh - bash script for the whole process
 
